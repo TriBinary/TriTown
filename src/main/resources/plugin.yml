@@ -1,11 +1,16 @@
-name: ExamplePlugin
-main: com.example.exampleplugin.Main
+name: TriTown
+main: net.trilleo.mc.plugins.tritown.Main
 version: ${projectVersion}
 api-version: 1.21
+author: Trilleo
+description: Custom Towny features for the Trilleo server
+depend:
+  - Towny
+  - Vault
 
 commands:
-  exampleplugin:
-    description: Main command for the ExamplePlugin plugin
-    usage: /exampleplugin <subcommand> [args]
+  tritown:
+    description: Main command for the TriTown plugin
+    usage: /tritown <subcommand> [args]
     aliases:
-      - ep
+      - tt

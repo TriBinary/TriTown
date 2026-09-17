@@ -1,0 +1,180 @@
+# TriTown — Agent Instructions
+
+## Project Overview
+
+TriTown is a Minecraft Paper plugin that adds custom town features for the Trilleo server on top of
+[Towny](https://github.com/TownyAdvanced/Towny). Where [TownyMenu](https://github.com/Trilleo/TownyMenu) is a general GUI
+for Towny's existing features, TriTown holds functionality specific to this server. It targets Minecraft 26.2 (Paper API
+26.2), hard-depends on Towny and Vault, and is written in Kotlin. [README.md](README.md) has the player-facing overview.
+
+## Tech Stack
+
+| Tool           | Version                                          |
+|:---------------|:-------------------------------------------------|
+| Language       | Kotlin 2.3.10                                    |
+| Build          | Gradle 9.7.1 (Kotlin DSL)                        |
+| Platform       | Paper API 26.2 (MC 26.2)                         |
+| Towny          | 0.103.2.7 (`towny_version` in gradle.properties) |
+| Vault API      | 1.7.1 (`vault_api_version` in gradle.properties) |
+| Java toolchain | JDK 25                                           |
+
+## After Every Change: Keep the Changelog and Docs in Sync
+
+Before finishing any task that changes the plugin, do all of the following:
+
+1. **Update the changelog** — add an entry for the change under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md), in the
+   same commit as the change. Every new feature gets an entry, and so does every improvement and fix.
+    - Follow the SkyHanni-style format documented in [docs/RELEASING.md](docs/RELEASING.md): category (`### New
+      Features` / `### Improvements` / `### Fixes` / `### Technical Details` / `### Removed Features`), then a
+      `#### Feature Area` heading (`Towns`, `Nations`, `Economy`, `Misc`, …), then `+` bullets.
+    - Reuse the category and feature-area headings already under `## Unreleased` instead of repeating them.
+    - Write player- and server-owner-facing entries for gameplay changes; put refactors, build, and tooling changes
+      under `### Technical Details`.
+    - Never edit the section of a version that has already been released.
+    - Skip changelog entries only for changes with no effect on the shipped plugin or its workflow (e.g. fixing a typo
+      in a doc).
+
+2. **Update the developer docs** — if the change adds or alters a system, base class, registrar, utility, or data API,
+   update [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) or [docs/UTILITY_GUIDE.md](docs/UTILITY_GUIDE.md) in the
+   same task. A change to a documented workflow (e.g. the release process in [docs/RELEASING.md](docs/RELEASING.md))
+   updates that doc too. Keep this file accurate as well.
+
+3. **Check the README** — if the change affects anything [README.md](README.md) mentions (features, commands,
+   configuration, requirements, build instructions), update it.
+
+## Build & Run
+
+```powershell
+./gradlew build        # Builds build/libs/TriTown-<version>.jar
+./gradlew copyPlugin   # Copies the jar and Towny (towny_version) into run/plugins/
+./gradlew startServer  # Runs copyPlugin, then launches the paper-*.jar in run/
+```
+
+The local test server lives in `run/` (gitignored). `copyPlugin` puts the matching Towny jar in `run/plugins/`, but the
+Paper 26.2 jar (`run/paper-*.jar`), Vault, and an economy plugin (e.g. EssentialsX) must be downloaded by hand, and
+`eula.txt` accepted, before `startServer` works. Without an economy plugin TriTown disables itself on startup. The server
+console reads commands from the terminal running Gradle.
+
+## Repository Layout
+
+```
+src/main/kotlin/net/trilleo/mc/plugins/tritown/
+├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
+├── commands/                # Sub-commands (auto-registered)
+│   ├── info/
+│   └── moderation/
+├── config/                  # PluginConfig (typed config.yml wrapper)
+├── data/                    # JSON-persisted PlayerData / ServerData and their managers
+├── enums/                   # DisplayLocation, FillMode, PagedGUIMode
+├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI)
+├── items/                   # Custom items (auto-registered, extend PluginItem)
+├── listeners/               # Event listeners, including Towny events (auto-registered)
+├── recipes/                 # Recipes (auto-registered, implement PluginRecipe)
+├── registration/            # Auto-registration engine (do not modify lightly)
+├── tasks/                   # Scheduled tasks (auto-registered, extend PluginTask)
+└── utils/                   # EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, CountdownUtil, TeamUtil, TagUtil,
+                             # PDCUtil, GameRuleUtil
+src/main/resources/
+└── config.yml  plugin.yml
+```
+
+## Auto-Registration System
+
+The plugin uses `PackageScanner` to discover components at startup — you **never** edit `plugin.yml` or wire things
+manually. Just extend the right base class and place the file in the correct package.
+
+| Component   | Base Class                     | Package                 |
+|:------------|:-------------------------------|:------------------------|
+| Command     | `PluginCommand`                | `commands` (any depth)  |
+| Listener    | `Listener`                     | `listeners` (any depth) |
+| GUI         | `PluginGUI` / `PagedPluginGUI` | `guis` (any depth)      |
+| Task        | `PluginTask`                   | `tasks` (any depth)     |
+| Custom item | `PluginItem`                   | `items` (any depth)     |
+| Recipe      | `PluginRecipe`                 | `recipes` (any depth)   |
+| Config      | `PluginConfig`                 | `config`                |
+| Data        | `PlayerData` / `ServerData`    | `data`                  |
+
+Commands are sub-commands of `/tritown` (alias `/tt`) unless `isMainCommand = true`. Permissions are derived from
+commands automatically and default to OP. Every auto-registered class needs either a no-arg constructor or one accepting
+a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).
+
+## Working with Towny
+
+- **Towny is a hard dependency** — it is `compileOnly` in the build and listed under `depend` in `plugin.yml`, so it is
+  always loaded before TriTown. Never shade Towny into the jar.
+- **Read data through `TownyAPI`** — `TownyAPI.getInstance()` gives residents (`getResident(player)`), towns, nations,
+  and `TownBlock`s. Handle `null` results: a player may have no resident record, town, or nation.
+- **Prefer Towny's own actions over reimplementing them** — for anything that changes Towny state (joining, claiming,
+  deposits, ranks, toggles), run the equivalent Towny command as the player so Towny's permission checks, costs,
+  confirmations, and messages still apply. Always use the `towny:` namespace. Only call Towny's mutating API directly
+  when no command covers the action, and then enforce the same permission nodes Towny would.
+- **Don't duplicate TownyMenu** — general GUIs for Towny's built-in features belong in TownyMenu; TriTown is for
+  server-specific functionality.
+- **Towny stays the source of truth** — never cache Towny data; re-read it from `TownyAPI` when it is needed. Data
+  TriTown adds on top of a town or resident goes in `ServerData` / `PlayerData`, keyed by Towny's UUIDs, not names.
+- **Towny's package `com.palmergames.bukkit.towny.object` needs backticks in Kotlin imports** (`` `object` ``).
+- **React to Towny events** — listen to Towny's Bukkit events (`com.palmergames.bukkit.towny.event.*`) in `listeners/`.
+  Clean up TriTown data when towns or nations are deleted or renamed.
+- **Bumping Towny** — change `towny_version` in [gradle.properties](gradle.properties) and the Requirements table in
+  [README.md](README.md) together.
+
+## Working with the Economy (Vault)
+
+- **Vault is a hard dependency** — the Vault API is `compileOnly` and Vault is under `depend` in `plugin.yml`. Never
+  shade it.
+- **Go through `EconomyUtil`** — never look up the `Economy` service yourself. Economy plugins may enable after TriTown,
+  so `EconomyUtil` resolves the provider on first use, and `Main` disables TriTown one tick after enabling if none is
+  registered. Code that runs after startup can assume an economy exists; never touch `EconomyUtil` from `onEnable` or
+  during registration.
+- **Charge before acting** — call `EconomyUtil.withdraw` and only perform the action when it returns `true`; refund with
+  `deposit` if the action then fails. Never check `has` and withdraw separately.
+- **Show money with `EconomyUtil.format`** — never hardcode a currency symbol.
+- **Town and nation banks belong to Towny** — change them through Towny commands or Towny's account API, not Vault.
+- **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
+
+## Versioning & Releases
+
+- `plugin_version` in [gradle.properties](gradle.properties) is the single source of truth for the plugin version. It
+  flows into the jar filename and, through `processResources`, into `plugin.yml` (`version: ${projectVersion}`) — never
+  hardcode a version in `plugin.yml` or `build.gradle.kts`.
+- [.github/workflows/build.yml](.github/workflows/build.yml) builds every push and pull request.
+- Releases are published when a commit that changes `plugin_version` lands on `master`:
+  [.github/workflows/release.yml](.github/workflows/release.yml) builds the jar, uses the matching
+  `## Version X.Y.Z` section of `CHANGELOG.md` as the release notes, creates the `vX.Y.Z` tag, and attaches the jar.
+  It skips forks, so the release appears in the repository the pull request is merged into. It does nothing if the tag
+  already exists. See [docs/RELEASING.md](docs/RELEASING.md). **Never create tags, and never merge a version bump
+  unless explicitly asked** — that publishes a release.
+
+## Commit Convention
+
+Format: `<Tag>: <imperative message>` — no trailing period. One granular commit per logical change.
+
+| Tag           | Use for                                   |
+|:--------------|:------------------------------------------|
+| `Feature`     | New functionality                         |
+| `Fix`         | Bug / crash / logic error repairs         |
+| `Improvement` | Refines existing code, UX, or performance |
+| `Internal`    | Docs, comments, repo maintenance          |
+| `Backend`     | Build system, dependency, config changes  |
+| `Update`      | Version bumps                             |
+
+Example: `Feature: Add daily town upkeep rewards`
+
+Tags map to changelog categories: `Feature` → `### New Features`, `Improvement` → `### Improvements`, `Fix` →
+`### Fixes`, `Backend` / `Internal` → `### Technical Details`, `Update` → usually no entry. A `Feature`, `Improvement`,
+or `Fix` commit carries its own changelog entry. See [docs/COMMIT_STRUCTURE.md](docs/COMMIT_STRUCTURE.md).
+
+## Code Conventions
+
+- **Kotlin idioms** — use `object` for singletons, `data class` for value types, extension functions for utility.
+- **No comments by default** — only add one when the WHY is non-obvious (hidden constraint, workaround, subtle
+  invariant). Never describe WHAT the code does.
+- **No unused code** — delete dead code entirely rather than commenting it out or renaming with `_`. Unused template
+  systems may be removed once it is clear the server's features don't need them (update the docs when you do).
+- **MiniMessage everywhere** — all player-facing text uses Kyori Adventure MiniMessage tags (`<red>`, `<bold>`,
+  `<gradient:…>`). Never use `ChatColor`. Send prefixed messages with `sendPrefixed`.
+- **Escape player-written text** — town names, boards, and other player input must be escaped
+  (`MiniMessage.miniMessage().escapeTags(...)`) before being embedded in MiniMessage.
+- **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.
+- **No manual registration** — never edit `plugin.yml` commands/listeners. The auto-registration system handles
+  everything.

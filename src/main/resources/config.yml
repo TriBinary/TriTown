@@ -1,4 +1,4 @@
-# ExamplePlugin Configuration
+# TriTown Configuration
 
 # A friendly prefix shown before plugin messages
-message-prefix: "[ExamplePlugin]"
+message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown]"
