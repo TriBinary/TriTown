@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## Version 1.0.0
+
 ### New Features
 
 #### Economy
