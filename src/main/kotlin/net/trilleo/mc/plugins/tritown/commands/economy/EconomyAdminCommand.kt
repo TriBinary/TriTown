@@ -2,13 +2,7 @@ package net.trilleo.mc.plugins.tritown.commands.economy
 
 import net.trilleo.mc.plugins.tritown.Main
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
-import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
-import net.trilleo.mc.plugins.tritown.economy.EconomyContext
-import net.trilleo.mc.plugins.tritown.economy.EconomyResult
-import net.trilleo.mc.plugins.tritown.economy.EconomyService
-import net.trilleo.mc.plugins.tritown.economy.Money
-import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
-import net.trilleo.mc.plugins.tritown.economy.TransactionReason
+import net.trilleo.mc.plugins.tritown.economy.*
 import net.trilleo.mc.plugins.tritown.guis.economy.TransactionHistoryGUI
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
@@ -20,7 +14,7 @@ import org.bukkit.entity.Player
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.util.*
 
 /** Administrative access to balances. */
 class EconomyAdminCommand : PluginCommand(
@@ -131,9 +125,10 @@ class EconomyAdminCommand : PluginCommand(
     private fun reset(sender: CommandSender, account: MoneyAccount) {
         val currency = primaryCurrency()
         val starting = currency.of(EconomySettings.snapshot.startingBalance)
-        val result = EconomyContext.command(TransactionReason.of(TransactionReason.ADMIN_RESET, "admin" to sender.name)) {
-            EconomyService.setBalance(account, currency, starting)
-        }
+        val result =
+            EconomyContext.command(TransactionReason.of(TransactionReason.ADMIN_RESET, "admin" to sender.name)) {
+                EconomyService.setBalance(account, currency, starting)
+            }
         apply(sender, account, result) {
             sender.tr(
                 "command.eco.reset",
@@ -215,7 +210,12 @@ class EconomyAdminCommand : PluginCommand(
                 }
             }
 
-            is EconomyResult.Failure -> sender.sendPrefixed(sender.tr("common.error", "message" to sender.tr(result.key)))
+            is EconomyResult.Failure -> sender.sendPrefixed(
+                sender.tr(
+                    "common.error",
+                    "message" to sender.tr(result.key)
+                )
+            )
         }
     }
 

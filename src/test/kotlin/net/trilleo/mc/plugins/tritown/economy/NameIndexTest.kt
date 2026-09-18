@@ -1,12 +1,8 @@
 package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.enums.AccountType
-import java.util.UUID
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import java.util.*
+import kotlin.test.*
 
 /**
  * The name index only exists so that Vault's deprecated name-based methods and

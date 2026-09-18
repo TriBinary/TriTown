@@ -97,7 +97,7 @@ object CommandRegistrar {
                     } else {
                         plugin.logger.info(
                             "/${command.name} is already taken by another plugin; " +
-                                "TriTown's is available as /${plugin.name.lowercase()}:${command.name}"
+                                    "TriTown's is available as /${plugin.name.lowercase()}:${command.name}"
                         )
                     }
                     mainCount++

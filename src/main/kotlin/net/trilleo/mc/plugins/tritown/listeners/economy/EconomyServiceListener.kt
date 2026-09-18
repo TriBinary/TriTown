@@ -30,10 +30,10 @@ class EconomyServiceListener(private val plugin: JavaPlugin) : Listener {
 
         plugin.logger.warning(
             "'${registration.plugin.name}' registered a second Vault economy (${(provider as Economy).name}) after " +
-                "TriTown did. Towny has already chosen which economy to use and will not notice this one, so the " +
-                "two can disagree about balances. Pick one: set economy.provider.mode to 'external' in TriTown's " +
-                "config, or remove the other plugin. Then restart, or run /townyadmin eco convert modern to make " +
-                "Towny look again."
+                    "TriTown did. Towny has already chosen which economy to use and will not notice this one, so the " +
+                    "two can disagree about balances. Pick one: set economy.provider.mode to 'external' in TriTown's " +
+                    "config, or remove the other plugin. Then restart, or run /townyadmin eco convert modern to make " +
+                    "Towny look again."
         )
     }
 }

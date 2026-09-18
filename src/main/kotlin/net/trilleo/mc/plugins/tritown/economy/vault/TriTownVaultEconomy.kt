@@ -2,12 +2,7 @@ package net.trilleo.mc.plugins.tritown.economy.vault
 
 import net.milkbowl.vault.economy.Economy
 import net.milkbowl.vault.economy.EconomyResponse
-import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
-import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
-import net.trilleo.mc.plugins.tritown.economy.EconomyResult
-import net.trilleo.mc.plugins.tritown.economy.EconomyService
-import net.trilleo.mc.plugins.tritown.economy.Money
-import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
+import net.trilleo.mc.plugins.tritown.economy.*
 import net.trilleo.mc.plugins.tritown.utils.Lang
 import org.bukkit.OfflinePlayer
 
@@ -195,7 +190,11 @@ class TriTownVaultEconomy : Economy {
             return if (money.isZero) success(0.0, 0.0) else failure(amount, 0.0, "money.error.no-account")
         }
 
-        return respond(amount, EconomyService.withdraw(account, currency, money), currency.toDouble(account.balance(currency.id)))
+        return respond(
+            amount,
+            EconomyService.withdraw(account, currency, money),
+            currency.toDouble(account.balance(currency.id))
+        )
     }
 
     private fun deposit(account: MoneyAccount?, amount: Double): EconomyResponse {
@@ -203,7 +202,11 @@ class TriTownVaultEconomy : Economy {
         val money = parse(amount) ?: return failure(amount, 0.0, "money.error.unusable-amount")
         if (account == null) return failure(amount, 0.0, "money.error.account-not-created")
 
-        return respond(amount, EconomyService.deposit(account, currency, money), currency.toDouble(account.balance(currency.id)))
+        return respond(
+            amount,
+            EconomyService.deposit(account, currency, money),
+            currency.toDouble(account.balance(currency.id))
+        )
     }
 
     private fun respond(amount: Double, result: EconomyResult, fallbackBalance: Double): EconomyResponse =

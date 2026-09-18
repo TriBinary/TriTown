@@ -1,7 +1,7 @@
 package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.enums.AccountType
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

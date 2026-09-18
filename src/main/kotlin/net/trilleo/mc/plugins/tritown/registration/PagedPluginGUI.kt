@@ -1,11 +1,11 @@
 package net.trilleo.mc.plugins.tritown.registration
 
+import net.kyori.adventure.key.Key
+import net.kyori.adventure.sound.Sound
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.enums.PagedGUIMode
 import net.trilleo.mc.plugins.tritown.utils.itemStack
 import net.trilleo.mc.plugins.tritown.utils.tr
-import net.kyori.adventure.key.Key
-import net.kyori.adventure.sound.Sound
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent

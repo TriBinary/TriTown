@@ -1,6 +1,6 @@
 package net.trilleo.mc.plugins.tritown.economy.storage
 
-import java.util.UUID
+import java.util.*
 
 /** Raised when economy data cannot be read or written safely. */
 class EconomyStorageException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)

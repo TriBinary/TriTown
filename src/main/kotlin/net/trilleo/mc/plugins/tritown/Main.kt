@@ -157,7 +157,7 @@ class Main : JavaPlugin() {
             registration == null -> {
                 logger.severe(
                     "No Vault economy provider is registered, and TriTown's own economy is switched off. Set " +
-                        "economy.enabled to true in TriTown's config, or install an economy plugin. Disabling TriTown."
+                            "economy.enabled to true in TriTown's config, or install an economy plugin. Disabling TriTown."
                 )
                 server.pluginManager.disablePlugin(this)
             }
@@ -170,7 +170,7 @@ class Main : JavaPlugin() {
                 if (EconomySettings.isLoaded && EconomySettings.snapshot.providerMode == ProviderMode.INTERNAL) {
                     logger.warning(
                         "economy.provider.mode is 'internal', but '${registration.provider.name}' won the Vault " +
-                            "service. Remove the other economy plugin for TriTown's economy to take effect."
+                                "service. Remove the other economy plugin for TriTown's economy to take effect."
                     )
                 }
             }

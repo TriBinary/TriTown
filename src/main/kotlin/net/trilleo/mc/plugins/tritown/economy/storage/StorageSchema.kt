@@ -31,13 +31,13 @@ object StorageSchema {
         if (version > CURRENT) {
             throw EconomyStorageException(
                 "$source was written by a newer version of TriTown (schema $version, this build reads up to " +
-                    "$CURRENT). Update TriTown rather than letting an older build overwrite it."
+                        "$CURRENT). Update TriTown rather than letting an older build overwrite it."
             )
         }
         if (version < OLDEST_SUPPORTED) {
             throw EconomyStorageException(
                 "$source uses schema $version, which this build can no longer read (oldest supported is " +
-                    "$OLDEST_SUPPORTED)."
+                        "$OLDEST_SUPPORTED)."
             )
         }
     }

@@ -1,12 +1,12 @@
 package net.trilleo.mc.plugins.tritown.commands.info
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.trilleo.mc.plugins.tritown.registration.CommandRegistrar
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.Lang
 import net.trilleo.mc.plugins.tritown.utils.tr
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.command.CommandSender
 
 class HelpCommand : PluginCommand(

@@ -1,11 +1,7 @@
 package net.trilleo.mc.plugins.tritown.commands.economy
 
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
-import net.trilleo.mc.plugins.tritown.economy.EconomyContext
-import net.trilleo.mc.plugins.tritown.economy.EconomyResult
-import net.trilleo.mc.plugins.tritown.economy.EconomyService
-import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
-import net.trilleo.mc.plugins.tritown.economy.TransactionReason
+import net.trilleo.mc.plugins.tritown.economy.*
 import net.trilleo.mc.plugins.tritown.enums.AccountType
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
@@ -87,7 +83,12 @@ class PayCommand : PluginCommand(
                 EconomyService.flushAccount(recipient.uuid)
             }
 
-            is EconomyResult.Failure -> sender.sendPrefixed(sender.tr("common.error", "message" to sender.tr(result.key)))
+            is EconomyResult.Failure -> sender.sendPrefixed(
+                sender.tr(
+                    "common.error",
+                    "message" to sender.tr(result.key)
+                )
+            )
         }
         return true
     }

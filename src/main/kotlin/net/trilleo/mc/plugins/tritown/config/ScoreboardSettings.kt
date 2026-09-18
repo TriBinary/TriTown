@@ -86,7 +86,7 @@ data class ScoreboardSettings(
                 if (condition == null) {
                     logger.warning(
                         "Scoreboard board '$id' has unknown condition '$conditionName'; it will never be shown. " +
-                            "Known conditions: ${BoardCondition.ids().joinToString(", ")}"
+                                "Known conditions: ${BoardCondition.ids().joinToString(", ")}"
                     )
                     return@mapNotNull null
                 }
@@ -98,7 +98,7 @@ data class ScoreboardSettings(
                 if (own.size > room) {
                     logger.warning(
                         "Scoreboard board '$id' declares ${own.size} lines, but the header and footer take $frame of " +
-                            "the $MAX_LINES available, so only its first $room are shown."
+                                "the $MAX_LINES available, so only its first $room are shown."
                     )
                 }
 

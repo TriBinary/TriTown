@@ -4,7 +4,7 @@ import com.palmergames.bukkit.towny.TownyEconomyHandler
 import net.trilleo.mc.plugins.tritown.enums.AccountType
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
-import java.util.UUID
+import java.util.*
 
 /**
  * Works out which account a Vault call is about.

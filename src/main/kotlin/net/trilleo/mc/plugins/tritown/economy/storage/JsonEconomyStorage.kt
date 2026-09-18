@@ -10,13 +10,26 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.nio.file.StandardOpenOption
+import java.nio.file.*
 import java.util.UUID
 import java.util.logging.Logger
+import kotlin.collections.ArrayDeque
+import kotlin.collections.ArrayList
+import kotlin.collections.Collection
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.emptyList
+import kotlin.collections.emptyMap
+import kotlin.collections.forEach
+import kotlin.collections.getOrPut
+import kotlin.collections.map
+import kotlin.collections.mapValues
+import kotlin.collections.set
+import kotlin.collections.toList
 
 /**
  * Stores every account in one JSON file under `<dataFolder>/economy/`.
@@ -80,8 +93,8 @@ class JsonEconomyStorage(
             if (accountsFile.exists() || backupFile.exists()) {
                 throw EconomyStorageException(
                     "Neither ${accountsFile.name} nor ${backupFile.name} could be read. Refusing to start with an " +
-                        "empty economy, because the next save would overwrite whatever is still in those files. " +
-                        "Restore a backup, or move them aside to start fresh."
+                            "empty economy, because the next save would overwrite whatever is still in those files. " +
+                            "Restore a backup, or move them aside to start fresh."
                 )
             }
             logger.info("No economy data found; starting with an empty ledger")
@@ -124,7 +137,12 @@ class JsonEconomyStorage(
             runCatching {
                 rollIfOversized()
                 transactionLog.parentFile?.mkdirs()
-                BufferedWriter(OutputStreamWriter(FileOutputStream(transactionLog, true), Charsets.UTF_8)).use { writer ->
+                BufferedWriter(
+                    OutputStreamWriter(
+                        FileOutputStream(transactionLog, true),
+                        Charsets.UTF_8
+                    )
+                ).use { writer ->
                     for (record in records) {
                         writer.write(logGson.toJson(record))
                         writer.newLine()
@@ -253,8 +271,8 @@ class JsonEconomyStorage(
         if (!allowRescale) {
             throw EconomyStorageException(
                 "${accountsFile.name} holds balances at $storedDigits fractional digit(s) but " +
-                    "economy.currency.fractional-digits is now $expectedDigits. Change the setting back, or set " +
-                    "economy.storage.allow-rescale to true to convert every balance once."
+                        "economy.currency.fractional-digits is now $expectedDigits. Change the setting back, or set " +
+                        "economy.storage.allow-rescale to true to convert every balance once."
             )
         }
 

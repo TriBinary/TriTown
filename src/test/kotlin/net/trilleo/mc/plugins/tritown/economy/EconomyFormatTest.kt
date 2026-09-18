@@ -4,11 +4,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class EconomyFormatTest {
 

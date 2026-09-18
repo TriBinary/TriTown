@@ -2,13 +2,7 @@ package net.trilleo.mc.plugins.tritown.guis.economy
 
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
-import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
-import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
-import net.trilleo.mc.plugins.tritown.economy.EconomyService
-import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
-import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
-import net.trilleo.mc.plugins.tritown.economy.TransactionReason
-import net.trilleo.mc.plugins.tritown.economy.TransactionRecord
+import net.trilleo.mc.plugins.tritown.economy.*
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.enums.TransactionType
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
@@ -25,8 +19,7 @@ import org.bukkit.inventory.ItemStack
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -101,7 +94,8 @@ class TransactionHistoryGUI : PagedPluginGUI(
     private fun entry(viewer: Player, record: TransactionRecord, formatter: DateTimeFormatter): ItemStack {
         val currency = CurrencyRegistry.get(record.currency) ?: CurrencyRegistry.primary
         val amount = EconomyFormat.plain(currency, record.money)
-        val signed = viewer.tr(if (record.type.isCredit) "gui.history.credit" else "gui.history.debit", "amount" to amount)
+        val signed =
+            viewer.tr(if (record.type.isCredit) "gui.history.credit" else "gui.history.debit", "amount" to amount)
 
         val lore = buildString {
             append(viewer.tr("gui.history.type", "type" to label(viewer, record.type)))

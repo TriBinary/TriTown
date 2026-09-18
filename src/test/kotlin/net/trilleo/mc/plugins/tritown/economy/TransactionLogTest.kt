@@ -1,7 +1,7 @@
 package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.enums.TransactionType
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

@@ -1,8 +1,7 @@
 package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.enums.AccountType
-import java.util.Locale
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**

@@ -1,8 +1,8 @@
 package net.trilleo.mc.plugins.tritown.utils
 
+import com.google.gson.JsonArray
 import net.trilleo.mc.plugins.tritown.data.PlayerData
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
-import com.google.gson.JsonArray
 import org.bukkit.entity.Player
 
 /**

@@ -1,12 +1,8 @@
 package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.enums.AccountType
-import java.util.UUID
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import java.util.*
+import kotlin.test.*
 
 class EconomyLedgerTest {
 
@@ -56,7 +52,10 @@ class EconomyLedgerTest {
         val ledger = ledger()
         val account = ledger.player("Alex")
 
-        assertEquals(Money(10000L), (ledger.deposit(account, dollar, dollar.of(100.0)) as EconomyResult.Success).balance)
+        assertEquals(
+            Money(10000L),
+            (ledger.deposit(account, dollar, dollar.of(100.0)) as EconomyResult.Success).balance
+        )
         assertEquals(Money(7550L), (ledger.withdraw(account, dollar, dollar.of(24.5)) as EconomyResult.Success).balance)
         assertEquals(Money(7550L), account.balance(dollar.id))
     }

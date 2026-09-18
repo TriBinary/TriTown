@@ -1,9 +1,9 @@
 package net.trilleo.mc.plugins.tritown.registration
 
-import net.trilleo.mc.plugins.tritown.enums.FillMode
-import net.trilleo.mc.plugins.tritown.utils.tr
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent

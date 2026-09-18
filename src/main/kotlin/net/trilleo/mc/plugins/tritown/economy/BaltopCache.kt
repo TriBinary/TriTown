@@ -1,7 +1,7 @@
 package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.enums.AccountType
-import java.util.UUID
+import java.util.*
 
 /**
  * The balance leaderboard, kept ready so the command never sorts on the main

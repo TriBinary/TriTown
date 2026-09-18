@@ -16,7 +16,7 @@ import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import java.util.UUID
+import java.util.*
 import java.util.logging.Level
 
 /**
@@ -75,7 +75,7 @@ object ScoreboardService {
         if (settings.boards.isEmpty()) {
             plugin.logger.warning(
                 "No sidebar boards are configured, so no sidebar will be shown. Check the 'scoreboard.boards' " +
-                    "section of config.yml, or set 'scoreboard.enabled' to false to switch the sidebar off."
+                        "section of config.yml, or set 'scoreboard.enabled' to false to switch the sidebar off."
             )
             return
         }
@@ -249,8 +249,8 @@ object ScoreboardService {
         val components = ArrayList<Component>(next.lines.size)
         next.lines.forEachIndexed { index, text ->
             val reusable = previous != null &&
-                index < previous.components.size &&
-                previous.lines[index] == text
+                    index < previous.components.size &&
+                    previous.lines[index] == text
             components += if (reusable) previous.components[index] else ComponentUtil.parse(text)
         }
 
