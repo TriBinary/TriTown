@@ -2016,13 +2016,13 @@ window.
 ## Economy (Vault)
 
 Vault is a hard dependency (`depend` in `plugin.yml`); the Vault API is `compileOnly` (`vault_api_version` in
-`gradle.properties`). Vault only bridges to an economy plugin such as EssentialsX, which must also be installed.
+`gradle.properties`). **TriTown implements Vault's `Economy` itself**, so Vault + Towny + TriTown is a complete stack
+and no separate economy plugin is needed.
 
-All economy access goes through [`EconomyUtil`](UTILITY_GUIDE.md#economyutil). Economy plugins can enable after
-TriTown, so the provider is looked up on first use; one tick after enabling, `Main` checks that a provider exists and
-disables TriTown if it does not. Code that runs after startup (commands, listeners, GUIs, tasks) can therefore use
-`EconomyUtil` without checking for an economy first. Do not call it from `onEnable` or from code that runs during
-registration.
+### Feature code
+
+All economy access goes through [`EconomyUtil`](UTILITY_GUIDE.md#economyutil), because an owner can hand the economy to
+another plugin and feature code should not care which provider won:
 
 ```kotlin
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
@@ -2035,5 +2035,68 @@ if (!EconomyUtil.withdraw(player, cost)) {
 }
 ```
 
-Town and nation bank accounts belong to Towny — change them through Towny commands or Towny's account API, not
-through Vault.
+Do not call `EconomyUtil` from `onEnable` or from registration code: the winning provider is not settled until every
+plugin has enabled.
+
+### Registration happens in `onLoad`
+
+Towny decides which economy to use inside `TownyEconomyHandler.setupEconomy()`, which runs while **Towny** is enabling.
+TriTown depends on Towny, so Towny always enables first — registering the Vault service from TriTown's `onEnable` would
+be too late, and Towny would report no economy at all.
+
+`Main.onLoad` therefore loads the config, opens the ledger and registers the provider, all before any plugin enables.
+Two consequences worth knowing:
+
+* `onLoad` **cannot** disable the plugin — it is not enabled yet. A startup failure is recorded in `bootFailure` and
+  acted on at the top of `onEnable`.
+* `PluginConfig` is built in `onLoad`, so the data folder is created one lifecycle phase earlier than a plugin without
+  an economy would create it.
+
+If the order is ever disturbed, `/townyadmin eco convert modern` makes Towny look for an economy again; otherwise a
+restart does it.
+
+### Provider modes
+
+`economy.provider.mode` decides whether TriTown supplies the economy:
+
+| Mode       | Behaviour                                                                                 |
+|:-----------|:--------------------------------------------------------------------------------------------|
+| `auto`     | Supplies it unless a plugin under `economy.provider.defer-to` is installed; registers at `Low` |
+| `internal` | Always supplies it, at `Highest` priority                                                  |
+| `external` | Never supplies it; TriTown uses whichever provider another plugin registers                |
+
+`auto` checks what is **installed**, not what has already registered. TriTown has to register during `onLoad`, and at
+that moment no economy plugin has registered anything — they all do it when they enable, so a registration check would
+always come back empty and `auto` would silently behave like `internal`. Registering at `ServicePriority.Low` is the
+second line of defence: an economy plugin that is not on the list still wins the Vault service.
+
+`EconomyServiceListener` warns when a second provider registers after TriTown, because Towny has already chosen by
+then and will not notice the newcomer. Changing the mode needs a restart.
+
+### The Vault surface
+
+`TriTownVaultEconomy` implements `net.milkbowl.vault.economy.Economy` **directly**, never Vault's `AbstractEconomy`.
+`AbstractEconomy` reduces every `OfflinePlayer` overload to `player.getName()`, and Towny addresses a town's bank with
+a synthetic offline player whose UUID is the town's and whose name is `town-Riverbend` — routing that through the name
+would throw away the identity the account is keyed on.
+
+Towny reaches the economy two ways, and both must land on the same account:
+
+* **`economy.advanced.modern: true`** (Towny's default) — the `OfflinePlayer` overloads, keyed on UUID.
+* **`economy.advanced.modern: false`** — the deprecated name-based overloads. `AccountResolver.resolveName` bridges
+  these through `TownyEconomyHandler.getTownyObjectUUID`, which maps `town-Riverbend` back to the town's UUID.
+
+Other behaviour worth knowing:
+
+* World parameters are accepted and ignored. A balance is global per currency.
+* Reads never create an account; `depositPlayer` creates one on demand so a Towny refund is never dropped; a
+  withdrawal from an account that does not exist fails unless the amount is zero.
+* `hasBankSupport()` is `false`. Towny's town and nation banks are ordinary accounts reached through the player
+  methods, which is exactly how Towny expects to find them; Vault's separate bank API is an unrelated concept.
+* The provider is named `TriTown`. The name must be unique — Towny keys its providers by it and throws on a duplicate,
+  and it treats `EssentialsX Economy` specially by rewriting the UUID version of non-player accounts.
+* `isEnabled()` reports `EconomyService.isReady`, so a reference another plugin kept across a reload fails loudly
+  rather than mutating a ledger on its way out. Restart the server rather than using `/reload`.
+
+Town and nation bank *rules* still belong to Towny — change them through Towny commands or Towny's account API.
+TriTown stores the balance behind them, nothing more.

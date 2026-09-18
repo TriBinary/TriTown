@@ -434,9 +434,13 @@ class JoinListener : Listener {
 
 ## EconomyUtil
 
-`EconomyUtil` wraps the Vault `Economy` provider. Vault is a hard dependency and TriTown disables itself one tick after
-enabling if no economy plugin is registered, so code that runs after startup can call it without checks. See
+`EconomyUtil` is the single way the rest of the plugin touches money. TriTown normally supplies the server's economy
+itself, but an owner can hand that job to another plugin through `economy.provider.mode`, so everything here goes
+through whichever Vault provider actually won — feature code should not care which one that is. See
 [Economy (Vault)](DEVELOPER_GUIDE.md#economy-vault) in the developer guide.
+
+Do not call `EconomyUtil` from `onEnable` or from registration code: the winning provider is not settled until every
+plugin has enabled.
 
 ### Usage
 
@@ -457,19 +461,29 @@ EconomyUtil.deposit(player, 100.0)
 
 ### Methods
 
-| Method / Property          | Description                                                                                 |
-|:---------------------------|:--------------------------------------------------------------------------------------------|
-| `economy`                  | The Vault `Economy` provider, for anything not wrapped below. Throws if none is registered. |
-| `isAvailable`              | Whether an economy provider is registered.                                                  |
-| `balance(player)`          | The player's balance.                                                                       |
-| `has(player, amount)`      | Whether the player has at least `amount`.                                                   |
-| `withdraw(player, amount)` | Takes `amount`; returns `false` without charging if the player cannot afford it.            |
-| `deposit(player, amount)`  | Gives `amount`; returns `false` if the provider refuses.                                    |
-| `format(amount)`           | Formats `amount` with the economy's currency.                                               |
-| `reset()`                  | Forgets the cached provider. Called automatically on disable.                               |
+| Method / Property             | Description                                                                                 |
+|:------------------------------|:--------------------------------------------------------------------------------------------|
+| `economy`                     | The Vault `Economy` provider, for anything not wrapped below. Throws if none is registered. |
+| `isAvailable`                 | Whether an economy provider is registered.                                                  |
+| `isInternal`                  | Whether the economy in use is TriTown's own rather than another plugin's.                   |
+| `balance(player)`             | The player's balance.                                                                       |
+| `has(player, amount)`         | Whether the player has at least `amount`.                                                   |
+| `withdraw(player, amount)`    | Takes `amount`; returns `false` without charging if the player cannot afford it.            |
+| `deposit(player, amount)`     | Gives `amount`; returns `false` if the provider refuses.                                    |
+| `transfer(from, to, amount)`  | Moves `amount` between two players.                                                         |
+| `format(amount)`              | Formats `amount` as plain text, the way other plugins print it.                             |
+| `formatRich(amount)`          | Formats `amount` as a `Component`, using the configured MiniMessage pattern.                |
+| `reset()`                     | Forgets the cached provider. Called automatically on disable.                               |
 
-`withdraw` and `deposit` reject negative amounts with an `IllegalArgumentException`. All methods take an
+`withdraw`, `deposit` and `transfer` reject negative amounts with an `IllegalArgumentException`. All methods take an
 `OfflinePlayer`, so they also work for offline players.
+
+Prefer `transfer` over a withdrawal followed by a deposit. On TriTown's own economy it is a single atomic step, so a
+payment can never leave money in neither account; on another plugin's economy it falls back to withdraw-then-deposit
+and refunds the sender if the deposit fails.
+
+Use `format` for anything another plugin will print — it must never contain MiniMessage tags — and `formatRich` for
+TriTown's own messages.
 
 ---
 

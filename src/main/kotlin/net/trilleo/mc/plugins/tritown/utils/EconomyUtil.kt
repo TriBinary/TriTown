@@ -1,24 +1,33 @@
 package net.trilleo.mc.plugins.tritown.utils
 
+import net.kyori.adventure.text.Component
 import net.milkbowl.vault.economy.Economy
+import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
+import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
+import net.trilleo.mc.plugins.tritown.economy.EconomyService
+import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 
 /**
- * Access to the server economy through Vault.
+ * The single way the rest of the plugin touches money.
  *
- * Vault is a hard dependency, but the economy itself is provided by another plugin (EssentialsX, CMI, …) that may
- * enable after TriTown, so the provider is resolved on first use rather than in `onEnable`.
- * [net.trilleo.mc.plugins.tritown.Main] checks [isAvailable] once every plugin has enabled and disables TriTown when no
- * provider is registered, so every other caller can assume [economy] exists.
+ * TriTown normally supplies the server's economy itself, but an owner can hand
+ * that job to another plugin, so everything here goes through whichever Vault
+ * provider actually won. Feature code should not care which one that is.
  *
  * ### Usage
  *
  * ```kotlin
- * if (EconomyUtil.withdraw(player, 100.0)) {
- *     player.sendPrefixed("Paid ${EconomyUtil.format(100.0)}")
+ * val cost = 500.0
+ * if (!EconomyUtil.withdraw(player, cost)) {
+ *     player.sendPrefixed("<red>You need ${EconomyUtil.format(cost)}.")
+ *     return true
  * }
  * ```
+ *
+ * Do not call this during `onEnable` or from registration code: the winning
+ * provider is not settled until every plugin has enabled.
  */
 object EconomyUtil {
 
@@ -33,6 +42,10 @@ object EconomyUtil {
     /** Whether a Vault economy provider is registered. */
     val isAvailable: Boolean
         get() = runCatching { economy }.isSuccess
+
+    /** Whether the economy in use is TriTown's own, rather than another plugin's. */
+    val isInternal: Boolean
+        get() = runCatching { economy }.getOrNull() is TriTownVaultEconomy
 
     /** The current balance of [player]. */
     fun balance(player: OfflinePlayer): Double = economy.getBalance(player)
@@ -52,8 +65,43 @@ object EconomyUtil {
         return economy.depositPlayer(player, amount).transactionSuccess()
     }
 
+    /**
+     * Moves [amount] from [from] to [to].
+     *
+     * On TriTown's own economy this is one atomic step, so a payment can never
+     * leave money in neither account. On another plugin's economy it falls back
+     * to a withdrawal and a deposit, refunding the sender if the deposit fails.
+     */
+    fun transfer(from: OfflinePlayer, to: OfflinePlayer, amount: Double): Boolean {
+        require(amount >= 0) { "amount must not be negative" }
+        if (from.uniqueId == to.uniqueId) return false
+
+        if (isInternal) {
+            val currency = CurrencyRegistry.primary
+            val sender = EconomyService.resolve(from) ?: return false
+            val recipient = EconomyService.ensureAccount(to) ?: return false
+            return EconomyService.transfer(sender, recipient, currency, currency.of(amount)).isSuccess
+        }
+
+        if (!withdraw(from, amount)) return false
+        if (deposit(to, amount)) return true
+
+        deposit(from, amount)
+        return false
+    }
+
     /** Formats [amount] with the economy's currency, e.g. `$1,000.00`. */
     fun format(amount: Double): String = economy.format(amount)
+
+    /**
+     * Formats [amount] for TriTown's own messages, using the configured
+     * MiniMessage pattern.
+     *
+     * Falls back to the provider's plain text when another plugin supplies the
+     * economy, since only TriTown's currency has a rich pattern.
+     */
+    fun formatRich(amount: Double): Component =
+        if (isInternal && CurrencyRegistry.isLoaded) EconomyFormat.rich(amount) else Component.text(format(amount))
 
     /** Forgets the cached provider, so the next access looks it up again. */
     fun reset() {

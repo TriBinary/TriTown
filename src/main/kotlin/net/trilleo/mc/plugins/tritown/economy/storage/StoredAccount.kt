@@ -8,7 +8,8 @@ package net.trilleo.mc.plugins.tritown.economy.storage
  * lock. Because nothing else depends on its shape, the on-disk format can change
  * without touching the ledger.
  *
- * @param balances minor units keyed by currency id; zero balances are omitted
+ * @param balances                minor units keyed by currency id; zero balances are omitted
+ * @param startingBalanceGranted  whether the wallet has already been paid its starting balance
  */
 data class StoredAccount(
     val uuid: String,
@@ -17,4 +18,5 @@ data class StoredAccount(
     val balances: Map<String, Long>,
     val createdAt: Long,
     val updatedAt: Long,
+    val startingBalanceGranted: Boolean = false,
 )

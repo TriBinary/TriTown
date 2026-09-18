@@ -23,6 +23,14 @@ class MoneyAccount(
     private val balances: ConcurrentHashMap<String, Long> = ConcurrentHashMap(),
     val createdAt: Long = System.currentTimeMillis(),
     @Volatile var updatedAt: Long = createdAt,
+    /**
+     * Whether this wallet has already been given the configured starting balance.
+     *
+     * Tracked explicitly rather than inferred from the account being new: Towny
+     * can create an account for a resident who has never joined, and that player
+     * should still be paid their starting balance the first time they log in.
+     */
+    @Volatile var startingBalanceGranted: Boolean = false,
 ) {
 
     internal val lock = Any()

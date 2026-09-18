@@ -8,6 +8,26 @@ economy:
   # Turn the economy off entirely. TriTown then needs another plugin to supply one.
   enabled: true
 
+  provider:
+    # Who supplies the server's Vault economy.
+    #   internal - TriTown always supplies it, at the highest priority
+    #   external - TriTown never supplies it and uses another plugin's instead
+    #   auto     - TriTown supplies it unless one of the plugins below is installed
+    # Changing this needs a restart: TriTown has to register with Vault before
+    # Towny starts up, which happens before any plugin can be reloaded.
+    mode: auto
+    # Checked by plugin name. An economy plugin not listed here still wins, because
+    # "auto" registers at a low service priority.
+    defer-to:
+      - Essentials
+      - EssentialsX
+      - CMI
+      - XConomy
+      - GemsEconomy
+      - iConomy
+      - BOSEconomy
+      - EconomyAPI
+
   currency:
     # Stable key used in storage and commands. Never shown to players.
     id: dollar

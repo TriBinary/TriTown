@@ -10,21 +10,29 @@
 
 ## Features
 
-TriTown is in early development. It currently provides the plugin framework, Towny integration, and Vault economy
-support that the server's custom town features are built on; see the [change log](CHANGELOG.md) for what has shipped.
+TriTown is in early development; see the [change log](CHANGELOG.md) for what has shipped.
+
+**A built-in economy.** TriTown supplies the server's Vault economy itself, so Towny gets working player wallets and
+town and nation banks without a separate economy plugin such as EssentialsX. Balances are stored as whole units of the
+smallest denomination, so they never drift, and they are written to disk atomically with a backup copy. The currency,
+starting balance, balance cap and formatting are all configurable. If you would rather keep another economy plugin,
+`economy.provider.mode` tells TriTown to stand aside and use it instead.
+
+Alongside it, TriTown provides the plugin framework and Towny integration that the server's custom town features are
+built on.
 
 ## Requirements
 
-| Dependency     | Version                  |
-|:---------------|:-------------------------|
-| Paper          | 26.2+                    |
-| Java           | 25+                      |
-| Towny          | 0.103.2.7+               |
-| Vault          | 1.7+                     |
-| Economy plugin | Any Vault-compatible one |
+| Dependency     | Version                                  |
+|:---------------|:-----------------------------------------|
+| Paper          | 26.2+                                    |
+| Java           | 25+                                      |
+| Towny          | 0.103.2.7+                               |
+| Vault          | 1.7+                                     |
+| Economy plugin | Not required — TriTown provides one      |
 
-TriTown is an addon: Towny and Vault must be installed on the server, along with an economy plugin that Vault supports
-(for example EssentialsX), or TriTown will not load.
+TriTown is an addon: Towny and Vault must both be installed, or TriTown will not load. An economy plugin is optional —
+install one only if you want it to supply the economy instead of TriTown, and set `economy.provider.mode` accordingly.
 
 ## Building
 
@@ -37,7 +45,7 @@ into `run/plugins/` for the local test server, or `./gradlew startServer` to cop
 first start:
 
 - download a Paper 26.2 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
-- put Vault and an economy plugin (for example EssentialsX) into `run/plugins/`;
+- put Vault into `run/plugins/`;
 - accept the EULA in `run/eula.txt` after the first launch.
 
 Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/TriTown/releases).
@@ -57,6 +65,8 @@ All commands are sub-commands of `/tritown` (alias `/tt`).
 |:---------------------------------------|:-----------------|:-----------------------------------------------------------------------------|
 | `message-prefix`                       | —                | MiniMessage prefix shown before plugin messages                             |
 | `economy.enabled`                      | `true`           | Turn the economy off entirely                                               |
+| `economy.provider.mode`                | `auto`           | `internal`, `external` or `auto` — who supplies the Vault economy (restart) |
+| `economy.provider.defer-to`            | common eco plugins | Which installed plugins `auto` stands aside for                           |
 | `economy.currency.id`                  | `dollar`         | Stable key used in storage and commands                                     |
 | `economy.currency.singular` / `.plural`| `Dollar(s)`      | Display names                                                               |
 | `economy.currency.symbol`              | `$`              | Short prefix shown before an amount                                         |
@@ -74,6 +84,10 @@ All commands are sub-commands of `/tritown` (alias `/tt`).
 Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how
 every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;
 set `economy.storage.allow-rescale` to `true` to convert every balance once instead.
+
+`economy.provider.mode` and `economy.provider.*` only take effect on a restart. TriTown has to register its economy
+with Vault before Towny starts up, and Towny picks an economy exactly once, so this cannot be changed with
+`/tt reload`. Everything else in the table is applied by `/tt reload`.
 
 ## Developer Documentation
 

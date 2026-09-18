@@ -119,18 +119,36 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 - **Bumping Towny** — change `towny_version` in [gradle.properties](gradle.properties) and the Requirements table in
   [README.md](README.md) together.
 
-## Working with the Economy (Vault)
+## Working with the Economy
+
+**TriTown supplies the server's economy.** It implements Vault's `Economy` itself, so Vault + Towny + TriTown is a
+complete stack and no separate economy plugin is needed. See
+[Economy Core](docs/DEVELOPER_GUIDE.md#economy-core) and [Economy (Vault)](docs/DEVELOPER_GUIDE.md#economy-vault).
 
 - **Vault is a hard dependency** — the Vault API is `compileOnly` and Vault is under `depend` in `plugin.yml`. Never
   shade it.
-- **Go through `EconomyUtil`** — never look up the `Economy` service yourself. Economy plugins may enable after TriTown,
-  so `EconomyUtil` resolves the provider on first use, and `Main` disables TriTown one tick after enabling if none is
-  registered. Code that runs after startup can assume an economy exists; never touch `EconomyUtil` from `onEnable` or
-  during registration.
+- **Registration happens in `Main.onLoad`** — Towny picks its economy while *it* enables, and TriTown depends on Towny,
+  so Towny always enables first. Registering the Vault service from `onEnable` would be too late for Towny to see it.
+  Nothing else belongs in `onLoad`.
+- **Go through `EconomyUtil`** in feature code — never look up the `Economy` service yourself. An owner can hand the
+  economy to another plugin (`economy.provider.mode`), and feature code should not care which provider won. Never touch
+  `EconomyUtil` from `onEnable` or during registration; the winner is not settled until every plugin has enabled.
+- **`EconomyService` and `EconomyLedger` must never call `EconomyUtil`, the `ServicesManager`, or anything under
+  `net.milkbowl.vault`.** The dependency runs one way — `EconomyUtil` → provider → `EconomyService` → `EconomyLedger` —
+  and reaching back up loops a call into the provider that is already inside the service.
 - **Charge before acting** — call `EconomyUtil.withdraw` and only perform the action when it returns `true`; refund with
-  `deposit` if the action then fails. Never check `has` and withdraw separately.
-- **Show money with `EconomyUtil.format`** — never hardcode a currency symbol.
-- **Town and nation banks belong to Towny** — change them through Towny commands or Towny's account API, not Vault.
+  `deposit` if the action then fails. Never check `has` and withdraw separately. Use `EconomyUtil.transfer` for a
+  payment between two accounts, which is atomic on TriTown's own economy.
+- **Show money with `EconomyUtil.format`** (plain) or `EconomyUtil.formatRich` (MiniMessage) — never hardcode a
+  currency symbol, and never put MiniMessage tags in the plain format, which other plugins print verbatim.
+- **Everything the economy touches must be thread-safe.** Towny's `economy.use_async` defaults to true, so the Vault
+  provider and everything under it is called from Towny's threads. No Bukkit API, no blocking I/O on those paths.
+- **Money is held as whole minor units** (`Money`), never as a `Double`. Convert at the Vault boundary only, through
+  `Currency.of` / `Currency.toDouble`.
+- **Never call `Bukkit.getOfflinePlayer(String)`** — it blocks on a request to Mojang and invents an account for a
+  typo. Resolve names through `EconomyService.resolveByName`.
+- **Town and nation banks belong to Towny** — change them through Towny commands or Towny's account API. TriTown stores
+  the balance behind them, but the rules around them are Towny's.
 - **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
 
 ## Versioning & Releases

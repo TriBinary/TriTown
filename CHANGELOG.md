@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### New Features
+
+#### Economy
+
++ TriTown now provides the server's economy itself. Vault, Towny and TriTown are a complete stack — no separate economy
+  plugin such as EssentialsX is needed for player wallets or for town and nation banks.
+    + The currency name, symbol, decimal places and formatting are all configurable, as are the starting balance, the
+      balance cap and the smallest allowed payment.
+    + Balances are stored as whole units of the smallest denomination, so they never drift the way decimal money in
+      other plugins can, and they are written to disk atomically with a backup copy kept alongside.
+    + Already running another economy plugin? Set `economy.provider.mode` to `external` and TriTown will use it
+      instead. On `auto`, TriTown stands aside automatically when a known economy plugin is installed.
+    + TriTown warns in the console when a second economy plugin registers after it, because Towny will not notice the
+      newcomer and the two would disagree about balances.
+
 ### Improvements
 
 #### Misc
@@ -26,6 +41,11 @@
   by a newer build, and a changed currency scale each stop the plugin instead of silently losing balances.
 + Added `EconomySettings`, an immutable snapshot of the `economy` block of `config.yml`, and the `economy` section
   itself.
++ Added `EconomyService`, `AccountResolver`, `TownyAccountNaming`, `TriTownVaultEconomy` and `VaultRegistration`.
+  `Main.onLoad` now loads the config and registers the Vault service, which is the only point early enough for Towny
+  to find it — Towny picks its economy while enabling, and TriTown depends on Towny.
++ `EconomyUtil` gained `isInternal`, `transfer` and `formatRich`, and the startup check now reports which provider won
+  instead of assuming another plugin supplies one.
 + Added Gson to the test dependencies, since it reaches the plugin through the `compileOnly` Paper API.
 
 #### Misc

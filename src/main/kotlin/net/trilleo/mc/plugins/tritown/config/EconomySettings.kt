@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.config
 import net.trilleo.mc.plugins.tritown.economy.Currency
 import net.trilleo.mc.plugins.tritown.economy.LedgerLimits
 import net.trilleo.mc.plugins.tritown.economy.Money
+import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 
 /**
  * An immutable snapshot of the `economy` block of `config.yml`.
@@ -14,6 +15,8 @@ import net.trilleo.mc.plugins.tritown.economy.Money
  */
 data class EconomySettings(
     val enabled: Boolean,
+    val providerMode: ProviderMode,
+    val deferTo: List<String>,
     val currencies: List<Currency>,
     val primaryCurrencyId: String,
     val startingBalance: Double,
@@ -39,6 +42,11 @@ data class EconomySettings(
     fun startingBalance(currency: Currency): Money = currency.of(startingBalance)
 
     companion object {
+
+        /** Economy plugins `auto` mode stands aside for when they are installed. */
+        private val DEFAULT_DEFER_TO = listOf(
+            "Essentials", "EssentialsX", "CMI", "XConomy", "GemsEconomy", "iConomy", "BOSEconomy", "EconomyAPI",
+        )
 
         @Volatile
         private var current: EconomySettings? = null
@@ -66,8 +74,13 @@ data class EconomySettings(
                 richFormat = config.getString("economy.currency.rich-format", "<gold>%symbol%%amount%</gold>"),
             )
 
+            val deferTo = config.getStringList("economy.provider.defer-to")
+                .ifEmpty { DEFAULT_DEFER_TO }
+
             return EconomySettings(
                 enabled = config.getBoolean("economy.enabled", true),
+                providerMode = ProviderMode.parse(config.getString("economy.provider.mode", "auto")),
+                deferTo = deferTo,
                 currencies = listOf(currency),
                 primaryCurrencyId = currency.id,
                 startingBalance = config.getDouble("economy.starting-balance", 100.0),

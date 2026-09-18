@@ -139,6 +139,7 @@ class JsonEconomyStorage(
                     balances = balances,
                     createdAt = entry.get("createdAt")?.asLong ?: 0L,
                     updatedAt = entry.get("updatedAt")?.asLong ?: 0L,
+                    startingBalanceGranted = entry.get("startingBalanceGranted")?.asBoolean ?: false,
                 )
             )
         }

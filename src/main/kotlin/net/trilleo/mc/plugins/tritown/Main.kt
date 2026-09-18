@@ -1,25 +1,80 @@
 package net.trilleo.mc.plugins.tritown
 
+import com.palmergames.bukkit.towny.TownyEconomyHandler
+import net.milkbowl.vault.economy.Economy
+import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.config.PluginConfig
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
+import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
+import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
+import net.trilleo.mc.plugins.tritown.economy.EconomyService
+import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
+import net.trilleo.mc.plugins.tritown.economy.storage.JsonEconomyStorage
+import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
+import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
+import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 import net.trilleo.mc.plugins.tritown.registration.*
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
 import net.trilleo.mc.plugins.tritown.utils.MessageUtil
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.logging.Level
 
 class Main : JavaPlugin() {
 
     lateinit var pluginConfig: PluginConfig
         private set
 
-    override fun onEnable() {
+    /** Set when startup fails before the plugin is enabled, since `onLoad` cannot disable a plugin itself. */
+    private var bootFailure: String? = null
+
+    /**
+     * Loads the configuration and opens the economy, then offers it to Vault.
+     *
+     * All of this has to happen before any plugin enables. Towny picks its
+     * economy while it is enabling, and TriTown depends on Towny, so Towny
+     * always enables first — registering the Vault service from [onEnable]
+     * would be too late for Towny to ever see it.
+     */
+    override fun onLoad() {
         instance = this
         pluginConfig = PluginConfig(this)
+
+        val settings = EconomySettings.load(pluginConfig)
+        if (!settings.enabled) {
+            logger.info("The economy is disabled in config.yml; TriTown will use another plugin's economy")
+            return
+        }
+
+        try {
+            CurrencyRegistry.load(settings.currencies, settings.primaryCurrencyId)
+            EconomyFormat.invalidate()
+            EconomyService.initialize(logger, createStorage(settings), settings)
+        } catch (e: Exception) {
+            logger.log(Level.SEVERE, "The economy could not be loaded", e)
+            bootFailure = e.message ?: e.javaClass.simpleName
+            return
+        }
+
+        VaultRegistration.register(this)
+    }
+
+    override fun onEnable() {
         MessageUtil.init(pluginConfig.messagePrefix)
+
+        bootFailure?.let {
+            logger.severe("Disabling TriTown: $it")
+            server.pluginManager.disablePlugin(this)
+            return
+        }
 
         ServerDataManager.init(this)
         PlayerDataManager.init(this)
+
+        // Towny is enabled by now, so its account prefixes can be cached before
+        // anything classifies an account.
+        TownyAccountNaming.load()
+        EconomyService.start()
 
         ItemRegistrar.registerAll(this)
         RecipeRegistrar.registerAll(this)
@@ -30,29 +85,75 @@ class Main : JavaPlugin() {
         GUIManager.registerAll(this)
         TaskRegistrar.registerAll(this)
 
-        // Economy plugins may enable after TriTown, so the provider is only checked once every plugin has loaded.
-        server.scheduler.runTask(this, Runnable {
-            if (!EconomyUtil.isAvailable) {
-                logger.severe("No Vault economy provider found. Install an economy plugin such as EssentialsX. Disabling TriTown.")
-                server.pluginManager.disablePlugin(this)
-            }
-        })
+        // Another economy plugin may register after TriTown, so the winner is only known once everything has loaded.
+        server.scheduler.runTask(this, Runnable { reportEconomyProvider() })
     }
 
-    /** Re-reads `config.yml` and applies the message prefix. */
+    /** Re-reads `config.yml` and applies everything that does not need a restart. */
     fun reload() {
         pluginConfig.reload()
         MessageUtil.init(pluginConfig.messagePrefix)
+
+        val settings = EconomySettings.load(pluginConfig)
+        if (settings.enabled) {
+            CurrencyRegistry.load(settings.currencies, settings.primaryCurrencyId)
+            EconomyFormat.invalidate()
+            EconomyService.applySettings(settings)
+            TownyAccountNaming.load()
+        }
     }
 
     override fun onDisable() {
+        // Stopped first, so the flush task cannot race the final write.
         TaskRegistrar.unregisterAll()
         RecipeRegistrar.unregisterAll()
 
         PlayerDataManager.saveAll()
         ServerDataManager.save()
 
+        EconomyService.shutdown()
+        VaultRegistration.unregister()
         EconomyUtil.reset()
+    }
+
+    private fun createStorage(settings: EconomySettings): JsonEconomyStorage {
+        if (settings.storageType != "json") {
+            logger.warning("Unknown economy storage type '${settings.storageType}'; falling back to json")
+        }
+        return JsonEconomyStorage(
+            directory = dataFolder,
+            expectedDigits = CurrencyRegistry.primary.fractionalDigits,
+            allowRescale = settings.allowRescale,
+            logger = logger,
+        )
+    }
+
+    private fun reportEconomyProvider() {
+        val registration = server.servicesManager.getRegistration(Economy::class.java)
+        val townyStatus = runCatching { TownyEconomyHandler.getVersion() }.getOrDefault("unknown")
+
+        when {
+            registration == null -> {
+                logger.severe(
+                    "No Vault economy provider is registered, and TriTown's own economy is switched off. Set " +
+                        "economy.enabled to true in TriTown's config, or install an economy plugin. Disabling TriTown."
+                )
+                server.pluginManager.disablePlugin(this)
+            }
+
+            registration.provider is TriTownVaultEconomy ->
+                logger.info("TriTown is supplying the server economy (Towny sees: $townyStatus)")
+
+            else -> {
+                logger.info("Using the '${registration.provider.name}' economy (Towny sees: $townyStatus)")
+                if (EconomySettings.isLoaded && EconomySettings.snapshot.providerMode == ProviderMode.INTERNAL) {
+                    logger.warning(
+                        "economy.provider.mode is 'internal', but '${registration.provider.name}' won the Vault " +
+                            "service. Remove the other economy plugin for TriTown's economy to take effect."
+                    )
+                }
+            }
+        }
     }
 
     companion object {
