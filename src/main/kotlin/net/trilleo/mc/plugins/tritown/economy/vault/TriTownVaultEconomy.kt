@@ -37,6 +37,10 @@ import org.bukkit.OfflinePlayer
  * called off the main thread. Nothing in the read and write paths touches
  * blocking I/O or main-thread-only API.
  */
+// Vault's name-based methods are deprecated but not optional: Towny calls them
+// whenever its economy.advanced.modern setting is off, so they are implemented
+// and delegated to like any other overload.
+@Suppress("DEPRECATION")
 class TriTownVaultEconomy : Economy {
 
     override fun isEnabled(): Boolean = EconomyService.isReady
