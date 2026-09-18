@@ -2037,6 +2037,19 @@ nest safely.
 `meta` on a record is the extension point for later features — a shop id, a banknote serial, a payday tag — so they
 add keys rather than needing a new field.
 
+`TransactionHistoryGUI` shows the result, and is a worked example of the constraints a `PagedPluginGUI` imposes:
+
+* **GUIs are singletons.** One instance serves every viewer, so the account being looked at and the rendered items
+  live in a `ConcurrentHashMap` keyed by viewer UUID, not in fields.
+* **`getItems` must be cheap.** It is called on every render *and* again inside every page count, so it is an O(1) map
+  lookup; the items are built once, in `open()`.
+* **An override of `onClose` must call `super.onClose(event)`**, which is where the base class drops the page it is
+  holding for that viewer.
+* **The title cannot vary per viewer** — `PluginGUI.title` is a constructor property — so the account being viewed is
+  shown in a header item in the first slot instead.
+* Anything that came from a player, including a town name and a recorded reason, goes through
+  `MiniMessage.miniMessage().escapeTags(...)` before it reaches a name or lore.
+
 > A limitation worth knowing before extending this: Towny's own `Account.deposit(amount, reason)` carries a human
 > reason such as "New town" or "Upkeep", but `BankTransactionEvent` does not expose it, so records from Towny carry
 > the event type rather than Towny's own wording. Do **not** try to recover it by matching timestamps and amounts —

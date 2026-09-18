@@ -62,8 +62,9 @@ Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/
 | `/eco <action> …`  | Administer balances (OP only)       |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
-`info <player>` for an account's details, and `flush` to write changed accounts to disk immediately. Each action has
-its own permission, `tritown.economy.admin.<action>`.
+`info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
+write changed accounts to disk immediately. Each action has its own permission, `tritown.economy.admin.<action>`;
+viewing someone else's history additionally needs `tritown.economy.admin.history.others`.
 
 Commands are sub-commands of `/tritown` (alias `/tt`) unless noted. The economy commands are registered as top-level
 commands as well, which `economy.commands.top-level-aliases` turns off — they are then only reachable as

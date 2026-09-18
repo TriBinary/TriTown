@@ -32,6 +32,8 @@
     + Recent entries are also kept in memory per account, so viewing a history never reads from disk. Only accounts
       active since the last restart use any memory.
     + Turn the whole thing off with `economy.history.enabled` if you would rather not keep records.
++ Added `/eco history [player]`, a paged menu of an account's recorded transactions showing the amount, the resulting
+  balance, who was on the other side, and what caused it.
 + Added `/eco` for administering balances: `give`, `take` and `set` an amount, `reset` a player to the starting
   balance, `info` for an account's UUID, type, balances and dates, and `flush` to write changed accounts to disk
   immediately. Every action has its own permission, and any change is written out at once rather than waiting for the

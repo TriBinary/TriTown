@@ -8,10 +8,13 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyResult
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.Money
 import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
+import net.trilleo.mc.plugins.tritown.guis.economy.TransactionHistoryGUI
+import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Player
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -21,13 +24,13 @@ import java.util.Locale
 class EconomyAdminCommand : PluginCommand(
     name = "eco",
     description = "Administer player balances",
-    usage = "/eco <give|take|set|reset|info|flush> [player] [amount]",
+    usage = "/eco <give|take|set|reset|info|history|flush> [player] [amount]",
     aliases = listOf("economy"),
     permission = PERMISSION,
     isMainCommand = topLevelAliases(),
 ) {
 
-    override val extraPermissions = ACTIONS.map { permissionFor(it) }
+    override val extraPermissions = ACTIONS.map { permissionFor(it) } + HISTORY_OTHERS_PERMISSION
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (!requireEconomy(sender)) return true
@@ -46,6 +49,7 @@ class EconomyAdminCommand : PluginCommand(
         when (action) {
             "flush" -> flush(sender)
             "info" -> withTarget(sender, args) { info(sender, it) }
+            "history" -> history(sender, args)
             "reset" -> withTarget(sender, args) { reset(sender, it) }
             else -> withAmount(sender, args, action)
         }
@@ -77,6 +81,30 @@ class EconomyAdminCommand : PluginCommand(
         val plugin = Main.instance
         plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable { EconomyService.flush() })
         sender.sendPrefixed("Writing changed accounts to disk.")
+    }
+
+    /** Opens the history view, defaulting to the sender's own account. */
+    private fun history(sender: CommandSender, args: Array<out String>) {
+        val viewer = sender as? Player ?: run {
+            sender.sendPrefixed("<red>Only players can open the history view.")
+            return
+        }
+
+        val account = if (args.size < 2) {
+            EconomyService.ensurePlayerAccount(viewer)
+        } else {
+            if (!sender.hasPermission(HISTORY_OTHERS_PERMISSION)) {
+                sender.sendPrefixed("<red>You don't have permission to view another account's history!")
+                return
+            }
+            resolveOrTell(sender, args[1])
+        } ?: return
+
+        val gui = GUIManager.getGUI(TransactionHistoryGUI.ID) as? TransactionHistoryGUI ?: run {
+            sender.sendPrefixed("<red>The history view is unavailable.")
+            return
+        }
+        gui.open(viewer, account)
     }
 
     private fun info(sender: CommandSender, account: MoneyAccount) {
@@ -183,6 +211,7 @@ class EconomyAdminCommand : PluginCommand(
         sender.sendPrefixed("<white>/eco set <player> <amount> [currency]</white> <gray>- set a balance outright")
         sender.sendPrefixed("<white>/eco reset <player></white> <gray>- back to the starting balance")
         sender.sendPrefixed("<white>/eco info <player></white> <gray>- account details")
+        sender.sendPrefixed("<white>/eco history [player]</white> <gray>- browse recorded transactions")
         sender.sendPrefixed("<white>/eco flush</white> <gray>- write changed accounts to disk now")
     }
 
@@ -191,7 +220,8 @@ class EconomyAdminCommand : PluginCommand(
 
     private companion object {
         const val PERMISSION = "tritown.economy.admin"
-        val ACTIONS = listOf("give", "take", "set", "reset", "info", "flush")
+        const val HISTORY_OTHERS_PERMISSION = "tritown.economy.admin.history.others"
+        val ACTIONS = listOf("give", "take", "set", "reset", "info", "history", "flush")
         val AMOUNT_ACTIONS = setOf("give", "take", "set")
         val TIMESTAMP: DateTimeFormatter = DateTimeFormatter
             .ofPattern("yyyy-MM-dd HH:mm", Locale.ROOT)
