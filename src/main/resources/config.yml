@@ -95,3 +95,118 @@ economy:
     # Size at which the log is rolled aside into a dated file.
     roll-size-mb: 16
     time-format: "yyyy-MM-dd HH:mm"
+
+# ── Sidebar ─────────────────────────────────────────────────────────────────
+# The scoreboard shown at the right of the screen. Each board names a condition
+# and a priority, and a player sees the highest-priority board whose condition
+# matches where they are standing — so the same player gets different
+# information at home, on someone else's land, and out in the wild.
+#
+# Lines name a translation key, so the wording and colours live in
+# plugins/TriTown/lang/ and each player reads the sidebar in their own language.
+# An empty entry is a blank spacer, and at most 15 lines are shown.
+#
+# Values are written into a line as %marker%. Available markers:
+#   Town    %town% %town_level% %town_residents% %town_online% %town_claims%
+#           %town_claims_max% %town_claims_free% %town_bank% %town_upkeep%
+#           %town_mayor% %town_warning% %newday%
+#   Nation  %nation% %nation_level% %nation_towns% %nation_residents%
+#           %nation_bank% %nation_upkeep% %nation_king% %nation_capital%
+#   Plot    %plot_town% %plot_nation% %plot_type% %plot_owner% %plot_price%
+#           %plot_coords% %plot_pvp% %plot_mobs%
+#   Money   %balance% %balance_raw% %baltop_rank%
+#
+# Conditions: always, no-town, has-town, no-nation, has-nation, in-wilderness,
+#   in-own-town, in-own-plot, in-other-town, in-ally-town, in-enemy-town,
+#   town-has-warning
+scoreboard:
+  # Turn the sidebar off entirely.
+  enabled: true
+  # Seconds between redraws of a sidebar nothing has changed on. Claims, bank
+  # movements and the new day redraw it immediately anyway, so this only bounds
+  # how stale the countdown can get.
+  refresh-interval: 2
+  # Whether a player who has never run /tritown scoreboard sees one.
+  default-on: true
+  # Ticks between title frames. Leave a single frame to switch the animation off.
+  title-frame-interval: 10
+  title:
+    - scoreboard.title.frame-1
+    - scoreboard.title.frame-2
+
+  boards:
+    # Having no town comes before everything else: a new player needs pointing
+    # at how to get one, not a readout of land they do not own.
+    townless:
+      priority: 90
+      condition: no-town
+      lines:
+        - scoreboard.line.balance
+        - ""
+        - scoreboard.line.townless-hint
+        - ""
+        - scoreboard.line.coords
+
+    enemy-town:
+      priority: 60
+      condition: in-enemy-town
+      lines:
+        - scoreboard.line.enemy-warning
+        - scoreboard.line.plot-town
+        - scoreboard.line.plot-owner
+        - ""
+        - scoreboard.line.coords
+
+    own-town:
+      priority: 40
+      condition: in-own-town
+      lines:
+        - scoreboard.line.town-name
+        - scoreboard.line.town-level
+        - scoreboard.line.town-residents
+        - scoreboard.line.town-claims
+        - scoreboard.line.town-bank
+        - scoreboard.line.town-upkeep
+        - scoreboard.line.town-warning
+        - scoreboard.line.plot-type
+        - scoreboard.line.plot-owner
+        - ""
+        - scoreboard.line.balance
+        - scoreboard.line.newday
+
+    other-town:
+      priority: 30
+      condition: in-other-town
+      lines:
+        - scoreboard.line.plot-town
+        - scoreboard.line.plot-nation
+        - scoreboard.line.plot-type
+        - scoreboard.line.plot-owner
+        - scoreboard.line.plot-price
+        - ""
+        - scoreboard.line.balance
+        - scoreboard.line.coords
+
+    wilderness:
+      priority: 20
+      condition: in-wilderness
+      lines:
+        - scoreboard.line.wilderness
+        - scoreboard.line.coords
+        - ""
+        - scoreboard.line.town-name
+        - scoreboard.line.town-claims
+        - scoreboard.line.town-bank
+        - ""
+        - scoreboard.line.balance
+        - scoreboard.line.newday
+
+    # Never reached by the boards above, which already cover every place a
+    # player can stand. Kept so that editing one of their conditions cannot
+    # leave someone with a stale sidebar.
+    fallback:
+      priority: 0
+      condition: always
+      lines:
+        - scoreboard.line.balance
+        - scoreboard.line.coords

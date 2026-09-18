@@ -91,6 +91,17 @@ command:
       history: "<white>/eco history [player]</white> <gray>- 浏览交易记录"
       flush: "<white>/eco flush</white> <gray>- 立即将变动的账户写入磁盘"
 
+  scoreboard:
+    description: "显示或隐藏侧边栏"
+    players-only: "<red>只有玩家才有侧边栏。"
+    unavailable: "<red>本服务器已关闭侧边栏。"
+    usage: "<red>用法：<white>/tritown scoreboard [on|off]</white>"
+    shown: "已显示侧边栏。"
+    hidden: "已隐藏侧边栏。"
+    pinned: "侧边栏已固定为 <white>{board}</white> 板面。"
+    unpinned: "侧边栏已恢复为根据所在位置自动切换。"
+    unknown-board: "<red>不存在名为 <white>{board}</white> 的板面。"
+
 common:
   unknown: "未知"
   invalid-amount: "<red>这不是有效的金额。"
@@ -98,6 +109,11 @@ common:
   no-account: "<red>找不到 <white>{name}</white> 的账户。"
   # 用于包裹 money.error.* 的信息，后者为纯文本以便其他插件直接输出。
   error: "<red>{message}"
+  duration: "{hours}小时{minutes}分"
+  "on": "开"
+  "off": "关"
+  # 当侧边栏变量没有对应的值时显示，例如没有城镇的玩家的城镇名。
+  none: "-"
 
 money:
   # 仅限纯文本：这些信息会作为 Vault 的错误信息传给其他插件，并被原样输出。
@@ -167,3 +183,38 @@ gui:
     reason: "<gray>原因：<white>{reason}</white>"
     source: "<gray>来源：<white>{source}</white>"
     time: "<dark_gray>{time}"
+
+# 侧边栏。显示哪些行、按什么顺序显示由 config.yml 中的各个板面决定；措辞与颜色在此设置。
+# 变量写作 %marker%，完整列表见 config.yml。
+scoreboard:
+  title:
+    frame-1: "<gradient:#f9d423:#ff8c00><bold>TRILLEO</bold></gradient>"
+    frame-2: "<gradient:#ff8c00:#f9d423><bold>TRILLEO</bold></gradient>"
+
+  line:
+    town-name: "<gray>城镇 <white>%town%"
+    town-level: "<gray>等级 <white>%town_level%<gray>，在线 <white>%town_online%<gray>/<white>%town_residents%"
+    town-residents: "<gray>居民 <white>%town_residents%"
+    town-claims: "<gray>领地 <white>%town_claims%<gray>/<white>%town_claims_max%<gray>（剩余 <green>%town_claims_free%<gray>）"
+    town-bank: "<gray>银行 <white>%town_bank%"
+    town-upkeep: "<gray>维护费 <white>%town_upkeep%"
+    town-warning: "<red>%town_warning%"
+    plot-town: "<gray>所属城镇 <white>%plot_town%"
+    plot-nation: "<gray>国家 <white>%plot_nation%"
+    plot-type: "<gray>地皮 <white>%plot_type%"
+    plot-owner: "<gray>拥有者 <white>%plot_owner%"
+    plot-price: "<gray>出售中 <green>%plot_price%"
+    enemy-warning: "<red><bold>敌对领地</bold>"
+    wilderness: "<dark_green>荒野"
+    coords: "<gray>区块 <white>%plot_coords%"
+    balance: "<gray>余额 <white>%balance%"
+    newday: "<dark_gray>距新的一天 %newday%"
+    townless-hint: "<yellow>使用 <white>/tm</white> 加入城镇"
+
+  warning:
+    ruined: "已废墟"
+    bankrupt: "已破产"
+    upkeep-short: "无力支付维护费"
+    overclaimed: "超额占地"
+    conquered: "已被征服"
+    none: ""

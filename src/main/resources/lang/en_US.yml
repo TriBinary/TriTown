@@ -91,6 +91,17 @@ command:
       history: "<white>/eco history [player]</white> <gray>- browse recorded transactions"
       flush: "<white>/eco flush</white> <gray>- write changed accounts to disk now"
 
+  scoreboard:
+    description: "Show or hide the sidebar"
+    players-only: "<red>Only players have a sidebar."
+    unavailable: "<red>The sidebar is switched off on this server."
+    usage: "<red>Usage: <white>/tritown scoreboard [on|off]</white>"
+    shown: "Sidebar shown."
+    hidden: "Sidebar hidden."
+    pinned: "Sidebar pinned to the <white>{board}</white> board."
+    unpinned: "Sidebar back to matching where you stand."
+    unknown-board: "<red>No board named <white>{board}</white>."
+
 common:
   unknown: "unknown"
   invalid-amount: "<red>That is not a valid amount."
@@ -98,6 +109,12 @@ common:
   no-account: "<red>No account found for <white>{name}</white>."
   # Wraps a money.error.* line, which is plain so other plugins can print it.
   error: "<red>{message}"
+  duration: "{hours}h {minutes}m"
+  "on": "On"
+  "off": "Off"
+  # Shown by a sidebar marker whose value does not exist, such as the town of a
+  # player who has none.
+  none: "-"
 
 money:
   # Plain text only: these also travel to other plugins as Vault's error message, which they print verbatim.
@@ -167,3 +184,39 @@ gui:
     reason: "<gray>Reason: <white>{reason}</white>"
     source: "<gray>Source: <white>{source}</white>"
     time: "<dark_gray>{time}"
+
+# The sidebar. Which of these lines appear, and in what order, is set per board
+# in config.yml; the wording and colours are set here. Values are written as
+# %marker% and are listed in config.yml.
+scoreboard:
+  title:
+    frame-1: "<gradient:#f9d423:#ff8c00><bold>TRILLEO</bold></gradient>"
+    frame-2: "<gradient:#ff8c00:#f9d423><bold>TRILLEO</bold></gradient>"
+
+  line:
+    town-name: "<gray>Town <white>%town%"
+    town-level: "<gray>Level <white>%town_level%<gray>, <white>%town_online%<gray>/<white>%town_residents%<gray> on"
+    town-residents: "<gray>Residents <white>%town_residents%"
+    town-claims: "<gray>Claims <white>%town_claims%<gray>/<white>%town_claims_max%<gray> (<green>%town_claims_free%<gray> free)"
+    town-bank: "<gray>Bank <white>%town_bank%"
+    town-upkeep: "<gray>Upkeep <white>%town_upkeep%"
+    town-warning: "<red>%town_warning%"
+    plot-town: "<gray>Land of <white>%plot_town%"
+    plot-nation: "<gray>Nation <white>%plot_nation%"
+    plot-type: "<gray>Plot <white>%plot_type%"
+    plot-owner: "<gray>Owner <white>%plot_owner%"
+    plot-price: "<gray>For sale <green>%plot_price%"
+    enemy-warning: "<red><bold>ENEMY LAND</bold>"
+    wilderness: "<dark_green>Wilderness"
+    coords: "<gray>Chunk <white>%plot_coords%"
+    balance: "<gray>Balance <white>%balance%"
+    newday: "<dark_gray>New day in %newday%"
+    townless-hint: "<yellow>Join a town with <white>/tm</white>"
+
+  warning:
+    ruined: "Ruined"
+    bankrupt: "Bankrupt"
+    upkeep-short: "Cannot pay upkeep"
+    overclaimed: "Overclaimed"
+    conquered: "Conquered"
+    none: ""

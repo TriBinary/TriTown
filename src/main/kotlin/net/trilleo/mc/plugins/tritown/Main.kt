@@ -4,6 +4,7 @@ import com.palmergames.bukkit.towny.TownyEconomyHandler
 import net.milkbowl.vault.economy.Economy
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.config.PluginConfig
+import net.trilleo.mc.plugins.tritown.config.ScoreboardSettings
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
@@ -15,6 +16,7 @@ import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
 import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 import net.trilleo.mc.plugins.tritown.registration.*
+import net.trilleo.mc.plugins.tritown.scoreboard.ScoreboardService
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
 import net.trilleo.mc.plugins.tritown.utils.Lang
 import net.trilleo.mc.plugins.tritown.utils.MessageUtil
@@ -90,6 +92,11 @@ class Main : JavaPlugin() {
         GUIManager.registerAll(this)
         TaskRegistrar.registerAll(this)
 
+        // Last, so Towny's HUD manager and TriTown's own listeners are both live
+        // before any sidebar goes up.
+        ScoreboardSettings.load(pluginConfig, logger)
+        ScoreboardService.start(this)
+
         // Another economy plugin may register after TriTown, so the winner is only known once everything has loaded.
         server.scheduler.runTask(this, Runnable { reportEconomyProvider() })
     }
@@ -107,9 +114,16 @@ class Main : JavaPlugin() {
             EconomyService.applySettings(settings)
             TownyAccountNaming.load()
         }
+
+        ScoreboardSettings.load(pluginConfig, logger)
+        ScoreboardService.reload()
     }
 
     override fun onDisable() {
+        // Before the tasks stop, so no sidebar is left on a player's screen
+        // pointing at a plugin that is no longer running.
+        ScoreboardService.stop()
+
         // Stopped first, so the flush task cannot race the final write.
         TaskRegistrar.unregisterAll()
         RecipeRegistrar.unregisterAll()

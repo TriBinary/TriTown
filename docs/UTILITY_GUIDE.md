@@ -15,6 +15,8 @@ boilerplate and provide commonly needed functionality out of the box.
 | `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack |
 | `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules   |
 | `LoreUtil`      | Word-aware text wrapping for item lore with style carry-over       |
+| `TownyUtil`     | Reads and formats Towny data: names, balances, upkeep, the new day |
+| `ComponentUtil` | Parses a MiniMessage string into a Component, and escapes input    |
 
 ---
 
@@ -795,3 +797,73 @@ val item = itemStack(Material.DIAMOND_SWORD) {
 - **Empty input**: Returns an empty list.
 
 ---
+
+---
+
+## TownyUtil
+
+`TownyUtil` reads Towny's objects and turns them into text fit for a message, a menu, or the sidebar. It is the only
+place in TriTown that formats Towny data, so the same town name is escaped the same way everywhere.
+
+Nothing here caches. Towny is the source of truth, and every value is re-read when it is needed — see
+[Working with Towny](DEVELOPER_GUIDE.md#working-with-towny).
+
+### Usage
+
+```kotlin
+val town = TownyAPI.getInstance().getResident(player)?.townOrNull ?: return
+
+player.sendPrefixed(
+    player.tr(
+        "town.summary",
+        "town" to TownyUtil.name(town.name),
+        "bank" to TownyUtil.balance(town),
+        "upkeep" to TownyUtil.money(TownyUtil.townUpkeep(town)),
+        "newday" to TownyUtil.duration(player, TownyUtil.secondsUntilNewDay()),
+    )
+)
+```
+
+### Methods
+
+| Method                          | Description                                                                 |
+|:--------------------------------|:-----------------------------------------------------------------------------|
+| `text(value)`                   | Strips legacy colour codes and escapes MiniMessage tags in player-written text |
+| `name(name)`                    | A Towny object name with underscores shown as spaces, escaped                |
+| `money(amount)`                 | Formats an amount with the server currency, or `-` when there is no economy  |
+| `balance(government)`           | Formats a town's or nation's bank balance from Towny's cached value          |
+| `townUpkeep(town)`              | What the town pays at the next new day, with overclaim and neutrality costs  |
+| `nationUpkeep(nation)`          | What the nation pays at the next new day, with its neutrality cost           |
+| `cannotAffordUpkeep(town)`      | Whether the town's bank will not cover its upkeep                            |
+| `secondsUntilNewDay()`          | Seconds until Towny collects taxes and upkeep                                |
+| `duration(player, seconds)`     | Hours and minutes in the player's language (`common.duration`)               |
+| `onOff(player, value)`          | An On/Off label in the player's language (`common.on` / `common.off`)        |
+
+**Always escape before embedding.** Town names, mayor names and boards are player-written, and `Lang.tr` inserts
+arguments verbatim into a MiniMessage string. `name()` and `text()` are what stand between a town called
+`<red>hello` and a coloured chat message.
+
+**`balance()` reads Towny's cached balance**, not a live one. A real lookup can block on another plugin's economy, and
+this is called once per player per sidebar refresh.
+
+---
+
+## ComponentUtil
+
+`Lang.tr` returns a MiniMessage **string** so that callers can substitute into it, which leaves every caller needing
+the same final parse. `ComponentUtil` is that step, and holds the one `MiniMessage` instance used for both parsing and
+escaping.
+
+### Usage
+
+```kotlin
+val line = ComponentUtil.parse(player.tr("scoreboard.line.balance"))
+val safe = ComponentUtil.escape(player.name)
+```
+
+### Methods
+
+| Method            | Description                                                      |
+|:------------------|:-------------------------------------------------------------------|
+| `parse(message)`  | Parses a MiniMessage string into an Adventure `Component`         |
+| `escape(value)`   | Escapes MiniMessage tags so player-written text renders as typed  |

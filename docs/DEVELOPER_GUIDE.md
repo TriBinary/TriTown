@@ -2,7 +2,7 @@
 
 This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**,
 work with **translations** and the **configuration** system using TriTown's registration system, and how to build on
-**Towny** and the **Vault economy**. Commands, listeners, GUIs, tasks,
+**Towny**, the **Vault economy**, and the **sidebar**. Commands, listeners, GUIs, tasks,
 custom items, and recipes all follow the same pattern: extend a base class (or implement an interface), place the file
 in the correct package, and the plugin handles the rest automatically at startup. The configuration system provides
 typed access to `config.yml` values.
@@ -2293,3 +2293,85 @@ What the provider cannot know is *why* the money moved. `EconomyService.record` 
 for a Towny-owned account as coming from Towny, which is the most that can honestly be claimed — Towny's own reason
 string ("New town", "Upkeep") is not exposed on the event. See the note under the transaction log for the clean way to
 get it later.
+
+---
+
+## Sidebar
+
+The sidebar lives in `net.trilleo.mc.plugins.tritown.scoreboard`, which — like `economy` — is **not** one of the
+packages `PackageScanner` walks. `ScoreboardService` is started explicitly from `Main.onEnable`, after every registrar
+has run so that Towny's HUD manager and TriTown's own listeners are both live.
+
+### Towny renders it, TriTown decides what it says
+
+TriTown contains no `org.bukkit.scoreboard` code. Towny already has a sidebar renderer for its own plot and map HUDs
+and accepts other plugins' HUDs through `HUDManager.addHUD`, so `TriTownHud` implements Towny's `HUDImplementer` and
+`ScoreboardService` registers a `PaperHUD` (or `FoliaHUD`) wrapping it.
+
+Registering there rather than driving the scoreboard directly is what makes TriTown's sidebar and
+`/towny plot perm hud` **mutually exclusive**: `HUDManager.toggleHUD` takes every other HUD down before raising one,
+so the two never fight over the single sidebar slot a player has. Towny also takes every registered HUD down on quit.
+
+Three things Towny does **not** do for a HUD it did not create, which `ScoreboardService` handles itself:
+
+- Towny refreshes only `permHUD` and `mapHUD` by name when a player crosses a chunk border, so
+  `ScoreboardTownyListener` listens to `PlayerChangePlotEvent` itself.
+- Towny never says when one of its own HUDs is switched off, so the refresh tick restores a sidebar that was taken
+  over and has since been released.
+- `PaperHUD.setLines` reverses the list it is given, so every render passes a fresh `ArrayList`.
+
+### Boards, conditions and priorities
+
+A board is a named layout in `config.yml` with a `condition` and a `priority`. Each render resolves the player's
+`PlayerContext` — their resident, town and nation, and the claim under their feet — and shows the highest-priority
+board whose `BoardCondition` matches. That is what lets one player see different information at home, on another
+town's land, and out in the wild.
+
+Nothing about the context is cached. Towny stays the source of truth, so a deleted town cannot linger on a sidebar.
+
+To add a condition, add a `BoardCondition` entry with its `config.yml` name and extend the `matches` branch:
+
+```kotlin
+IN_CAPITAL("in-capital"),
+...
+IN_CAPITAL -> context.plotTown?.isCapital == true
+```
+
+### Placeholders
+
+A line is **translated first and substituted second**, so a translator can move a value to wherever it reads best.
+`PlaceholderEngine` holds the `%marker%` resolvers; the four `placeholders/` objects register them when the service
+starts. An unknown marker is left on screen as written, so a typo shows up instead of silently blanking a value, and a
+resolver that throws falls back to `common.none` rather than taking the whole sidebar down.
+
+```kotlin
+PlaceholderEngine.register("town_plot_price") { context ->
+    context.town?.let { TownyUtil.money(it.plotPrice) } ?: context.none()
+}
+```
+
+Every value a resolver returns must already be escaped — the line it lands in is parsed as MiniMessage afterwards.
+Use `TownyUtil.name` / `TownyUtil.text` for anything player-written.
+
+### Rendering and cost
+
+One task ticks every tick and decides internally when to redraw, because a `PluginTask`'s period is fixed at
+construction and tasks are not re-registered on `/tritown reload` — counting ticks is what lets
+`scoreboard.refresh-interval` take effect on a reload.
+
+Renders are **diffed** before they are sent: the rendered strings are compared and an unchanged sidebar is never
+pushed again. Towny events (`ScoreboardTownyListener`) call `refreshSoon`, which collapses a burst into a single
+redraw on the main thread — which is also what makes the asynchronous `PlayerChangePlotEvent` safe to handle.
+
+Everything runs on the main thread: Towny's objects and Towny's renderer both require it, and every value the sidebar
+reads is an in-memory lookup.
+
+### Translations
+
+Board lines name a translation key rather than carrying text, so a server owner controls the layout in `config.yml`
+while wording and colour stay in the language files and each player reads the sidebar in their own language.
+
+`LangFilesTest` knows about this: it treats the strings under `scoreboard.title` and `scoreboard.boards.*.lines` as
+used keys, and subtracts `config.yml`'s own paths from the keys it scans out of Kotlin — necessary because a settings
+block and a translation section can share a name, as `scoreboard` does. A misspelled line therefore fails the build
+instead of rendering the raw key.

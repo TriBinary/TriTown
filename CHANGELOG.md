@@ -44,6 +44,26 @@
   immediately. Every action has its own permission, and any change is written out at once rather than waiting for the
   next save.
 
+#### Sidebar
+
++ Added a sidebar that changes with where you are standing. Each board in `config.yml` names a condition and a
+  priority, and you see the highest-priority board that matches, so the same player gets different information at
+  home, on someone else's land, and out in the wild.
+    + Out of the box: a board for players without a town that points them at joining one, a full read-out of your own
+      town's level, residents, claims, bank, upkeep and any warning while you are inside it, a summary of whose land
+      you are on elsewhere, a warning board on enemy territory, and a lighter board in the wilderness.
+    + Boards can show your town and nation, the claim under your feet, your balance and leaderboard place, and a
+      countdown to the next Towny day. Values are written into a line as `%town_bank%`, `%plot_owner%`, `%balance%`
+      and so on; `config.yml` lists every one of them.
+    + Lines name a translation, so the layout is yours to arrange while the wording and colours stay in
+      `plugins/TriTown/lang/` and every player reads the sidebar in their own language.
+    + `/tt scoreboard` turns it on and off and remembers the choice. `/tt scoreboard board <id>` pins one board for
+      checking a layout, and needs `tritown.scoreboard.admin`.
+    + The sidebar and Towny's own `/towny plot perm hud` take turns rather than fighting: turning either on puts the
+      other away, and yours comes back once Towny's is switched off again.
+    + A sidebar that has not changed is never redrawn, and a claim, a bank movement or the new day redraws it at once
+      rather than waiting for `scoreboard.refresh-interval`.
+
 #### Misc
 
 + TriTown now speaks English and Simplified Chinese. Every message, menu, item name and lore line is translated.
@@ -92,6 +112,26 @@
 + Documented the economy end to end: the core and storage layers, the Vault surface and why it implements `Economy`
   directly, the transaction log, the Towny lifecycle rules, and an owner-facing runbook covering provider modes,
   restart-only settings, the crash window and moving from another economy plugin.
+
+#### Sidebar
+
++ Added the `scoreboard` package: `ScoreboardService` (lifecycle, board selection, render diffing), `TriTownHud`,
+  `PlayerContext`/`ContextResolver`, `BoardCondition`, `BoardDefinition` and `PlaceholderEngine`, plus
+  `ScoreboardSettings`, a refresh task, two listeners and `/tt scoreboard`. Like `economy`, the package is outside
+  the ones `PackageScanner` walks and is started from `Main`.
++ TriTown writes no `org.bukkit.scoreboard` code. `TriTownHud` implements Towny's `HUDImplementer` and registers a
+  `PaperHUD`/`FoliaHUD` through `HUDManager.addHUD`, which is also what makes the sidebar and Towny's own HUDs
+  mutually exclusive and cleans up on quit. Towny only refreshes its own two HUDs on a plot change and never says
+  when one is switched off, so TriTown handles `PlayerChangePlotEvent` and restores a released sidebar itself.
++ The refresh task ticks every tick and counts, rather than being scheduled at the configured rate: a `PluginTask`'s
+  period is fixed at construction and tasks are not re-registered on reload, so `scoreboard.refresh-interval` would
+  otherwise be stuck at whatever it was at startup.
++ Added `TownyUtil`, TriTown's first reader of Towny data — escaping, names, bank balances from Towny's cached value,
+  upkeep including overclaim and neutrality costs, and the new-day countdown — and `ComponentUtil`, which holds the
+  single MiniMessage instance used to parse a translation and to escape player-written text.
++ `LangFilesTest` now counts the translation keys named by `scoreboard.title` and `scoreboard.boards.*.lines` in
+  `config.yml` as used, and subtracts `config.yml`'s own paths from the keys it scans out of Kotlin, since a settings
+  block and a translation section can share a name. A misspelled sidebar line now fails the build.
 
 #### Misc
 

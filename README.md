@@ -18,6 +18,13 @@ smallest denomination, so they never drift, and they are written to disk atomica
 starting balance, balance cap and formatting are all configurable. If you would rather keep another economy plugin,
 `economy.provider.mode` tells TriTown to stand aside and use it instead.
 
+**A sidebar that follows you.** A scoreboard that changes with where you are standing: a new player without a town is
+pointed at joining one, your own claims show your town's level, residents, land, bank, upkeep and any warning, another
+town's claims show whose land it is and what the plot costs, and enemy territory says so. Which lines appear is set per
+board in `config.yml`; the wording lives in the language files, so everyone reads it in their own language. Players turn
+it on and off with `/tt scoreboard`, and it takes turns with Towny's own plot HUD rather than fighting it for the
+screen.
+
 **English and Simplified Chinese.** Every message, menu and item TriTown shows is translated. By default each player
 sees whichever of the two their Minecraft client is set to, and everyone else sees English. Set `language` in
 `config.yml` to `en_US` or `zh_CN` to pick one for the whole server, or edit the files in `plugins/TriTown/lang/` to
@@ -65,6 +72,7 @@ Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/
 | `/pay <player> <amount>` | Send money to another player  |
 | `/baltop [page]`   | List the richest accounts           |
 | `/eco <action> …`  | Administer balances (OP only)       |
+| `/tt scoreboard`   | Show or hide the sidebar            |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -107,6 +115,12 @@ TriTown's version stays available as `/tritown:balance` and so on.
 | `economy.history.retention-days`       | `30`             | How long rolled log files are kept; `0` keeps them forever                  |
 | `economy.history.roll-size-mb`         | `16`             | Size at which the transaction log is rolled aside                           |
 | `economy.history.time-format`          | `yyyy-MM-dd HH:mm` | How timestamps are shown in the history view                              |
+| `scoreboard.enabled`                   | `true`           | Turn the sidebar off entirely                                               |
+| `scoreboard.refresh-interval`          | `2`              | Seconds between redraws of a sidebar nothing has changed on                 |
+| `scoreboard.default-on`                | `true`           | Whether a player who has never used `/tt scoreboard` sees one               |
+| `scoreboard.title-frame-interval`      | `10`             | Ticks between title frames; a single frame disables the animation           |
+| `scoreboard.title`                     | two frames       | Translation keys for the title, cycled in order                             |
+| `scoreboard.boards.<id>`               | five boards      | A board's `priority`, `condition` and `lines` (translation keys)            |
 
 Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how
 every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;
@@ -115,6 +129,21 @@ set `economy.storage.allow-rescale` to `true` to convert every balance once inst
 `economy.provider.*` and `economy.commands.top-level-aliases` only take effect on a restart — TriTown has to register
 its economy with Vault, and its commands with the server, before either can be changed again. Everything else in the
 table is applied by `/tt reload`.
+
+### The sidebar
+
+Each board under `scoreboard.boards` has a `priority`, a `condition`, and a list of `lines`. A player sees the
+highest-priority board whose condition matches, so one player gets different information depending on where they are
+standing. The conditions are `always`, `no-town`, `has-town`, `no-nation`, `has-nation`, `in-wilderness`,
+`in-own-town`, `in-own-plot`, `in-other-town`, `in-ally-town`, `in-enemy-town` and `town-has-warning`.
+
+A line names a translation key rather than carrying text, so you arrange the layout here and the wording stays in
+`plugins/TriTown/lang/`. An empty entry (`""`) is a blank spacer, and at most 15 lines fit on screen. Values are
+written into a line as `%town_bank%`, `%plot_owner%`, `%balance%` and so on — `config.yml` lists every available
+marker beside the block.
+
+The sidebar and Towny's `/towny plot perm hud` are mutually exclusive: turning either on puts the other away, and
+TriTown's returns once Towny's is switched off. Everything under `scoreboard` is applied by `/tt reload`.
 
 ## Translations
 
