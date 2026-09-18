@@ -1503,14 +1503,37 @@ message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown
 `PluginConfig` provides the following typed getter methods. Each method accepts a YAML path and a default value that is
 returned when the key is absent or has the wrong type:
 
-| Method          | Signature                           | Description                                       |
-|:----------------|:------------------------------------|:--------------------------------------------------|
-| `getString`     | `getString(path, default = "")`     | Returns a `String` value                          |
-| `getInt`        | `getInt(path, default = 0)`         | Returns an `Int` value                            |
-| `getDouble`     | `getDouble(path, default = 0.0)`    | Returns a `Double` value                          |
-| `getBoolean`    | `getBoolean(path, default = false)` | Returns a `Boolean` value                         |
-| `getStringList` | `getStringList(path)`               | Returns a `List<String>` (empty list if absent)   |
-| `contains`      | `contains(path)`                    | Returns `true` when the path exists in the config |
+| Method          | Signature                           | Description                                            |
+|:----------------|:------------------------------------|:-------------------------------------------------------|
+| `getString`     | `getString(path, default = "")`     | Returns a `String` value                               |
+| `getInt`        | `getInt(path, default = 0)`         | Returns an `Int` value                                 |
+| `getLong`       | `getLong(path, default = 0L)`       | Returns a `Long` value                                 |
+| `getDouble`     | `getDouble(path, default = 0.0)`    | Returns a `Double` value                               |
+| `getBoolean`    | `getBoolean(path, default = false)` | Returns a `Boolean` value                              |
+| `getStringList` | `getStringList(path)`               | Returns a `List<String>` (empty list if absent)        |
+| `getKeys`       | `getKeys(path)`                     | Returns the immediate child keys of the section at `path` |
+| `contains`      | `contains(path)`                    | Returns `true` when the path exists in the config      |
+
+Use `getLong` rather than `getInt` for money amounts held in minor units and for durations in milliseconds — both
+overflow an `Int`. Use `getKeys` to iterate configuration written as a map of named entries:
+
+```yaml
+economy:
+  currencies:
+    dollar:
+      symbol: "$"
+    credit:
+      symbol: "₡"
+```
+
+```kotlin
+for (id in pluginConfig.getKeys("economy.currencies")) {
+    val symbol = pluginConfig.getString("economy.currencies.$id.symbol", "$")
+}
+```
+
+`PluginConfig` deliberately exposes no `getConfigurationSection`. Returning a Bukkit `ConfigurationSection` would leak
+the type the wrapper exists to hide, and callers would bypass the typed getters; `getKeys` covers the same need.
 
 ### Reloading
 

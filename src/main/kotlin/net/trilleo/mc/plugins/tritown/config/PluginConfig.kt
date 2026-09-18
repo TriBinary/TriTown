@@ -59,6 +59,16 @@ class PluginConfig(private val plugin: JavaPlugin) {
         config.getInt(path, default)
 
     /**
+     * Returns the [Long] value at [path], or [default] when the key is
+     * absent or not a number.
+     *
+     * Prefer this over [getInt] for money amounts held in minor units and for
+     * durations in milliseconds, both of which overflow an [Int].
+     */
+    fun getLong(path: String, default: Long = 0L): Long =
+        config.getLong(path, default)
+
+    /**
      * Returns the [Double] value at [path], or [default] when the key is
      * absent or not a double.
      */
@@ -78,6 +88,16 @@ class PluginConfig(private val plugin: JavaPlugin) {
      */
     fun getStringList(path: String): List<String> =
         config.getStringList(path)
+
+    /**
+     * Returns the immediate child keys of the section at [path], or an empty
+     * list when [path] is absent or is not a section.
+     *
+     * Use this to iterate configuration written as a map of named entries, such
+     * as `economy.currencies.<id>`.
+     */
+    fun getKeys(path: String): List<String> =
+        config.getConfigurationSection(path)?.getKeys(false)?.toList() ?: emptyList()
 
     /**
      * Returns `true` when [path] exists in the loaded configuration.

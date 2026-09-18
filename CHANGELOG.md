@@ -18,6 +18,7 @@
 
 #### Misc
 
++ Added `PluginConfig.getLong` and `PluginConfig.getKeys` for long values and for iterating named config sections.
 + Set up the TriTown project from the Paper plugin template.
     + Renamed the package to `net.trilleo.mc.plugins.tritown`, the main command to `/tritown` (alias `/tt`), and
       permissions to `tritown.*`.
