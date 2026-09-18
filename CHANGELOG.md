@@ -25,6 +25,10 @@
     + The three are registered as top-level commands as well as `/tt` sub-commands. Set
       `economy.commands.top-level-aliases` to `false` to keep them under `/tt` only. A name another plugin already owns
       stays that plugin's, and TriTown's is still reachable as `/tritown:balance`.
++ Added `/eco` for administering balances: `give`, `take` and `set` an amount, `reset` a player to the starting
+  balance, `info` for an account's UUID, type, balances and dates, and `flush` to write changed accounts to disk
+  immediately. Every action has its own permission, and any change is written out at once rather than waiting for the
+  next save.
 
 ### Improvements
 
