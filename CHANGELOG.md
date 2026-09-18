@@ -44,6 +44,17 @@
   immediately. Every action has its own permission, and any change is written out at once rather than waiting for the
   next save.
 
+#### Misc
+
++ TriTown now speaks English and Simplified Chinese. Every message, menu, item name and lore line is translated.
+    + By default each player sees whichever of the two their own Minecraft client is set to, and anyone whose client
+      is in another language sees English. A client set to a language TriTown does not ship but that is close enough
+      — Traditional Chinese, say — gets the nearest match.
+    + Set `language` in `config.yml` to `en_US` or `zh_CN` to show one language to the whole server instead.
+    + The files are copied to `plugins/TriTown/lang/` on first start and can be edited to reword anything, or joined
+      by a language file of your own. `/tt reload` picks the changes up, and a line you remove falls back to the
+      version TriTown ships.
+
 ### Improvements
 
 #### Misc
@@ -84,6 +95,21 @@
 
 #### Misc
 
++ Added `Lang`, which loads `plugins/TriTown/lang/<id>.yml` and resolves a key for a sender's language, and the
+  `CommandSender.tr(key, vararg args)` shorthand every player-facing string now goes through. Translations load in
+  `Main.onLoad`, before Vault registration, because Towny can call the economy before TriTown has enabled.
++ `PluginGUI` now takes a `titleKey` instead of a `Component` and translates the title for whoever opens it;
+  `title(player)` is overridable for a title that carries live data. `PagedPluginGUI`'s navigation row is translated
+  too.
++ `EconomyResult.Failure` now carries a `money.error.*` translation key rather than an English sentence, so the
+  language is chosen where the failure is shown. The Vault provider translates into the configured language, since it
+  has no player to take one from and other plugins print the message verbatim.
++ Added `TransactionReason`, which encodes a recorded reason as its translation key plus arguments
+  (`money.reason.admin-set?admin=Steve`), so the transaction log stays readable whichever language the server is later
+  set to while the history view still shows it translated.
++ Added `LangFilesTest`, which fails the build when the bundled languages disagree on keys or placeholders, when the
+  code uses a key no language defines, or when a translation is left unused. Added snakeyaml to the test dependencies
+  for it.
 + Added `PluginConfig.getLong` and `PluginConfig.getKeys` for long values and for iterating named config sections.
 + Commands can now declare `extraPermissions`, which the permission registrar registers alongside the command's own
   node so per-action permissions are visible to permission-management plugins.

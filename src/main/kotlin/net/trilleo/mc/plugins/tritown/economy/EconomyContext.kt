@@ -13,12 +13,12 @@ object EconomyContext {
 
     /**
      * @param source where the call came from, e.g. `command`, `vault`, `towny`
-     * @param reason a short human description, shown in the history view
+     * @param reason why the money moved, as [TransactionReason] encodes it
      */
     data class Entry(val source: String, val reason: String)
 
     /** What a transaction is attributed to when nothing has claimed it. */
-    val DEFAULT = Entry(source = "vault", reason = "External plugin")
+    val DEFAULT = Entry(source = "vault", reason = TransactionReason.EXTERNAL)
 
     private val current = ThreadLocal<Entry>()
 

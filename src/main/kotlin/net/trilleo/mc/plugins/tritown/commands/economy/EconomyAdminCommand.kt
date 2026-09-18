@@ -8,10 +8,12 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyResult
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.Money
 import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
+import net.trilleo.mc.plugins.tritown.economy.TransactionReason
 import net.trilleo.mc.plugins.tritown.guis.economy.TransactionHistoryGUI
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -42,7 +44,7 @@ class EconomyAdminCommand : PluginCommand(
         }
 
         if (!sender.hasPermission(permissionFor(action))) {
-            sender.sendPrefixed("<red>You don't have permission to use <white>/eco $action</white>!")
+            sender.sendPrefixed(sender.tr("command.eco.no-permission-action", "action" to action))
             return true
         }
 
@@ -80,13 +82,13 @@ class EconomyAdminCommand : PluginCommand(
     private fun flush(sender: CommandSender) {
         val plugin = Main.instance
         plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable { EconomyService.flush() })
-        sender.sendPrefixed("Writing changed accounts to disk.")
+        sender.sendPrefixed(sender.tr("command.eco.flushing"))
     }
 
     /** Opens the history view, defaulting to the sender's own account. */
     private fun history(sender: CommandSender, args: Array<out String>) {
         val viewer = sender as? Player ?: run {
-            sender.sendPrefixed("<red>Only players can open the history view.")
+            sender.sendPrefixed(sender.tr("command.eco.history.players-only"))
             return
         }
 
@@ -94,57 +96,67 @@ class EconomyAdminCommand : PluginCommand(
             EconomyService.ensurePlayerAccount(viewer)
         } else {
             if (!sender.hasPermission(HISTORY_OTHERS_PERMISSION)) {
-                sender.sendPrefixed("<red>You don't have permission to view another account's history!")
+                sender.sendPrefixed(sender.tr("command.eco.history.no-permission-others"))
                 return
             }
             resolveOrTell(sender, args[1])
         } ?: return
 
         val gui = GUIManager.getGUI(TransactionHistoryGUI.ID) as? TransactionHistoryGUI ?: run {
-            sender.sendPrefixed("<red>The history view is unavailable.")
+            sender.sendPrefixed(sender.tr("command.eco.history.unavailable"))
             return
         }
         gui.open(viewer, account)
     }
 
     private fun info(sender: CommandSender, account: MoneyAccount) {
-        sender.sendPrefixed("<gold><bold>${displayName(account)}</bold></gold>")
-        sender.sendPrefixed("<gray>UUID:</gray> <white>${account.uuid}</white>")
-        sender.sendPrefixed("<gray>Type:</gray> <white>${account.type.name.lowercase()}</white>")
-        sender.sendPrefixed("<gray>Created:</gray> <white>${timestamp(account.createdAt)}</white>")
-        sender.sendPrefixed("<gray>Updated:</gray> <white>${timestamp(account.updatedAt)}</white>")
+        sender.sendPrefixed(sender.tr("command.eco.info.header", "name" to displayName(account)))
+        sender.sendPrefixed(sender.tr("command.eco.info.uuid", "uuid" to account.uuid))
+        sender.sendPrefixed(sender.tr("command.eco.info.type", "type" to accountTypeName(sender, account.type)))
+        sender.sendPrefixed(sender.tr("command.eco.info.created", "date" to timestamp(sender, account.createdAt)))
+        sender.sendPrefixed(sender.tr("command.eco.info.updated", "date" to timestamp(sender, account.updatedAt)))
 
         for (currency in CurrencyRegistry.all()) {
             val balance = account.balance(currency.id)
-            sender.sendPrefixed("<gray>${currency.plural}:</gray> <white>${display(balance, currency)}</white>")
+            sender.sendPrefixed(
+                sender.tr(
+                    "command.eco.info.balance",
+                    "currency" to currency.plural,
+                    "balance" to display(balance, currency),
+                )
+            )
         }
     }
 
     private fun reset(sender: CommandSender, account: MoneyAccount) {
         val currency = primaryCurrency()
         val starting = currency.of(EconomySettings.snapshot.startingBalance)
-        val result = EconomyContext.command("Reset by ${sender.name}") {
+        val result = EconomyContext.command(TransactionReason.of(TransactionReason.ADMIN_RESET, "admin" to sender.name)) {
             EconomyService.setBalance(account, currency, starting)
         }
         apply(sender, account, result) {
-            "Reset <white>${displayName(account)}</white> to <white>${display(it, currency)}</white>"
+            sender.tr(
+                "command.eco.reset",
+                "name" to displayName(account),
+                "balance" to display(it, currency),
+            )
         }
     }
 
     private fun withAmount(sender: CommandSender, args: Array<out String>, action: String) {
         if (args.size < 3) {
-            sender.sendPrefixed("<red>Usage: <white>/eco $action <player> <amount></white>")
+            sender.sendPrefixed(sender.tr("command.eco.amount-usage", "action" to action))
             return
         }
 
         val currency = CurrencyRegistry.getOrPrimary(args.getOrNull(3))
         if (args.size > 3 && CurrencyRegistry.get(args[3]) == null) {
-            sender.sendPrefixed("<red>Unknown currency <white>${args[3]}</white>.")
+            sender.sendPrefixed(sender.tr("command.eco.unknown-currency", "currency" to args[3]))
             return
         }
 
         val amount = parseAmount(args[2], currency) ?: run {
-            sender.sendPrefixed("<red>That is not a valid amount.")
+            sender.sendPrefixed(sender.tr("common.invalid-amount"))
             return
         }
 
@@ -154,7 +166,7 @@ class EconomyAdminCommand : PluginCommand(
             return
         }
 
-        val result = EconomyContext.command("Set by ${sender.name}") {
+        val result = EconomyContext.command(TransactionReason.of(TransactionReason.ADMIN_SET, "admin" to sender.name)) {
             when (action) {
                 "give" -> EconomyService.deposit(account, currency, amount)
                 "take" -> EconomyService.withdraw(account, currency, amount)
@@ -163,14 +175,17 @@ class EconomyAdminCommand : PluginCommand(
         }
 
         apply(sender, account, result) { balance ->
-            val moved = display(amount, currency)
-            val target = displayName(account)
-            val summary = when (action) {
-                "give" -> "Gave <white>$moved</white> to <white>$target</white>"
-                "take" -> "Took <white>$moved</white> from <white>$target</white>"
-                else -> "Set <white>$target</white> to <white>$moved</white>"
+            val key = when (action) {
+                "give" -> "command.eco.gave"
+                "take" -> "command.eco.took"
+                else -> "command.eco.set"
             }
-            "$summary. Balance: <white>${display(balance, currency)}</white>"
+            sender.tr(
+                key,
+                "amount" to display(amount, currency),
+                "name" to displayName(account),
+                "balance" to display(balance, currency),
+            )
         }
     }
 
@@ -178,7 +193,7 @@ class EconomyAdminCommand : PluginCommand(
 
     private fun withTarget(sender: CommandSender, args: Array<out String>, block: (MoneyAccount) -> Unit) {
         val name = args.getOrNull(1) ?: run {
-            sender.sendPrefixed("<red>Usage: <white>/eco ${args[0].lowercase()} <player></white>")
+            sender.sendPrefixed(sender.tr("command.eco.target-usage", "action" to args[0].lowercase()))
             return
         }
         block(resolveOrTell(sender, name) ?: return)
@@ -196,27 +211,27 @@ class EconomyAdminCommand : PluginCommand(
                 sender.sendPrefixed(message(result.balance))
                 EconomyService.flushAccount(account.uuid)
                 Bukkit.getPlayer(account.uuid)?.let { player ->
-                    if (player != sender) player.sendPrefixed("<gray>Your balance was changed by an administrator.")
+                    if (player != sender) player.sendPrefixed(player.tr("command.eco.changed-by-admin"))
                 }
             }
 
-            is EconomyResult.Failure -> sender.sendPrefixed("<red>${result.reason}.")
+            is EconomyResult.Failure -> sender.sendPrefixed(sender.tr("common.error", "message" to sender.tr(result.key)))
         }
     }
 
     private fun sendUsage(sender: CommandSender) {
-        sender.sendPrefixed("<gold><bold>Economy administration</bold></gold>")
-        sender.sendPrefixed("<white>/eco give <player> <amount> [currency]</white> <gray>- add money")
-        sender.sendPrefixed("<white>/eco take <player> <amount> [currency]</white> <gray>- remove money")
-        sender.sendPrefixed("<white>/eco set <player> <amount> [currency]</white> <gray>- set a balance outright")
-        sender.sendPrefixed("<white>/eco reset <player></white> <gray>- back to the starting balance")
-        sender.sendPrefixed("<white>/eco info <player></white> <gray>- account details")
-        sender.sendPrefixed("<white>/eco history [player]</white> <gray>- browse recorded transactions")
-        sender.sendPrefixed("<white>/eco flush</white> <gray>- write changed accounts to disk now")
+        sender.sendPrefixed(sender.tr("command.eco.usage.header"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.give"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.take"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.set"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.reset"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.info"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.history"))
+        sender.sendPrefixed(sender.tr("command.eco.usage.flush"))
     }
 
-    private fun timestamp(epochMillis: Long): String =
-        if (epochMillis <= 0L) "unknown" else TIMESTAMP.format(Instant.ofEpochMilli(epochMillis))
+    private fun timestamp(sender: CommandSender, epochMillis: Long): String =
+        if (epochMillis <= 0L) sender.tr("common.unknown") else TIMESTAMP.format(Instant.ofEpochMilli(epochMillis))
 
     private companion object {
         const val PERMISSION = "tritown.economy.admin"

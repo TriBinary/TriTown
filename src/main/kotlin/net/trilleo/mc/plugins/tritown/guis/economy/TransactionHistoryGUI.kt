@@ -7,13 +7,16 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
 import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
+import net.trilleo.mc.plugins.tritown.economy.TransactionReason
 import net.trilleo.mc.plugins.tritown.economy.TransactionRecord
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.enums.TransactionType
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
+import net.trilleo.mc.plugins.tritown.utils.Lang
 import net.trilleo.mc.plugins.tritown.utils.LoreUtil
 import net.trilleo.mc.plugins.tritown.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -39,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class TransactionHistoryGUI : PagedPluginGUI(
     id = ID,
-    title = MiniMessage.miniMessage().deserialize("<dark_gray>Transaction History"),
+    titleKey = "gui.history.title",
     rows = 6,
     fillMode = FillMode.NONE,
 ) {
@@ -48,7 +51,7 @@ class TransactionHistoryGUI : PagedPluginGUI(
 
     /** Opens the history of [subject] for [viewer]. */
     fun open(viewer: Player, subject: MoneyAccount) {
-        snapshots[viewer.uniqueId] = render(subject)
+        snapshots[viewer.uniqueId] = render(viewer, subject)
         GUIManager.open(viewer, ID)
     }
 
@@ -64,19 +67,21 @@ class TransactionHistoryGUI : PagedPluginGUI(
         snapshots.remove((event.player as? Player)?.uniqueId ?: return)
     }
 
-    private fun render(subject: MoneyAccount): List<ItemStack> {
+    private fun render(viewer: Player, subject: MoneyAccount): List<ItemStack> {
         val currency = CurrencyRegistry.primary
         val records = EconomyService.history(subject.uuid)
         val formatter = timestampFormatter()
 
         val header = itemStack(Material.PLAYER_HEAD) {
-            name("<gold><bold>${escape(displayName(subject))}</bold></gold>")
+            name(viewer.tr("gui.history.header", "name" to escape(displayName(subject))))
             meta {
                 lore(
                     LoreUtil.wrapLore(
-                        "<gray>Balance: <white>${EconomyFormat.plain(currency, subject.balance(currency.id))}</white>" +
-                            "<newline><gray>Records kept: <white>${records.size}</white>" +
-                            "<newline><dark_gray>Newest first."
+                        viewer.tr(
+                            "gui.history.header-lore",
+                            "balance" to EconomyFormat.plain(currency, subject.balance(currency.id)),
+                            "count" to records.size,
+                        )
                     )
                 )
             }
@@ -84,29 +89,41 @@ class TransactionHistoryGUI : PagedPluginGUI(
 
         if (records.isEmpty()) {
             val empty = itemStack(Material.BARRIER) {
-                name("<red>No transactions recorded")
-                meta { lore(LoreUtil.wrapLore("<gray>Nothing has been recorded for this account yet.")) }
+                name(viewer.tr("gui.history.empty"))
+                meta { lore(LoreUtil.wrapLore(viewer.tr("gui.history.empty-lore"))) }
             }
             return listOf(header, empty)
         }
 
-        return listOf(header) + records.map { entry(it, formatter) }
+        return listOf(header) + records.map { entry(viewer, it, formatter) }
     }
 
-    private fun entry(record: TransactionRecord, formatter: DateTimeFormatter): ItemStack {
+    private fun entry(viewer: Player, record: TransactionRecord, formatter: DateTimeFormatter): ItemStack {
         val currency = CurrencyRegistry.get(record.currency) ?: CurrencyRegistry.primary
         val amount = EconomyFormat.plain(currency, record.money)
-        val signed = if (record.type.isCredit) "<green>+$amount" else "<red>-$amount"
+        val signed = viewer.tr(if (record.type.isCredit) "gui.history.credit" else "gui.history.debit", "amount" to amount)
 
         val lore = buildString {
-            append("<gray>Type: <white>${label(record.type)}</white>")
-            append("<newline><gray>Balance after: <white>")
-            append(EconomyFormat.plain(currency, record.balance))
-            append("</white>")
-            counterpartyName(record)?.let { append("<newline><gray>With: <white>${escape(it)}</white>") }
-            if (record.reason.isNotBlank()) append("<newline><gray>Reason: <white>${escape(record.reason)}</white>")
-            append("<newline><gray>Source: <white>${escape(record.source)}</white>")
-            append("<newline><dark_gray>${formatter.format(Instant.ofEpochMilli(record.timestamp))}")
+            append(viewer.tr("gui.history.type", "type" to label(viewer, record.type)))
+            append("<newline>")
+            append(
+                viewer.tr(
+                    "gui.history.balance-after",
+                    "balance" to EconomyFormat.plain(currency, record.balance),
+                )
+            )
+            counterpartyName(record)?.let {
+                append("<newline>")
+                append(viewer.tr("gui.history.with", "name" to escape(it)))
+            }
+            if (record.reason.isNotBlank()) {
+                append("<newline>")
+                append(viewer.tr("gui.history.reason", "reason" to TransactionReason.translate(viewer, record.reason)))
+            }
+            append("<newline>")
+            append(viewer.tr("gui.history.source", "source" to source(viewer, record.source)))
+            append("<newline>")
+            append(viewer.tr("gui.history.time", "time" to formatter.format(Instant.ofEpochMilli(record.timestamp))))
         }
 
         return itemStack(material(record.type)) {
@@ -124,13 +141,17 @@ class TransactionHistoryGUI : PagedPluginGUI(
     private fun displayName(account: MoneyAccount): String =
         if (account.type.isGovernment) TownyAccountNaming.stripPrefix(account.name) else account.name
 
-    private fun label(type: TransactionType): String = when (type) {
-        TransactionType.DEPOSIT -> "Received"
-        TransactionType.WITHDRAW -> "Paid out"
-        TransactionType.TRANSFER_IN -> "Payment in"
-        TransactionType.TRANSFER_OUT -> "Payment out"
-        TransactionType.SET -> "Balance set"
-        TransactionType.CLOSED -> "Account closed"
+    /** Where the money moved from, as TriTown recorded it; another plugin's source is shown as it was written. */
+    private fun source(viewer: Player, source: String): String =
+        Lang.find(viewer, "money.source.$source") ?: escape(source)
+
+    private fun label(viewer: Player, type: TransactionType): String = when (type) {
+        TransactionType.DEPOSIT -> viewer.tr("money.transaction.deposit")
+        TransactionType.WITHDRAW -> viewer.tr("money.transaction.withdraw")
+        TransactionType.TRANSFER_IN -> viewer.tr("money.transaction.transfer-in")
+        TransactionType.TRANSFER_OUT -> viewer.tr("money.transaction.transfer-out")
+        TransactionType.SET -> viewer.tr("money.transaction.set")
+        TransactionType.CLOSED -> viewer.tr("money.transaction.closed")
     }
 
     private fun material(type: TransactionType): Material = when (type) {

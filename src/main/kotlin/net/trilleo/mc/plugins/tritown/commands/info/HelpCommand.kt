@@ -2,6 +2,8 @@ package net.trilleo.mc.plugins.tritown.commands.info
 
 import net.trilleo.mc.plugins.tritown.registration.CommandRegistrar
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.utils.Lang
+import net.trilleo.mc.plugins.tritown.utils.tr
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -23,7 +25,7 @@ class HelpCommand : PluginCommand(
         sender.sendMessage(
             Component.text("=========", NamedTextColor.GOLD)
                 .append(
-                    Component.text(" TriTown Commands ", NamedTextColor.GOLD)
+                    Component.text(" ${sender.tr("command.help.header")} ", NamedTextColor.GOLD)
                         .decorate(TextDecoration.BOLD)
                 )
                 .append(Component.text("=========", NamedTextColor.GOLD))
@@ -34,7 +36,10 @@ class HelpCommand : PluginCommand(
             sender.sendMessage(
                 Component.text("» ", NamedTextColor.GOLD)
                     .append(
-                        Component.text(category, NamedTextColor.YELLOW)
+                        Component.text(
+                            Lang.find(sender, "command.category.${category.lowercase()}") ?: category,
+                            NamedTextColor.YELLOW
+                        )
                             .decorate(TextDecoration.BOLD)
                     )
             )
@@ -49,7 +54,13 @@ class HelpCommand : PluginCommand(
                 sender.sendMessage(
                     Component.text("  $commandText", NamedTextColor.GREEN)
                         .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
-                        .append(Component.text(info.command.description, NamedTextColor.GRAY))
+                        .append(
+                            Component.text(
+                                Lang.find(sender, "command.${info.command.name}.description")
+                                    ?: info.command.description,
+                                NamedTextColor.GRAY
+                            )
+                        )
                 )
             }
         }

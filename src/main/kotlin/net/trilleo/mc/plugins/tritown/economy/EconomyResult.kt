@@ -3,9 +3,11 @@ package net.trilleo.mc.plugins.tritown.economy
 /**
  * The outcome of a ledger operation.
  *
- * Failures carry a player-facing reason rather than throwing, because the Vault
- * provider is called from Towny's own threads where an exception would be
- * swallowed or would spam the console.
+ * Failures carry a reason rather than throwing, because the Vault provider is
+ * called from Towny's own threads where an exception would be swallowed or
+ * would spam the console. The reason is a translation key, not a sentence: the
+ * ledger has no idea who is going to read it, so the language is chosen where
+ * the failure is shown.
  */
 sealed interface EconomyResult {
 
@@ -20,8 +22,8 @@ sealed interface EconomyResult {
         val counterpartyBalance: Money? = null,
     ) : EconomyResult
 
-    /** @param reason a player-facing explanation, already plain text */
-    data class Failure(val reason: String) : EconomyResult
+    /** @param key the translation key of a player-facing explanation, under `money.error.*` */
+    data class Failure(val key: String) : EconomyResult
 
     val isSuccess: Boolean
         get() = this is Success
@@ -30,7 +32,7 @@ sealed interface EconomyResult {
     val balanceOrZero: Money
         get() = (this as? Success)?.balance ?: Money.ZERO
 
-    /** The failure reason, or `null` when the operation succeeded. */
-    val failureReason: String?
-        get() = (this as? Failure)?.reason
+    /** The failure's translation key, or `null` when the operation succeeded. */
+    val failureKey: String?
+        get() = (this as? Failure)?.key
 }

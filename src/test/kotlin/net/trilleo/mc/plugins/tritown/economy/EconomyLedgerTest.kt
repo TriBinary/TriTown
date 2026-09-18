@@ -69,7 +69,7 @@ class EconomyLedgerTest {
 
         val result = ledger.withdraw(account, dollar, dollar.of(10.01))
 
-        assertEquals("Insufficient funds", (result as EconomyResult.Failure).reason)
+        assertEquals("money.error.insufficient-funds", (result as EconomyResult.Failure).key)
         assertEquals(Money(1000L), account.balance(dollar.id))
     }
 
@@ -89,8 +89,8 @@ class EconomyLedgerTest {
         val ledger = ledger()
         val account = ledger.player("Alex")
 
-        assertEquals("Amount cannot be negative", ledger.deposit(account, dollar, Money(-1L)).failureReason)
-        assertEquals("Amount cannot be negative", ledger.withdraw(account, dollar, Money(-1L)).failureReason)
+        assertEquals("money.error.negative-amount", ledger.deposit(account, dollar, Money(-1L)).failureKey)
+        assertEquals("money.error.negative-amount", ledger.withdraw(account, dollar, Money(-1L)).failureKey)
     }
 
     @Test
@@ -101,7 +101,7 @@ class EconomyLedgerTest {
 
         val result = ledger.deposit(account, dollar, dollar.of(20.0))
 
-        assertEquals("Balance cap reached", result.failureReason)
+        assertEquals("money.error.balance-cap", result.failureKey)
         assertEquals(Money(9000L), account.balance(dollar.id))
     }
 
@@ -141,7 +141,7 @@ class EconomyLedgerTest {
 
         val result = ledger.transfer(from, to, dollar, dollar.of(30.0))
 
-        assertEquals("Insufficient funds", result.failureReason)
+        assertEquals("money.error.insufficient-funds", result.failureKey)
         assertEquals(Money(1000L), from.balance(dollar.id))
         assertEquals(Money.ZERO, to.balance(dollar.id))
     }
@@ -151,7 +151,7 @@ class EconomyLedgerTest {
         val ledger = ledger()
         val account = ledger.player("Alex")
 
-        assertEquals("Cannot transfer to the same account", ledger.transfer(account, account, dollar, dollar.of(1.0)).failureReason)
+        assertEquals("money.error.same-account", ledger.transfer(account, account, dollar, dollar.of(1.0)).failureKey)
     }
 
     @Test

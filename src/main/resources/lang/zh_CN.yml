@@ -1,0 +1,169 @@
+# TriTown - 简体中文 (zh_CN)
+#
+# 值使用 MiniMessage 格式 (https://docs.advntr.dev/minimessage/format.html)。请保留每一个 {占位符}：TriTown 会填充它们。
+# 此文件缺少的键会回退到内置的同语言文件，再回退到英文。
+# 编辑后请执行 /tritown reload。
+
+command:
+  usage: "用法：/{command} <subcommand>"
+  available: "可用子命令：{commands}"
+  unknown: "未知子命令：{command}"
+  no-permission: "<red>你没有权限使用该命令！"
+
+  # 帮助列表为纯文本，不要使用 MiniMessage 标签。
+  category:
+    general: "通用"
+    economy: "经济"
+    info: "信息"
+    moderation: "管理"
+
+  help:
+    header: "TriTown 命令"
+    description: "显示所有可用命令"
+
+  reload:
+    description: "重新载入插件配置与语言文件"
+    done: "配置已重新载入！"
+    error: "<red>错误：插件实例类型不匹配，无法重新载入配置。"
+
+  balance:
+    description: "查看你的余额"
+    yours: "你的余额：<white>{balance}</white>"
+    other: "<white>{name}</white>：<white>{balance}</white>"
+    console-needs-player: "<red>请指定一名玩家：<white>/balance <player></white>"
+    no-permission-others: "<red>你没有权限查看其他玩家的余额！"
+
+  pay:
+    description: "向其他玩家付款"
+    players-only: "<red>只有玩家可以付款。控制台请使用 <white>/eco give</white>。"
+    usage: "<red>用法：<white>/pay <player> <amount></white>"
+    minimum: "<red>最小付款金额为 <white>{amount}</white>。"
+    self: "<red>你不能向自己付款。"
+    government: "<red>请使用 Towny 自带的存款命令向城镇或国家银行付款。"
+    server-account: "<red>你不能向服务器账户付款。"
+    no-account: "<red>无法打开你的账户。"
+    sent: "已向 <white>{name}</white> 支付 <white>{amount}</white>。余额：<white>{balance}</white>"
+    received: "<white>{name}</white> 向你支付了 <white>{amount}</white>。"
+
+  baltop:
+    description: "列出最富有的玩家"
+    empty: "<gray>目前还没有人拥有金钱。"
+    header: "<gold><bold>财富排行</bold></gold> <gray>（第 {page}/{pages} 页）"
+    entry: "<gray>{rank}.</gray> <white>{name}</white>{tag} <dark_gray>-</dark_gray> <white>{balance}</white>"
+    tag: " <gray>[{type}]</gray>"
+    updated: "<dark_gray>更新于{age}。"
+    age:
+      now: "刚刚"
+      seconds: "{seconds} 秒前"
+      minute: "一分钟前"
+      minutes: "{minutes} 分钟前"
+
+  eco:
+    description: "管理玩家余额"
+    no-permission-action: "<red>你没有权限使用 <white>/eco {action}</white>！"
+    flushing: "正在将变动的账户写入磁盘。"
+    target-usage: "<red>用法：<white>/eco {action} <player></white>"
+    amount-usage: "<red>用法：<white>/eco {action} <player> <amount></white>"
+    unknown-currency: "<red>未知货币 <white>{currency}</white>。"
+    changed-by-admin: "<gray>你的余额已被管理员修改。"
+    gave: "已向 <white>{name}</white> 发放 <white>{amount}</white>。余额：<white>{balance}</white>"
+    took: "已从 <white>{name}</white> 扣除 <white>{amount}</white>。余额：<white>{balance}</white>"
+    set: "已将 <white>{name}</white> 设置为 <white>{amount}</white>。余额：<white>{balance}</white>"
+    reset: "已将 <white>{name}</white> 重置为 <white>{balance}</white>"
+    info:
+      header: "<gold><bold>{name}</bold></gold>"
+      uuid: "<gray>UUID：</gray> <white>{uuid}</white>"
+      type: "<gray>类型：</gray> <white>{type}</white>"
+      created: "<gray>创建于：</gray> <white>{date}</white>"
+      updated: "<gray>更新于：</gray> <white>{date}</white>"
+      balance: "<gray>{currency}：</gray> <white>{balance}</white>"
+    history:
+      players-only: "<red>只有玩家可以打开交易记录界面。"
+      no-permission-others: "<red>你没有权限查看其他账户的交易记录！"
+      unavailable: "<red>交易记录界面不可用。"
+    usage:
+      header: "<gold><bold>经济管理</bold></gold>"
+      give: "<white>/eco give <player> <amount> [currency]</white> <gray>- 发放金钱"
+      take: "<white>/eco take <player> <amount> [currency]</white> <gray>- 扣除金钱"
+      set: "<white>/eco set <player> <amount> [currency]</white> <gray>- 直接设置余额"
+      reset: "<white>/eco reset <player></white> <gray>- 重置为初始余额"
+      info: "<white>/eco info <player></white> <gray>- 账户详情"
+      history: "<white>/eco history [player]</white> <gray>- 浏览交易记录"
+      flush: "<white>/eco flush</white> <gray>- 立即将变动的账户写入磁盘"
+
+common:
+  unknown: "未知"
+  invalid-amount: "<red>这不是有效的金额。"
+  economy-unavailable: "<red>本服务器的经济系统不可用。"
+  no-account: "<red>找不到 <white>{name}</white> 的账户。"
+  # 用于包裹 money.error.* 的信息，后者为纯文本以便其他插件直接输出。
+  error: "<red>{message}"
+
+money:
+  # 仅限纯文本：这些信息会作为 Vault 的错误信息传给其他插件，并被原样输出。
+  error:
+    negative-amount: "金额不能为负数"
+    too-large: "该金额过大，无法持有"
+    balance-cap: "已达到余额上限"
+    recipient-balance-cap: "收款方已达到余额上限"
+    insufficient-funds: "余额不足"
+    negative-balance: "余额不能为负数"
+    same-account: "不能向同一账户转账"
+    unavailable: "经济系统不可用"
+    no-account: "该账户不存在"
+    unusable-amount: "金额不是可用的数值"
+    account-not-created: "无法创建该账户"
+    no-banks: "TriTown 不提供 Vault 银行账户"
+
+  # 交易发生的原因，显示在交易记录界面中。这些原因会以键的形式写入交易日志，
+  # 因此无论服务器之后切换到哪种语言，记录都仍然可读。
+  reason:
+    external: "外部插件"
+    starting-balance: "初始余额"
+    payment: "玩家付款"
+    towny: "Towny"
+    town-deleted: "{name} 已被删除"
+    admin-set: "由 {admin} 设置"
+    admin-reset: "由 {admin} 重置"
+
+  # 交易的发起方。TriTown 不认识的来源会按记录原样显示。
+  source:
+    vault: "其他插件"
+    command: "TriTown 命令"
+    towny: "Towny"
+
+  account-type:
+    player: "玩家"
+    town: "城镇"
+    nation: "国家"
+    npc: "NPC"
+    server: "服务器"
+    unknown: "未知"
+
+  transaction:
+    deposit: "收入"
+    withdraw: "支出"
+    transfer-in: "转入"
+    transfer-out: "转出"
+    set: "余额设置"
+    closed: "账户关闭"
+
+gui:
+  previous-page: "<yellow>上一页"
+  next-page: "<yellow>下一页"
+  page: "<white>第 {page}/{pages} 页"
+
+  history:
+    title: "<dark_gray>交易记录"
+    header: "<gold><bold>{name}</bold></gold>"
+    header-lore: "<gray>余额：<white>{balance}</white><newline><gray>保留记录数：<white>{count}</white><newline><dark_gray>最新的在前。"
+    empty: "<red>没有交易记录"
+    empty-lore: "<gray>该账户目前还没有任何记录。"
+    credit: "<green>+{amount}"
+    debit: "<red>-{amount}"
+    type: "<gray>类型：<white>{type}</white>"
+    balance-after: "<gray>交易后余额：<white>{balance}</white>"
+    with: "<gray>对方：<white>{name}</white>"
+    reason: "<gray>原因：<white>{reason}</white>"
+    source: "<gray>来源：<white>{source}</white>"
+    time: "<dark_gray>{time}"

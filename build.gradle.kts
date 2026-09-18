@@ -42,6 +42,7 @@ dependencies {
     testImplementation("net.kyori:adventure-text-minimessage:5.2.0")
     testImplementation("net.kyori:adventure-text-serializer-plain:5.2.0")
     testImplementation("com.google.code.gson:gson:2.14.0")
+    testImplementation("org.yaml:snakeyaml:2.2")
 }
 
 kotlin {

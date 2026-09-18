@@ -127,18 +127,18 @@ class EconomyLedger(limits: LedgerLimits = LedgerLimits.DEFAULT) {
 
     /** Adds [amount] to [account]. Fails rather than clamping when the balance cap would be exceeded. */
     fun deposit(account: MoneyAccount, currency: Currency, amount: Money): EconomyResult {
-        if (amount.isNegative) return EconomyResult.Failure("Amount cannot be negative")
+        if (amount.isNegative) return EconomyResult.Failure("money.error.negative-amount")
 
         return synchronized(account.lock) {
             val next = try {
                 account.balance(currency.id).plusExact(amount)
             } catch (_: ArithmeticException) {
-                return@synchronized EconomyResult.Failure("That amount is too large to hold")
+                return@synchronized EconomyResult.Failure("money.error.too-large")
             }
 
             val cap = limits.capFor(currency.id)
             if (cap != null && next.minor > cap) {
-                return@synchronized EconomyResult.Failure("Balance cap reached")
+                return@synchronized EconomyResult.Failure("money.error.balance-cap")
             }
 
             account.setBalance(currency.id, next.minor)
@@ -149,17 +149,17 @@ class EconomyLedger(limits: LedgerLimits = LedgerLimits.DEFAULT) {
 
     /** Takes [amount] from [account], refusing to overdraw unless [LedgerLimits.allowNegativeBalances] is set. */
     fun withdraw(account: MoneyAccount, currency: Currency, amount: Money): EconomyResult {
-        if (amount.isNegative) return EconomyResult.Failure("Amount cannot be negative")
+        if (amount.isNegative) return EconomyResult.Failure("money.error.negative-amount")
 
         return synchronized(account.lock) {
             val next = try {
                 account.balance(currency.id).minusExact(amount)
             } catch (_: ArithmeticException) {
-                return@synchronized EconomyResult.Failure("That amount is too large to hold")
+                return@synchronized EconomyResult.Failure("money.error.too-large")
             }
 
             if (next.isNegative && !limits.allowNegativeBalances) {
-                return@synchronized EconomyResult.Failure("Insufficient funds")
+                return@synchronized EconomyResult.Failure("money.error.insufficient-funds")
             }
 
             account.setBalance(currency.id, next.minor)
@@ -171,11 +171,11 @@ class EconomyLedger(limits: LedgerLimits = LedgerLimits.DEFAULT) {
     /** Sets [account]'s balance to exactly [amount]. */
     fun setBalance(account: MoneyAccount, currency: Currency, amount: Money): EconomyResult {
         if (amount.isNegative && !limits.allowNegativeBalances) {
-            return EconomyResult.Failure("Balance cannot be negative")
+            return EconomyResult.Failure("money.error.negative-balance")
         }
 
         val cap = limits.capFor(currency.id)
-        if (cap != null && amount.minor > cap) return EconomyResult.Failure("Balance cap reached")
+        if (cap != null && amount.minor > cap) return EconomyResult.Failure("money.error.balance-cap")
 
         return synchronized(account.lock) {
             val previous = account.balance(currency.id)
@@ -192,8 +192,8 @@ class EconomyLedger(limits: LedgerLimits = LedgerLimits.DEFAULT) {
      * opposite directions serialise instead of deadlocking.
      */
     fun transfer(from: MoneyAccount, to: MoneyAccount, currency: Currency, amount: Money): EconomyResult {
-        if (from.uuid == to.uuid) return EconomyResult.Failure("Cannot transfer to the same account")
-        if (amount.isNegative) return EconomyResult.Failure("Amount cannot be negative")
+        if (from.uuid == to.uuid) return EconomyResult.Failure("money.error.same-account")
+        if (amount.isNegative) return EconomyResult.Failure("money.error.negative-amount")
 
         val first = if (from.uuid < to.uuid) from else to
         val second = if (first === from) to else from
@@ -203,20 +203,20 @@ class EconomyLedger(limits: LedgerLimits = LedgerLimits.DEFAULT) {
                 val fromNext = try {
                     from.balance(currency.id).minusExact(amount)
                 } catch (_: ArithmeticException) {
-                    return@synchronized EconomyResult.Failure("That amount is too large to hold")
+                    return@synchronized EconomyResult.Failure("money.error.too-large")
                 }
                 if (fromNext.isNegative && !limits.allowNegativeBalances) {
-                    return@synchronized EconomyResult.Failure("Insufficient funds")
+                    return@synchronized EconomyResult.Failure("money.error.insufficient-funds")
                 }
 
                 val toNext = try {
                     to.balance(currency.id).plusExact(amount)
                 } catch (_: ArithmeticException) {
-                    return@synchronized EconomyResult.Failure("That amount is too large to hold")
+                    return@synchronized EconomyResult.Failure("money.error.too-large")
                 }
                 val cap = limits.capFor(currency.id)
                 if (cap != null && toNext.minor > cap) {
-                    return@synchronized EconomyResult.Failure("The recipient has reached the balance cap")
+                    return@synchronized EconomyResult.Failure("money.error.recipient-balance-cap")
                 }
 
                 from.setBalance(currency.id, fromNext.minor)

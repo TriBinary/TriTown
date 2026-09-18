@@ -11,6 +11,7 @@ import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
 import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
 import net.trilleo.mc.plugins.tritown.enums.AccountType
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.command.CommandSender
 
 /**
@@ -40,7 +41,7 @@ internal fun topLevelAliases(): Boolean =
  */
 internal fun requireEconomy(sender: CommandSender): Boolean {
     if (EconomyService.isReady && CurrencyRegistry.isLoaded) return true
-    sender.sendPrefixed("<red>The economy is not available on this server.")
+    sender.sendPrefixed(sender.tr("common.economy-unavailable"))
     return false
 }
 
@@ -82,7 +83,17 @@ internal fun displayName(name: String, type: AccountType): String {
 internal fun resolveOrTell(sender: CommandSender, name: String): MoneyAccount? {
     val account = EconomyService.resolveByName(name)
     if (account == null) {
-        sender.sendPrefixed("<red>No account found for <white>${MiniMessage.miniMessage().escapeTags(name)}</white>.")
+        sender.sendPrefixed(sender.tr("common.no-account", "name" to MiniMessage.miniMessage().escapeTags(name)))
     }
     return account
+}
+
+/** What kind of account [type] is, in [sender]'s language. */
+internal fun accountTypeName(sender: CommandSender, type: AccountType): String = when (type) {
+    AccountType.PLAYER -> sender.tr("money.account-type.player")
+    AccountType.TOWN -> sender.tr("money.account-type.town")
+    AccountType.NATION -> sender.tr("money.account-type.nation")
+    AccountType.NPC -> sender.tr("money.account-type.npc")
+    AccountType.SERVER -> sender.tr("money.account-type.server")
+    AccountType.UNKNOWN -> sender.tr("money.account-type.unknown")
 }

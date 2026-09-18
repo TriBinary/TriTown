@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.registration
 
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandMap
@@ -160,27 +161,25 @@ object CommandRegistrar {
     }
 
     private fun executeParentCommand(sender: CommandSender, args: Array<out String>): Boolean {
+        val available = subCommands.keys.sorted().joinToString(", ")
+
         if (args.isEmpty()) {
-            sender.sendPrefixed("Usage: /$ROOT_COMMAND <subcommand>")
-            sender.sendPrefixed(
-                "Available sub-commands: ${subCommands.keys.sorted().joinToString(", ")}"
-            )
+            sender.sendPrefixed(sender.tr("command.usage", "command" to ROOT_COMMAND))
+            sender.sendPrefixed(sender.tr("command.available", "commands" to available))
             return true
         }
 
         val subName = args[0].lowercase()
         val subCommand = subCommands[subName]
         if (subCommand == null) {
-            sender.sendPrefixed("Unknown sub-command: ${args[0]}")
-            sender.sendPrefixed(
-                "Available sub-commands: ${subCommands.keys.sorted().joinToString(", ")}"
-            )
+            sender.sendPrefixed(sender.tr("command.unknown", "command" to args[0]))
+            sender.sendPrefixed(sender.tr("command.available", "commands" to available))
             return true
         }
 
         subCommand.permission?.let { perm ->
             if (!sender.hasPermission(perm)) {
-                sender.sendPrefixed("<red>You don't have permission to use this command!")
+                sender.sendPrefixed(sender.tr("command.no-permission"))
                 return true
             }
         }

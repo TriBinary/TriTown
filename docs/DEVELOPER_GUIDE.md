@@ -1,8 +1,8 @@
 # TriTown - Developer Guide
 
-This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, and
-work with the **configuration** system using TriTown's registration system, and how to build on **Towny** and the
-**Vault economy**. Commands, listeners, GUIs, tasks,
+This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**,
+work with **translations** and the **configuration** system using TriTown's registration system, and how to build on
+**Towny** and the **Vault economy**. Commands, listeners, GUIs, tasks,
 custom items, and recipes all follow the same pattern: extend a base class (or implement an interface), place the file
 in the correct package, and the plugin handles the rest automatically at startup. The configuration system provides
 typed access to `config.yml` values.
@@ -66,8 +66,12 @@ category is used by the built-in `/tritown help` command to group commands for d
 ### Help Command
 
 The plugin ships with a built-in `/tritown help` command. It lists every registered command grouped by category,
-sorted alphabetically within each group, and formatted with colours for readability. Every command should provide a
-meaningful `description` so the help output is informative.
+sorted alphabetically within each group, and formatted with colours for readability.
+
+The list is translated: it shows `command.<name>.description` and `command.category.<category>` from the language
+files, falling back to the Kotlin `description` and the raw category name when a key is missing. Every command should
+still provide a meaningful `description` — it is what the server sees in Bukkit's own command list — and add the
+matching `command.<name>.description` key to both language files. See [Translations](#translations).
 
 ### PluginCommand Properties
 
@@ -301,12 +305,15 @@ or a subpackage.
 
 ### PluginGUI Properties
 
-| Property   | Type        | Default         | Description                                                      |
-|:-----------|:------------|:----------------|:-----------------------------------------------------------------|
-| `id`       | `String`    | *(required)*    | Unique identifier used to open the GUI                           |
-| `title`    | `Component` | *(required)*    | Title displayed at the top of the chest                          |
-| `rows`     | `Int`       | `3`             | Number of rows (1–6, each row = 9 slots)                         |
-| `fillMode` | `FillMode`  | `FillMode.NONE` | Controls how empty slots are pre-filled before `setup` is called |
+| Property   | Type       | Default         | Description                                                  |
+|:-----------|:-----------|:----------------|:--------------------------------------------------------------|
+| `id`       | `String`   | *(required)*    | Unique identifier used to open the GUI                       |
+| `titleKey` | `String`   | *(required)*    | Translation key of the title shown at the top of the chest   |
+| `rows`     | `Int`      | `3`             | Number of rows (1–6, each row = 9 slots)                     |
+| `fillMode` | `FillMode` | `FillMode.NONE` | Controls how empty slots are pre-filled before `setup` runs  |
+
+The title is translated for whoever opens the GUI. Override `title(player)` when it carries live data, such as a name
+or a count, and translate the key yourself there.
 
 #### FillMode values
 
@@ -318,11 +325,12 @@ or a subpackage.
 
 ### Methods to Override
 
-| Method    | Required | Description                                           |
-|:----------|:---------|:------------------------------------------------------|
-| `setup`   | Yes      | Populate the inventory with items before it opens     |
-| `onClick` | No       | Handle click events (clicks are cancelled by default) |
-| `onClose` | No       | Handle cleanup when the GUI is closed                 |
+| Method    | Required | Description                                                  |
+|:----------|:---------|:--------------------------------------------------------------|
+| `setup`   | Yes      | Populate the inventory with items before it opens            |
+| `title`   | No       | Build the title yourself when `titleKey` alone is not enough  |
+| `onClick` | No       | Handle click events (clicks are cancelled by default)        |
+| `onClose` | No       | Handle cleanup when the GUI is closed                        |
 
 ### Opening a GUI
 
@@ -342,32 +350,31 @@ package net.trilleo.mc.plugins.tritown.guis
 
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.registration.PluginGUI
-import net.kyori.adventure.text.Component
+import net.trilleo.mc.plugins.tritown.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 
 class SettingsGUI : PluginGUI(
     id = "settings",
-    title = Component.text("Settings"),
+    titleKey = "gui.settings.title",
     rows = 3,
     fillMode = FillMode.DARK
 ) {
     override fun setup(player: Player, inventory: Inventory) {
-        val compass = ItemStack(Material.COMPASS)
-        val meta = compass.itemMeta
-        meta.displayName(Component.text("Tracker"))
-        compass.itemMeta = meta
-        inventory.setItem(13, compass)
+        inventory.setItem(13, itemStack(Material.COMPASS) {
+            name(player.tr("gui.settings.tracker"))
+        })
     }
 
     override fun onClick(event: InventoryClickEvent) {
         event.isCancelled = true
         val player = event.whoClicked as? Player ?: return
         if (event.slot == 13) {
-            player.sendMessage("Tracker selected!")
+            player.sendPrefixed(player.tr("gui.settings.tracker-selected"))
         }
     }
 }
@@ -419,7 +426,7 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 | Property   | Type           | Default             | Description                                                                        |
 |:-----------|:---------------|:--------------------|:-----------------------------------------------------------------------------------|
 | `id`       | `String`       | *(required)*        | Unique identifier used to open the GUI                                             |
-| `title`    | `Component`    | *(required)*        | Title displayed at the top of the chest                                            |
+| `titleKey` | `String`       | *(required)*        | Translation key of the title shown at the top of the chest                         |
 | `rows`     | `Int`          | `6`                 | Number of rows (2–6, each row = 9 slots)                                           |
 | `fillMode` | `FillMode`     | `FillMode.NONE`     | Controls background filler; re-applied on every page render, not just initial open |
 | `mode`     | `PagedGUIMode` | `PagedGUIMode.LIST` | Controls how items are supplied — see [Modes](#modes) below                        |
@@ -461,7 +468,9 @@ The last row of the inventory contains:
 package net.trilleo.mc.plugins.tritown.guis
 
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
-import net.kyori.adventure.text.Component
+import net.trilleo.mc.plugins.tritown.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -469,22 +478,20 @@ import org.bukkit.inventory.ItemStack
 
 class RewardsGUI : PagedPluginGUI(
     id = "rewards",
-    title = Component.text("Rewards"),
+    titleKey = "gui.rewards.title",
     rows = 6
 ) {
     override fun getItems(player: Player): List<ItemStack> {
         return List(100) { index ->
-            val item = ItemStack(Material.DIAMOND)
-            val meta = item.itemMeta
-            meta.displayName(Component.text("Reward #${index + 1}"))
-            item.itemMeta = meta
-            item
+            itemStack(Material.DIAMOND) {
+                name(player.tr("gui.rewards.entry", "number" to index + 1))
+            }
         }
     }
 
     override fun onContentClick(event: InventoryClickEvent, page: Int) {
         val player = event.whoClicked as? Player ?: return
-        player.sendMessage("You clicked slot ${event.slot} on page ${page + 1}!")
+        player.sendPrefixed(player.tr("gui.rewards.clicked", "slot" to event.slot, "page" to page + 1))
     }
 }
 ```
@@ -500,14 +507,13 @@ package net.trilleo.mc.plugins.tritown.guis
 
 import net.trilleo.mc.plugins.tritown.enums.PagedGUIMode
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 class StagesGUI : PagedPluginGUI(
     id = "stages",
-    title = Component.text("Stages"),
+    titleKey = "gui.stages.title",
     rows = 4,
     mode = PagedGUIMode.SET
 ) {
@@ -922,6 +928,108 @@ class ExcaliburUpgradeRecipe : PluginRecipe("excalibur_upgrade") {
 ```
 
 ---
+
+## Translations
+
+Every player-facing string lives in `src/main/resources/lang/<id>.yml`. TriTown bundles `en_US` and `zh_CN`, and a
+server owner can edit either or drop in a new `<id>.yml`.
+
+### How it works
+
+1. On startup (in `Main.onLoad`, before Vault registration) and again on `/tritown reload`, `Lang.load` copies any
+   missing bundled file into `plugins/TriTown/lang/` and loads every `.yml` there. Keys missing from a file fall back
+   to the bundled copy of that language, then to English.
+2. `language` in `config.yml` is `auto` or a language id. With `auto`, each player gets the file matching their client
+   locale exactly (`zh_cn`), else one sharing its language prefix (`zh_tw` → `zh_CN`), else `en_US`. The console, and
+   anything with no player behind it, uses the configured language, or `en_US` under `auto`.
+3. `tr(key, "name" to value)` looks the key up and replaces each `{name}` with `value.toString()`. A key no file
+   defines is returned as-is, so a missing translation is visible in game.
+
+### Using it
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
+
+// Anywhere there is a CommandSender or Player
+sender.sendPrefixed(sender.tr("command.reload.done"))
+player.sendPrefixed(player.tr("command.pay.minimum", "amount" to display(minimum, currency)))
+
+// In an item or menu
+name(player.tr("gui.history.credit", "amount" to amount))
+```
+
+`Lang.find(sender, key)` returns `null` instead of the key, for the places that fall back to something else — the help
+list's command descriptions and a transaction's recorded source.
+
+### Rules
+
+- **No player-facing string in Kotlin.** Messages, item names, lore lines and menu titles all come from a key.
+- **Colours go in the translation**, so a translator sees the whole line. The one exception is `money.error.*`, which
+  is plain text because Vault passes it to other plugins that print it verbatim; `common.error` colours it for
+  TriTown's own messages.
+- **Escape player-written text** with `MiniMessage.miniMessage().escapeTags(...)` before passing it as an argument.
+  Arguments are inserted verbatim.
+- **Write keys as whole string literals.** `tr(if (credit) "gui.history.credit" else "gui.history.debit")` is fine;
+  `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list) and
+  `money.source.*` are the only runtime-built keys.
+- **Placeholder names are lowercase letters only** — `{name}`, `{balance}`, `{pages}`.
+- **Server-log messages stay English.** `logger.info`/`warning`/`severe` are for the owner, not the player.
+- Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
+  per menu. Reuse before adding.
+- Quote YAML keys that YAML 1.1 reads as booleans (`"on"`, `"off"`, `"yes"`, `"no"`).
+- Chinese terms follow Towny's own zh_CN wording: 城镇 (town), 国家 (nation), 镇长 (mayor), 居民 (resident),
+  银行 (bank).
+
+### Translating a GUI
+
+A GUI passes a `titleKey`, and the base class translates it for whoever opens it:
+
+```kotlin
+class TransactionHistoryGUI : PagedPluginGUI(
+    id = "eco-history",
+    titleKey = "gui.history.title",
+    rows = 6,
+)
+```
+
+```yaml
+# src/main/resources/lang/en_US.yml
+gui:
+  history:
+    title: "<dark_gray>Transaction History"
+```
+
+```yaml
+# src/main/resources/lang/zh_CN.yml
+gui:
+  history:
+    title: "<dark_gray>交易记录"
+```
+
+Override `title(player)` instead when the title carries live data. The **Previous** / **Next** / page buttons that
+`PagedPluginGUI` draws are already translated from `gui.previous-page`, `gui.next-page` and `gui.page`.
+
+### Recorded reasons
+
+A transaction's reason is written to `economy/transactions.log`, so it cannot be a translated sentence — the server's
+language may change, and the log has to stay readable either way. `TransactionReason.of(key, "name" to value)` encodes
+it as `money.reason.admin-set?admin=Steve`, and the history view translates it back with
+`TransactionReason.translate(viewer, reason)`. A reason another plugin recorded is shown as it was written.
+
+### LangFilesTest
+
+`./gradlew build` runs `LangFilesTest`, which fails when:
+
+- a bundled language is missing a key English has, or has one English lacks;
+- a translation's `{placeholders}` differ from English;
+- the code uses a key no language defines;
+- `en_US.yml` defines a key no code uses (outside the runtime-built prefixes).
+
+Doc comments are stripped before the scan, so an example key in KDoc does not count as used.
+
+To bundle another language, add `lang/<id>.yml` to the resources and its id to `Lang.BUNDLED` and to the test's
+language list.
 
 ## Adventure Library
 
@@ -1447,7 +1555,7 @@ player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty())
 
 The `utils` package (`net.trilleo.mc.plugins.tritown.utils`) contains helper classes and functions that reduce boilerplate
 across the plugin. See the [Utility Guide](UTILITY_GUIDE.md) for full documentation on the
-`itemStack` DSL builder and `CountdownUtil`.
+`itemStack` DSL builder, `Lang` and `CountdownUtil`.
 
 ### Enums
 
@@ -1519,6 +1627,9 @@ run:
 
 # A friendly prefix shown before plugin messages
 message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown]"
+
+# Message language: "auto" follows each player's client, or a language id such as "zh_CN" for everyone.
+language: auto
 ```
 
 ### Typed Getters
@@ -1567,8 +1678,9 @@ into the file, saves it, and refreshes the in-memory values:
 pluginConfig.reload()
 ```
 
-The built-in `/tritown reload` command calls `Main.reload()`, which reloads the config and re-applies the message
-prefix. Add anything else that depends on config values to `Main.reload()` so the command picks it up.
+The built-in `/tritown reload` command calls `Main.reload()`, which reloads the config, re-applies the message prefix
+and re-reads the language files. Add anything else that depends on config values to `Main.reload()` so the command
+picks it up.
 
 ### Accessing the Config from a Command
 
@@ -1929,9 +2041,14 @@ to is the surrounding service's job.
 | `drainDirty()` / `snapshot(uuid) { }`      | Persistence support, used by the flush task                                    |
 | `suggestNames(prefix, limit)`              | Tab completion straight from the in-memory index, with no disk access          |
 
-Every operation returns an `EconomyResult` — `Success(moved, balance, counterpartyBalance)` or `Failure(reason)` —
+Every operation returns an `EconomyResult` — `Success(moved, balance, counterpartyBalance)` or `Failure(key)` —
 rather than throwing. The Vault provider runs on Towny's threads, where an exception would be swallowed or would spam
 the console, so a refused operation is an ordinary return value.
+
+The failure carries a `money.error.*` **translation key**, not a sentence. The ledger has no idea who will read it,
+so the language is chosen where the failure is shown: a command translates it for the sender, and the Vault provider
+translates it into the configured language because Vault hands the message straight to another plugin. Those values
+are plain text for that reason — `common.error` adds the colour for TriTown's own messages.
 
 `LedgerLimits` supplies the bounds: a per-currency balance cap in minor units, and whether a withdrawal may take an
 account below zero. A deposit that would break the cap **fails** instead of clamping — clamping destroys money
@@ -2045,8 +2162,8 @@ add keys rather than needing a new field.
   lookup; the items are built once, in `open()`.
 * **An override of `onClose` must call `super.onClose(event)`**, which is where the base class drops the page it is
   holding for that viewer.
-* **The title cannot vary per viewer** — `PluginGUI.title` is a constructor property — so the account being viewed is
-  shown in a header item in the first slot instead.
+* **The title says only what the menu is** — it is translated from `titleKey` for the viewer, so the account being
+  looked at is shown in a header item in the first slot instead of in the title.
 * Anything that came from a player, including a town name and a recorded reason, goes through
   `MiniMessage.miniMessage().escapeTags(...)` before it reaches a name or lore.
 

@@ -3,9 +3,9 @@ package net.trilleo.mc.plugins.tritown.registration
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.enums.PagedGUIMode
 import net.trilleo.mc.plugins.tritown.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.tr
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -46,7 +46,7 @@ import java.util.*
  *
  * class RewardsGUI : PagedPluginGUI(
  *     id = "rewards",
- *     title = Component.text("Rewards"),
+ *     titleKey = "gui.rewards.title",
  *     rows = 6
  * ) {
  *     override fun getItems(player: Player): List<ItemStack> {
@@ -71,7 +71,7 @@ import java.util.*
  *
  * class CustomGUI : PagedPluginGUI(
  *     id = "custom",
- *     title = Component.text("Custom"),
+ *     titleKey = "gui.custom.title",
  *     rows = 4,
  *     mode = PagedGUIMode.SET
  * ) {
@@ -86,11 +86,11 @@ import java.util.*
  */
 abstract class PagedPluginGUI(
     id: String,
-    title: Component,
+    titleKey: String,
     rows: Int = 6,
     fillMode: FillMode = FillMode.NONE,
     val mode: PagedGUIMode = PagedGUIMode.LIST
-) : PluginGUI(id, title, rows, fillMode) {
+) : PluginGUI(id, titleKey, rows, fillMode) {
 
     /** Tracks the current page for each player viewing this GUI. */
     private val playerPages = mutableMapOf<UUID, Int>()
@@ -251,7 +251,7 @@ abstract class PagedPluginGUI(
             inventory.setItem(
                 navRowStart + PREVIOUS_OFFSET, createNavItem(
                     Material.ARROW,
-                    "<yellow>Previous Page"
+                    player.tr("gui.previous-page")
                 )
             )
         }
@@ -259,7 +259,7 @@ abstract class PagedPluginGUI(
         inventory.setItem(
             navRowStart + PAGE_INDICATOR_OFFSET, createNavItem(
                 Material.PAPER,
-                "<white>Page ${page + 1}/$totalPages"
+                player.tr("gui.page", "page" to page + 1, "pages" to totalPages)
             )
         )
 
@@ -267,7 +267,7 @@ abstract class PagedPluginGUI(
             inventory.setItem(
                 navRowStart + NEXT_OFFSET, createNavItem(
                     Material.ARROW,
-                    "<yellow>Next Page"
+                    player.tr("gui.next-page")
                 )
             )
         }

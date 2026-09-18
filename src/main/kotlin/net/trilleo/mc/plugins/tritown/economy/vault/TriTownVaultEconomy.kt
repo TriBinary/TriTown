@@ -8,6 +8,7 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyResult
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.Money
 import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
+import net.trilleo.mc.plugins.tritown.utils.Lang
 import org.bukkit.OfflinePlayer
 
 /**
@@ -186,12 +187,12 @@ class TriTownVaultEconomy : Economy {
 
     private fun withdraw(account: MoneyAccount?, amount: Double): EconomyResponse {
         val currency = CurrencyRegistry.primary
-        val money = parse(amount) ?: return failure(amount, 0.0, "Amount is not a usable number")
+        val money = parse(amount) ?: return failure(amount, 0.0, "money.error.unusable-amount")
 
         // A zero withdrawal from an account that does not exist yet is a no-op,
         // not a failure: Towny does this while working out whether a cost applies.
         if (account == null) {
-            return if (money.isZero) success(0.0, 0.0) else failure(amount, 0.0, "That account does not exist")
+            return if (money.isZero) success(0.0, 0.0) else failure(amount, 0.0, "money.error.no-account")
         }
 
         return respond(amount, EconomyService.withdraw(account, currency, money), currency.toDouble(account.balance(currency.id)))
@@ -199,8 +200,8 @@ class TriTownVaultEconomy : Economy {
 
     private fun deposit(account: MoneyAccount?, amount: Double): EconomyResponse {
         val currency = CurrencyRegistry.primary
-        val money = parse(amount) ?: return failure(amount, 0.0, "Amount is not a usable number")
-        if (account == null) return failure(amount, 0.0, "That account could not be created")
+        val money = parse(amount) ?: return failure(amount, 0.0, "money.error.unusable-amount")
+        if (account == null) return failure(amount, 0.0, "money.error.account-not-created")
 
         return respond(amount, EconomyService.deposit(account, currency, money), currency.toDouble(account.balance(currency.id)))
     }
@@ -212,20 +213,25 @@ class TriTownVaultEconomy : Economy {
                 CurrencyRegistry.primary.toDouble(result.balance),
             )
 
-            is EconomyResult.Failure -> failure(amount, fallbackBalance, result.reason)
+            is EconomyResult.Failure -> failure(amount, fallbackBalance, result.key)
         }
 
     private fun success(moved: Double, balance: Double) =
         EconomyResponse(moved, balance, EconomyResponse.ResponseType.SUCCESS, null)
 
-    private fun failure(attempted: Double, balance: Double, reason: String) =
-        EconomyResponse(attempted, balance, EconomyResponse.ResponseType.FAILURE, reason)
+    /**
+     * Vault hands the message straight to whichever plugin asked, and there is
+     * no player behind the call to take a language from, so it is translated
+     * into the configured one — English while `language` is `auto`.
+     */
+    private fun failure(attempted: Double, balance: Double, key: String) =
+        EconomyResponse(attempted, balance, EconomyResponse.ResponseType.FAILURE, Lang.tr(null, key))
 
     private fun noBanks() = EconomyResponse(
         0.0,
         0.0,
         EconomyResponse.ResponseType.NOT_IMPLEMENTED,
-        "TriTown does not provide Vault bank accounts",
+        Lang.tr(null, "money.error.no-banks"),
     )
 
     companion object {

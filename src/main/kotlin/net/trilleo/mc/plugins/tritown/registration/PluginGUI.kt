@@ -1,7 +1,9 @@
 package net.trilleo.mc.plugins.tritown.registration
 
 import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.utils.tr
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
@@ -28,7 +30,7 @@ import org.bukkit.inventory.Inventory
  *
  * class SettingsGUI : PluginGUI(
  *     id = "settings",
- *     title = Component.text("Settings"),
+ *     titleKey = "gui.settings.title",
  *     rows = 3,
  *     fillMode = FillMode.DARK
  * ) {
@@ -45,10 +47,21 @@ import org.bukkit.inventory.Inventory
  */
 abstract class PluginGUI(
     val id: String,
-    val title: Component,
+    val titleKey: String,
     val rows: Int = 3,
     val fillMode: FillMode = FillMode.NONE
 ) {
+
+    /**
+     * The inventory title, in [player]'s language.
+     *
+     * Override this when the title carries live data, such as a name or a
+     * count; translate the key yourself when you do.
+     *
+     * @param player the player the GUI is being opened for
+     */
+    open fun title(player: Player): Component =
+        MiniMessage.miniMessage().deserialize(player.tr(titleKey))
 
     /**
      * Called when the GUI inventory is being created and opened for a player.

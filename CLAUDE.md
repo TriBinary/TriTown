@@ -39,7 +39,12 @@ Before finishing any task that changes the plugin, do all of the following:
    same task. A change to a documented workflow (e.g. the release process in [docs/RELEASING.md](docs/RELEASING.md))
    updates that doc too. Keep this file accurate as well.
 
-3. **Check the README** — if the change affects anything [README.md](README.md) mentions (features, commands,
+3. **Translate every new string** — player-facing text never lives in Kotlin. Add each key to **both**
+   [en_US.yml](src/main/resources/lang/en_US.yml) and [zh_CN.yml](src/main/resources/lang/zh_CN.yml) in the same task,
+   with a real Simplified Chinese translation, and remove keys the change no longer uses. `LangFilesTest` fails the
+   build when the files disagree or a key is missing or unused. See the Translations section below.
+
+4. **Check the README** — if the change affects anything [README.md](README.md) mentions (features, commands,
    configuration, requirements, build instructions), update it.
 
 ## Build & Run
@@ -73,10 +78,11 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── recipes/                 # Recipes (auto-registered, implement PluginRecipe)
 ├── registration/            # Auto-registration engine (do not modify lightly)
 ├── tasks/                   # Scheduled tasks (auto-registered, extend PluginTask)
-└── utils/                   # EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, CountdownUtil, TeamUtil, TagUtil,
-                             # PDCUtil, GameRuleUtil
+└── utils/                   # Lang, EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, CountdownUtil, TeamUtil,
+                             # TagUtil, PDCUtil, GameRuleUtil
 src/main/resources/
-└── config.yml  plugin.yml
+├── config.yml  plugin.yml
+└── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
 ```
 
 ## Auto-Registration System
@@ -101,6 +107,29 @@ Commands are sub-commands of `/tritown` (alias `/tt`) unless `isMainCommand = tr
 commands automatically and default to OP; a command that checks further nodes itself lists them in
 `extraPermissions` so they are registered too. Every auto-registered class needs either a no-arg constructor or one
 accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).
+
+## Translations
+
+- **Never write a player-facing string in Kotlin.** Every message, item name, lore line and menu title comes from
+  `sender.tr("key")` / `player.tr("key", "name" to value)`. A hardcoded sentence is a bug, even a short one.
+- `Lang` loads `plugins/TriTown/lang/<id>.yml` (copied from `src/main/resources/lang/` on first start). With
+  `language: auto` in `config.yml` each player gets the file matching their client locale (`zh_tw` → `zh_CN` by
+  prefix), falling back to `en_US`. The console, and anything without a player behind it, uses the configured
+  language.
+- Values are MiniMessage with `{placeholder}` arguments. Arguments are inserted verbatim, so escape player-written
+  text with `MiniMessage.miniMessage().escapeTags(...)` first. **Colours belong in the translation**, not in Kotlin,
+  so a translator sees the whole line.
+- Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
+  per menu. Reuse an existing key before adding one.
+- Key names must appear as whole string literals (`tr(if (credit) "a.credit" else "a.debit")`, not `"a.$state"`) so
+  `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list) and `money.source.*`.
+- Placeholder names are lowercase letters only (`{name}`, `{balance}`), which is what the test checks for.
+- A GUI declares `titleKey` and its title is translated for the viewer; override `title(player)` when the title
+  carries live data.
+- Server-log messages (`logger.info`/`warning`/`severe`) stay English. Logs are for the owner, not the player.
+- Chinese terms follow Towny's own zh_CN wording: 城镇 (town), 国家 (nation), 镇长 (mayor), 居民 (resident),
+  银行 (bank).
+- Quote YAML keys that YAML 1.1 reads as booleans (`"on"`, `"off"`, `"yes"`, `"no"`).
 
 ## Working with Towny
 
@@ -132,7 +161,8 @@ complete stack and no separate economy plugin is needed. See
   shade it.
 - **Registration happens in `Main.onLoad`** — Towny picks its economy while *it* enables, and TriTown depends on Towny,
   so Towny always enables first. Registering the Vault service from `onEnable` would be too late for Towny to see it.
-  Nothing else belongs in `onLoad`.
+  Only the config and `Lang` join it there, and `Lang` only because Towny can call the Vault economy — whose refusals
+  are translated — before TriTown has enabled. Nothing else belongs in `onLoad`.
 - **Go through `EconomyUtil`** in feature code — never look up the `Economy` service yourself. An owner can hand the
   economy to another plugin (`economy.provider.mode`), and feature code should not care which provider won. Never touch
   `EconomyUtil` from `onEnable` or during registration; the winner is not settled until every plugin has enabled.
@@ -142,6 +172,9 @@ complete stack and no separate economy plugin is needed. See
 - **Charge before acting** — call `EconomyUtil.withdraw` and only perform the action when it returns `true`; refund with
   `deposit` if the action then fails. Never check `has` and withdraw separately. Use `EconomyUtil.transfer` for a
   payment between two accounts, which is atomic on TriTown's own economy.
+- **A failure carries a key, not a sentence** — `EconomyResult.Failure` holds a `money.error.*` translation key, and
+  the code that shows it picks the language. Those values are plain text, because Vault hands them straight to other
+  plugins, which print them verbatim; TriTown's own commands colour them with `common.error`.
 - **Show money with `EconomyUtil.format`** (plain) or `EconomyUtil.formatRich` (MiniMessage) — never hardcode a
   currency symbol, and never put MiniMessage tags in the plain format, which other plugins print verbatim.
 - **Everything the economy touches must be thread-safe.** Towny's `economy.use_async` defaults to true, so the Vault
@@ -197,7 +230,8 @@ or `Fix` commit carries its own changelog entry. See [docs/COMMIT_STRUCTURE.md](
 - **No unused code** — delete dead code entirely rather than commenting it out or renaming with `_`. Unused template
   systems may be removed once it is clear the server's features don't need them (update the docs when you do).
 - **MiniMessage everywhere** — all player-facing text uses Kyori Adventure MiniMessage tags (`<red>`, `<bold>`,
-  `<gradient:…>`). Never use `ChatColor`. Send prefixed messages with `sendPrefixed`.
+  `<gradient:…>`), and lives in the language files rather than in Kotlin. Never use `ChatColor`. Send prefixed
+  messages with `sendPrefixed(sender.tr("key"))`.
 - **Escape player-written text** — town names, boards, and other player input must be escaped
   (`MiniMessage.miniMessage().escapeTags(...)`) before being embedded in MiniMessage.
 - **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.

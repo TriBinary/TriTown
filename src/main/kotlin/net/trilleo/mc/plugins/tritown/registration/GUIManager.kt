@@ -65,7 +65,7 @@ object GUIManager : Listener {
      */
     fun open(player: Player, id: String): Boolean {
         val gui = guis[id] ?: return false
-        val inventory = Bukkit.createInventory(null, gui.rows * 9, gui.title)
+        val inventory = Bukkit.createInventory(null, gui.rows * 9, gui.title(player))
         fillInventory(gui, inventory)
         gui.setup(player, inventory)
         openGUIs[player] = Pair(gui, inventory)

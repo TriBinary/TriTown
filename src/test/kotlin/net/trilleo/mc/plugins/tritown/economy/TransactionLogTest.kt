@@ -98,12 +98,12 @@ class TransactionLogTest {
         val log = TransactionLog(maxPerAccount = 10)
 
         val external = log.deposit(1L)
-        val attributed = EconomyContext.command("Starting balance") { log.deposit(2L) }
+        val attributed = EconomyContext.command(TransactionReason.STARTING_BALANCE) { log.deposit(2L) }
         val afterwards = log.deposit(3L)
 
         assertEquals(EconomyContext.DEFAULT.source, external.source)
         assertEquals(EconomyContext.SOURCE_COMMAND, attributed.source)
-        assertEquals("Starting balance", attributed.reason)
+        assertEquals(TransactionReason.STARTING_BALANCE, attributed.reason)
         assertEquals(EconomyContext.DEFAULT.source, afterwards.source, "the attribution leaked past its block")
     }
 

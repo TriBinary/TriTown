@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.commands.economy
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -24,22 +25,28 @@ class BalanceCommand : PluginCommand(
 
         if (args.isEmpty()) {
             val player = sender as? Player ?: run {
-                sender.sendPrefixed("<red>Specify a player: <white>/balance <player></white>")
+                sender.sendPrefixed(sender.tr("command.balance.console-needs-player"))
                 return true
             }
             val balance = EconomyService.balance(player.uniqueId, currency)
-            sender.sendPrefixed("Your balance: <white>${display(balance, currency)}</white>")
+            sender.sendPrefixed(sender.tr("command.balance.yours", "balance" to display(balance, currency)))
             return true
         }
 
         if (!sender.hasPermission(OTHERS_PERMISSION)) {
-            sender.sendPrefixed("<red>You don't have permission to check another player's balance!")
+            sender.sendPrefixed(sender.tr("command.balance.no-permission-others"))
             return true
         }
 
         val account = resolveOrTell(sender, args[0]) ?: return true
         val balance = account.balance(currency.id)
-        sender.sendPrefixed("<white>${displayName(account)}</white>: <white>${display(balance, currency)}</white>")
+        sender.sendPrefixed(
+            sender.tr(
+                "command.balance.other",
+                "name" to displayName(account),
+                "balance" to display(balance, currency),
+            )
+        )
         return true
     }
 

@@ -21,7 +21,7 @@ import org.bukkit.OfflinePlayer
  * ```kotlin
  * val cost = 500.0
  * if (!EconomyUtil.withdraw(player, cost)) {
- *     player.sendPrefixed("<red>You need ${EconomyUtil.format(cost)}.")
+ *     player.sendPrefixed(player.tr("shop.too-expensive", "cost" to EconomyUtil.format(cost)))
  *     return true
  * }
  * ```

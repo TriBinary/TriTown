@@ -42,6 +42,13 @@ class PluginConfig(private val plugin: JavaPlugin) {
     val messagePrefix: String
         get() = getString("message-prefix", "[TriTown]")
 
+    /**
+     * The language every player sees, or `auto` to follow each player's own
+     * Minecraft client. Taken from the `language` key in `config.yml`.
+     */
+    val language: String
+        get() = getString("language", "auto")
+
     // ── Typed Getters ───────────────────────────────────────────────────
 
     /**

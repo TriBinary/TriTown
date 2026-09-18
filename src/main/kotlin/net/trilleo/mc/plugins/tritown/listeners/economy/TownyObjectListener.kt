@@ -10,6 +10,7 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyContext
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.Money
 import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
+import net.trilleo.mc.plugins.tritown.economy.TransactionReason
 import net.trilleo.mc.plugins.tritown.enums.TransactionType
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -66,7 +67,10 @@ class TownyObjectListener : Listener {
         val account = EconomyService.account(uuid) ?: return
 
         val currency = CurrencyRegistry.primary
-        EconomyContext.with(EconomyContext.SOURCE_TOWNY, "$name was deleted") {
+        EconomyContext.with(
+            EconomyContext.SOURCE_TOWNY,
+            TransactionReason.of(TransactionReason.TOWN_DELETED, "name" to name),
+        ) {
             EconomyService.record(
                 account = uuid,
                 counterparty = null,

@@ -5,9 +5,11 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyContext
 import net.trilleo.mc.plugins.tritown.economy.EconomyResult
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
+import net.trilleo.mc.plugins.tritown.economy.TransactionReason
 import net.trilleo.mc.plugins.tritown.enums.AccountType
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -25,43 +27,43 @@ class PayCommand : PluginCommand(
         if (!requireEconomy(sender)) return true
 
         val player = sender as? Player ?: run {
-            sender.sendPrefixed("<red>Only players can pay. Use <white>/eco give</white> from the console.")
+            sender.sendPrefixed(sender.tr("command.pay.players-only"))
             return true
         }
 
         if (args.size < 2) {
-            sender.sendPrefixed("<red>Usage: <white>/pay <player> <amount></white>")
+            sender.sendPrefixed(sender.tr("command.pay.usage"))
             return true
         }
 
         val currency = primaryCurrency()
         val amount = parseAmount(args[1], currency) ?: run {
-            sender.sendPrefixed("<red>That is not a valid amount.")
+            sender.sendPrefixed(sender.tr("common.invalid-amount"))
             return true
         }
 
         val minimum = currency.of(EconomySettings.snapshot.minimumPayment)
         if (amount < minimum) {
-            sender.sendPrefixed("<red>The smallest payment is <white>${display(minimum, currency)}</white>.")
+            sender.sendPrefixed(sender.tr("command.pay.minimum", "amount" to display(minimum, currency)))
             return true
         }
 
         val recipient = resolveRecipient(sender, args[0]) ?: return true
         if (recipient.uuid == player.uniqueId) {
-            sender.sendPrefixed("<red>You cannot pay yourself.")
+            sender.sendPrefixed(sender.tr("command.pay.self"))
             return true
         }
         if (recipient.type.isGovernment) {
-            sender.sendPrefixed("<red>Use Towny's own deposit commands to pay a town or nation bank.")
+            sender.sendPrefixed(sender.tr("command.pay.government"))
             return true
         }
 
         val from = EconomyService.ensurePlayerAccount(player) ?: run {
-            sender.sendPrefixed("<red>Your account could not be opened.")
+            sender.sendPrefixed(sender.tr("command.pay.no-account"))
             return true
         }
 
-        val result = EconomyContext.command("Player payment") {
+        val result = EconomyContext.command(TransactionReason.PAYMENT) {
             EconomyService.transfer(from, recipient, currency, amount)
         }
 
@@ -69,17 +71,23 @@ class PayCommand : PluginCommand(
             is EconomyResult.Success -> {
                 val paid = display(result.moved, currency)
                 sender.sendPrefixed(
-                    "Paid <white>$paid</white> to <white>${displayName(recipient)}</white>. " +
-                        "Balance: <white>${display(result.balance, currency)}</white>"
+                    sender.tr(
+                        "command.pay.sent",
+                        "amount" to paid,
+                        "name" to displayName(recipient),
+                        "balance" to display(result.balance, currency),
+                    )
                 )
-                Bukkit.getPlayer(recipient.uuid)?.sendPrefixed(
-                    "<white>${displayName(from)}</white> paid you <white>$paid</white>."
-                )
+                Bukkit.getPlayer(recipient.uuid)?.let { target ->
+                    target.sendPrefixed(
+                        target.tr("command.pay.received", "name" to displayName(from), "amount" to paid)
+                    )
+                }
                 EconomyService.flushAccount(from.uuid)
                 EconomyService.flushAccount(recipient.uuid)
             }
 
-            is EconomyResult.Failure -> sender.sendPrefixed("<red>${result.reason}.")
+            is EconomyResult.Failure -> sender.sendPrefixed(sender.tr("common.error", "message" to sender.tr(result.key)))
         }
         return true
     }
@@ -100,7 +108,7 @@ class PayCommand : PluginCommand(
     private fun resolveRecipient(sender: CommandSender, name: String): MoneyAccount? {
         val account = resolveOrTell(sender, name) ?: return null
         if (account.type == AccountType.SERVER) {
-            sender.sendPrefixed("<red>You cannot pay the server account.")
+            sender.sendPrefixed(sender.tr("command.pay.server-account"))
             return null
         }
         return account

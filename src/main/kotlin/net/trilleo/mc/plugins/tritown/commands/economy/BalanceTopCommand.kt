@@ -4,6 +4,7 @@ import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.economy.BaltopCache
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.command.CommandSender
 import java.util.concurrent.TimeUnit
 import kotlin.math.ceil
@@ -26,7 +27,7 @@ class BalanceTopCommand : PluginCommand(
         val snapshot = BaltopCache.current
 
         if (snapshot.entries.isEmpty()) {
-            sender.sendPrefixed("<gray>Nobody has any money yet.")
+            sender.sendPrefixed(sender.tr("command.baltop.empty"))
             return true
         }
 
@@ -34,20 +35,29 @@ class BalanceTopCommand : PluginCommand(
         val page = (args.firstOrNull()?.toIntOrNull() ?: 1).coerceIn(1, pages)
         val currency = primaryCurrency()
 
-        sender.sendPrefixed("<gold><bold>Richest accounts</bold></gold> <gray>(page $page/$pages)")
+        sender.sendPrefixed(sender.tr("command.baltop.header", "page" to page, "pages" to pages))
         snapshot.entries
             .asSequence()
             .drop((page - 1) * perPage)
             .take(perPage)
             .forEachIndexed { offset, entry ->
                 val rank = (page - 1) * perPage + offset + 1
-                val tag = if (entry.type.isGovernment) " <gray>[${entry.type.name.lowercase()}]</gray>" else ""
+                val tag = if (entry.type.isGovernment) {
+                    sender.tr("command.baltop.tag", "type" to accountTypeName(sender, entry.type))
+                } else {
+                    ""
+                }
                 sender.sendPrefixed(
-                    "<gray>$rank.</gray> <white>${displayName(entry.name, entry.type)}</white>$tag " +
-                        "<dark_gray>-</dark_gray> <white>${display(entry.balance, currency)}</white>"
+                    sender.tr(
+                        "command.baltop.entry",
+                        "rank" to rank,
+                        "name" to displayName(entry.name, entry.type),
+                        "tag" to tag,
+                        "balance" to display(entry.balance, currency),
+                    )
                 )
             }
-        sender.sendPrefixed("<dark_gray>Updated ${describeAge(snapshot.refreshedAt)}.")
+        sender.sendPrefixed(sender.tr("command.baltop.updated", "age" to describeAge(sender, snapshot.refreshedAt)))
         return true
     }
 
@@ -60,14 +70,14 @@ class BalanceTopCommand : PluginCommand(
      * It is rebuilt by the background flush, so it is deliberately a little
      * behind; saying so is better than implying it is live.
      */
-    private fun describeAge(refreshedAt: Long): String {
-        if (refreshedAt == 0L) return "just now"
+    private fun describeAge(sender: CommandSender, refreshedAt: Long): String {
+        if (refreshedAt == 0L) return sender.tr("command.baltop.age.now")
         val seconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - refreshedAt)
         return when {
-            seconds < 10L -> "just now"
-            seconds < 60L -> "$seconds seconds ago"
-            seconds < 120L -> "a minute ago"
-            else -> "${seconds / 60L} minutes ago"
+            seconds < 10L -> sender.tr("command.baltop.age.now")
+            seconds < 60L -> sender.tr("command.baltop.age.seconds", "seconds" to seconds)
+            seconds < 120L -> sender.tr("command.baltop.age.minute")
+            else -> sender.tr("command.baltop.age.minutes", "minutes" to seconds / 60L)
         }
     }
 }

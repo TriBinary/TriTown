@@ -16,6 +16,7 @@ import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 import net.trilleo.mc.plugins.tritown.registration.*
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
+import net.trilleo.mc.plugins.tritown.utils.Lang
 import net.trilleo.mc.plugins.tritown.utils.MessageUtil
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.logging.Level
@@ -29,16 +30,20 @@ class Main : JavaPlugin() {
     private var bootFailure: String? = null
 
     /**
-     * Loads the configuration and opens the economy, then offers it to Vault.
+     * Loads the configuration and translations, opens the economy, then offers
+     * it to Vault.
      *
      * All of this has to happen before any plugin enables. Towny picks its
      * economy while it is enabling, and TriTown depends on Towny, so Towny
      * always enables first — registering the Vault service from [onEnable]
-     * would be too late for Towny to ever see it.
+     * would be too late for Towny to ever see it. The translations come along
+     * for the same reason: Towny can call the Vault economy, whose refusals are
+     * translated, before TriTown has enabled.
      */
     override fun onLoad() {
         instance = this
         pluginConfig = PluginConfig(this)
+        Lang.load(this, pluginConfig.language)
 
         val settings = EconomySettings.load(pluginConfig)
         if (!settings.enabled) {
@@ -89,10 +94,11 @@ class Main : JavaPlugin() {
         server.scheduler.runTask(this, Runnable { reportEconomyProvider() })
     }
 
-    /** Re-reads `config.yml` and applies everything that does not need a restart. */
+    /** Re-reads `config.yml` and the language files, and applies everything that does not need a restart. */
     fun reload() {
         pluginConfig.reload()
         MessageUtil.init(pluginConfig.messagePrefix)
+        Lang.load(this, pluginConfig.language)
 
         val settings = EconomySettings.load(pluginConfig)
         if (settings.enabled) {

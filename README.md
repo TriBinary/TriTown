@@ -18,6 +18,11 @@ smallest denomination, so they never drift, and they are written to disk atomica
 starting balance, balance cap and formatting are all configurable. If you would rather keep another economy plugin,
 `economy.provider.mode` tells TriTown to stand aside and use it instead.
 
+**English and Simplified Chinese.** Every message, menu and item TriTown shows is translated. By default each player
+sees whichever of the two their Minecraft client is set to, and everyone else sees English. Set `language` in
+`config.yml` to `en_US` or `zh_CN` to pick one for the whole server, or edit the files in `plugins/TriTown/lang/` to
+reword anything — including adding a language of your own.
+
 Alongside it, TriTown provides the plugin framework and Towny integration that the server's custom town features are
 built on.
 
@@ -76,6 +81,7 @@ TriTown's version stays available as `/tritown:balance` and so on.
 | Key                                    | Default          | Description                                                                 |
 |:---------------------------------------|:-----------------|:-----------------------------------------------------------------------------|
 | `message-prefix`                       | —                | MiniMessage prefix shown before plugin messages                             |
+| `language`                             | `auto`           | `auto` follows each player's client, or a language id such as `zh_CN`        |
 | `economy.enabled`                      | `true`           | Turn the economy off entirely                                               |
 | `economy.provider.mode`                | `auto`           | `internal`, `external` or `auto` — who supplies the Vault economy (restart) |
 | `economy.provider.defer-to`            | common eco plugins | Which installed plugins `auto` stands aside for                           |
@@ -109,6 +115,23 @@ set `economy.storage.allow-rescale` to `true` to convert every balance once inst
 `economy.provider.*` and `economy.commands.top-level-aliases` only take effect on a restart — TriTown has to register
 its economy with Vault, and its commands with the server, before either can be changed again. Everything else in the
 table is applied by `/tt reload`.
+
+## Translations
+
+TriTown ships English (`en_US`) and Simplified Chinese (`zh_CN`). Both are copied into `plugins/TriTown/lang/` the
+first time the plugin starts, and `/tt reload` re-reads them.
+
+- `language: auto` (the default) gives each player the file matching their Minecraft client language, falling back to
+  `en_US`. A client set to a language TriTown does not have but that shares a prefix — `zh_TW`, say — gets the closest
+  match (`zh_CN`).
+- Setting `language` to a file's id, such as `zh_CN`, shows that one to everybody.
+- Edit either file to change any wording. Keep every `{placeholder}` — TriTown fills those in — and note that the
+  values use [MiniMessage](https://docs.advntr.dev/minimessage/format.html) formatting. A key you delete falls back to
+  the bundled copy, so nothing breaks if you remove a line.
+- To add a language, drop a `<id>.yml` of your own beside them; anything it does not define falls back to English.
+
+The `money.error.*` entries are the exception: they are plain text with no formatting, because they also travel to
+other plugins as Vault's error message and are printed verbatim.
 
 ## Running the Economy
 
@@ -160,10 +183,10 @@ copy of `plugins/TriTown/economy/` first.
 
 Full development guides are in the `docs/` directory:
 
-- [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) — How to add commands, listeners, GUIs, tasks, items, and recipes, use
-  the configuration and data storage, and build on Towny and the Vault economy.
-- [UTILITY_GUIDE.md](docs/UTILITY_GUIDE.md) — Reference for the utility helpers (`itemStack` DSL, `EconomyUtil`,
-  `MessageUtil`, `CountdownUtil`, `TeamUtil`, `TagUtil`, `PDCUtil`, `GameRuleUtil`, `LoreUtil`).
+- [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) — How to add commands, listeners, GUIs, tasks, items, and recipes,
+  translate every string, use the configuration and data storage, and build on Towny and the Vault economy.
+- [UTILITY_GUIDE.md](docs/UTILITY_GUIDE.md) — Reference for the utility helpers (`itemStack` DSL, `Lang`,
+  `EconomyUtil`, `MessageUtil`, `CountdownUtil`, `TeamUtil`, `TagUtil`, `PDCUtil`, `GameRuleUtil`, `LoreUtil`).
 - [COMMIT_STRUCTURE.md](docs/COMMIT_STRUCTURE.md) — Commit message conventions.
 - [RELEASING.md](docs/RELEASING.md) — Writing the changelog and publishing a release.
 

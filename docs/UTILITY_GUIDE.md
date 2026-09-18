@@ -9,6 +9,7 @@ boilerplate and provide commonly needed functionality out of the box.
 | `CountdownUtil` | Per-player countdown with configurable display and sound           |
 | `TeamUtil`      | Custom team management with server-data persistence                |
 | `TagUtil`       | Per-player string tag management with player-data persistence      |
+| `Lang`          | Translations: per-player language files and the `tr()` helper      |
 | `MessageUtil`   | Prefix-decorated message sender for any command sender             |
 | `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
 | `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack |
@@ -357,6 +358,37 @@ fun onEnterVipArea(player: Player) {
     player.sendMessage("<gold>Welcome to the VIP area!")
 }
 ```
+
+---
+
+## Lang
+
+`Lang` holds the translations for every player-facing string. See
+[Translations in the Developer Guide](DEVELOPER_GUIDE.md#translations) for the file layout and the rules a new string
+has to follow.
+
+| Method                               | Description                                                                                         |
+|:-------------------------------------|:-----------------------------------------------------------------------------------------------------|
+| `Lang.load(plugin, language)`        | Copies the bundled files to `plugins/TriTown/lang/` if missing and loads every language file.        |
+| `Lang.tr(sender, key, vararg args)`  | The translation of `key` for `sender`, with `{name}` placeholders filled; the key itself if missing. |
+| `Lang.find(sender, key)`             | The raw translation, or `null` when no language defines `key` (for runtime-built keys).              |
+| `Lang.ids`                           | Ids of every loaded language file (`en_US`, `zh_CN`, and any the server owner added).                |
+| `CommandSender.tr(key, vararg args)` | Extension shorthand for `Lang.tr(this, key, *args)`.                                                 |
+
+`Main` loads the translations in `onLoad` and again on `/tritown reload`, so nothing else has to call `load`. Pass
+`null` as the sender when there is no one to take a language from — the Vault provider does this, and gets the
+configured language, or `en_US` while `language` is `auto`.
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
+
+sender.sendPrefixed(sender.tr("command.reload.done"))
+val line = player.tr("command.balance.yours", "balance" to EconomyUtil.format(balance))
+```
+
+Values are MiniMessage with `{placeholder}` arguments, and arguments are inserted verbatim — escape player-written
+text with `MiniMessage.miniMessage().escapeTags(...)` before passing it.
 
 ---
 

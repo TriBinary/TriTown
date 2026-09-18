@@ -208,7 +208,7 @@ object EconomyService {
         if (amount <= 0.0) return
 
         val currency = CurrencyRegistry.primary
-        EconomyContext.with(EconomyContext.SOURCE_COMMAND, "Starting balance") {
+        EconomyContext.with(EconomyContext.SOURCE_COMMAND, TransactionReason.STARTING_BALANCE) {
             deposit(account, currency, currency.of(amount))
         }
     }
@@ -324,7 +324,7 @@ object EconomyService {
         // does not expose its own reason for the movement, so that is all that
         // can honestly be claimed here.
         if (EconomyContext.current() == EconomyContext.DEFAULT && isTownyOwned(account)) {
-            EconomyContext.with(EconomyContext.SOURCE_TOWNY, "Towny") {
+            EconomyContext.with(EconomyContext.SOURCE_TOWNY, TransactionReason.TOWNY) {
                 log.record(account, counterparty, currency, type, amount, balanceAfter, meta)
             }
             return
@@ -398,7 +398,7 @@ object EconomyService {
     }
 
     private inline fun guard(operation: () -> EconomyResult): EconomyResult =
-        if (storage == null) EconomyResult.Failure("The economy is not available") else operation()
+        if (storage == null) EconomyResult.Failure("money.error.unavailable") else operation()
 
     private fun MoneyAccount.toStored() = StoredAccount(
         uuid = uuid.toString(),
