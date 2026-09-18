@@ -6,7 +6,8 @@ import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * Automatically registers Bukkit [Permission] nodes for every
- * [PluginCommand] that declares a non-null [PluginCommand.permission].
+ * [PluginCommand] that declares a non-null [PluginCommand.permission] or any
+ * [PluginCommand.extraPermissions].
  *
  * Call [registerAll] **after** [CommandRegistrar.registerAll] so that the
  * command list is fully populated. Each permission is registered with the
@@ -19,29 +20,30 @@ import org.bukkit.plugin.java.JavaPlugin
 object PermissionRegistrar {
 
     /**
-     * Iterates over every registered command, and for each one that defines
-     * a permission string, registers a corresponding [Permission] with the
-     * server if it has not already been registered.
+     * Iterates over every registered command and registers a corresponding
+     * [Permission] for its [PluginCommand.permission] and each of its
+     * [PluginCommand.extraPermissions], skipping nodes the server already knows.
      */
     fun registerAll(plugin: JavaPlugin) {
         val commands = CommandRegistrar.getAllCommands()
         var count = 0
 
         for (info in commands) {
-            val permString = info.command.permission ?: continue
+            val nodes = listOfNotNull(info.command.permission) + info.command.extraPermissions
+            for (permString in nodes) {
+                if (plugin.server.pluginManager.getPermission(permString) != null) {
+                    continue
+                }
 
-            if (plugin.server.pluginManager.getPermission(permString) != null) {
-                continue
+                val permission = Permission(
+                    permString,
+                    info.command.description,
+                    PermissionDefault.OP
+                )
+                plugin.server.pluginManager.addPermission(permission)
+                plugin.logger.info("Registered permission: $permString")
+                count++
             }
-
-            val permission = Permission(
-                permString,
-                info.command.description,
-                PermissionDefault.OP
-            )
-            plugin.server.pluginManager.addPermission(permission)
-            plugin.logger.info("Registered permission: $permString")
-            count++
         }
 
         plugin.logger.info("Registered $count permission(s)")

@@ -62,6 +62,18 @@ abstract class PluginCommand(
 ) {
 
     /**
+     * Additional permission nodes this command checks itself, beyond
+     * [permission].
+     *
+     * [PermissionRegistrar] registers these alongside [permission] so that
+     * per-action nodes — `tritown.economy.admin.give` for a `/eco give`
+     * sub-action, or a `.others` node guarding another player as the target —
+     * are visible to permission-management plugins instead of only existing
+     * implicitly at the moment they are checked.
+     */
+    open val extraPermissions: List<String> = emptyList()
+
+    /**
      * Called when the command is executed.
      *
      * @param sender the entity that issued the command

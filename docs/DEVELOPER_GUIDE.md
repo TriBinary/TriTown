@@ -80,6 +80,12 @@ meaningful `description` so the help output is informative.
 | `permission`    | `String?`      | `null`         | Permission node required to use the command (auto-registered at startup) |
 | `isMainCommand` | `Boolean`      | `false`        | When `true`, the command is registered as a standalone top-level command |
 
+One further property is an overridable `val` rather than a constructor parameter:
+
+| Property            | Type           | Default        | Description                                                              |
+|:--------------------|:---------------|:---------------|:-------------------------------------------------------------------------|
+| `extraPermissions`  | `List<String>` | `emptyList()`  | Extra nodes the command checks itself, registered alongside `permission` |
+
 ### Automatic Permission Registration
 
 When the plugin starts, the `PermissionRegistrar` scans every registered command for a non-null `permission` value and
@@ -92,6 +98,23 @@ automatically registers it with Bukkit's `PluginManager`. This means:
 
 You do **not** need to declare permissions in `plugin.yml`; simply set the `permission` property on your command and the
 system handles the rest.
+
+A command that checks further nodes itself — a per-action node for a sub-action, or a `.others` node guarding another
+player as the target — lists them in `extraPermissions` so they are registered too. Without this they still *work*,
+because an unregistered node falls back to operator-only, but they stay invisible to permission-management plugins:
+
+```kotlin
+class EconomyAdminCommand : PluginCommand(
+    name = "eco",
+    description = "Administer player balances",
+    permission = "tritown.economy.admin"
+) {
+    override val extraPermissions = listOf(
+        "tritown.economy.admin.give",
+        "tritown.economy.admin.take"
+    )
+}
+```
 
 ### Methods to Override
 

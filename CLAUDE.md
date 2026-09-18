@@ -95,8 +95,9 @@ manually. Just extend the right base class and place the file in the correct pac
 | Data        | `PlayerData` / `ServerData`    | `data`                  |
 
 Commands are sub-commands of `/tritown` (alias `/tt`) unless `isMainCommand = true`. Permissions are derived from
-commands automatically and default to OP. Every auto-registered class needs either a no-arg constructor or one accepting
-a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).
+commands automatically and default to OP; a command that checks further nodes itself lists them in
+`extraPermissions` so they are registered too. Every auto-registered class needs either a no-arg constructor or one
+accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).
 
 ## Working with Towny
 

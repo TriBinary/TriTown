@@ -19,6 +19,8 @@
 #### Misc
 
 + Added `PluginConfig.getLong` and `PluginConfig.getKeys` for long values and for iterating named config sections.
++ Commands can now declare `extraPermissions`, which the permission registrar registers alongside the command's own
+  node so per-action permissions are visible to permission-management plugins.
 + Set up the TriTown project from the Paper plugin template.
     + Renamed the package to `net.trilleo.mc.plugins.tritown`, the main command to `/tritown` (alias `/tt`), and
       permissions to `tritown.*`.
