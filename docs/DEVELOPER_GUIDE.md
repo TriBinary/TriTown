@@ -108,6 +108,7 @@ This command is registered as `/tritown ping` (the default behavior):
 package net.trilleo.mc.plugins.tritown.commands
 
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -119,10 +120,10 @@ class PingCommand : PluginCommand(
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("This command can only be used by players.")
+            sender.sendPrefixed("<red>This command can only be used by players.")
             return true
         }
-        sender.sendMessage("Pong! Your ping is ${sender.ping}ms.")
+        sender.sendPrefixed("Pong! Your ping is <yellow>${sender.ping}</yellow>ms.")
         return true
     }
 }
@@ -173,6 +174,7 @@ This command is registered as `/tritown reload`:
 package net.trilleo.mc.plugins.tritown.commands
 
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -184,11 +186,11 @@ class ReloadCommand(private val plugin: JavaPlugin) : PluginCommand(
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val main = plugin as? net.trilleo.mc.plugins.tritown.Main
         if (main == null) {
-            sender.sendMessage("Error: Plugin instance type mismatch. Unable to reload configuration.")
+            sender.sendPrefixed("<red>Error: Plugin instance type mismatch. Unable to reload configuration.")
             return true
         }
         main.reload()
-        sender.sendMessage("Configuration reloaded!")
+        sender.sendPrefixed("Configuration reloaded!")
         return true
     }
 }
@@ -367,7 +369,7 @@ class SettingsCommand : PluginCommand(
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("This command can only be used by players.")
+            sender.sendPrefixed("<red>This command can only be used by players.")
             return true
         }
         GUIManager.open(sender, "settings")
@@ -519,7 +521,7 @@ class RewardsCommand : PluginCommand(
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("This command can only be used by players.")
+            sender.sendPrefixed("<red>This command can only be used by players.")
             return true
         }
         GUIManager.open(sender, "rewards")

@@ -9,7 +9,7 @@ boilerplate and provide commonly needed functionality out of the box.
 | `CountdownUtil` | Per-player countdown with configurable display and sound           |
 | `TeamUtil`      | Custom team management with server-data persistence                |
 | `TagUtil`       | Per-player string tag management with player-data persistence      |
-| `MessageUtil`   | Prefix-decorated message sender for players                        |
+| `MessageUtil`   | Prefix-decorated message sender for any command sender             |
 | `EconomyUtil`   | Vault economy access: balances, withdrawals, deposits, formatting  |
 | `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack |
 | `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules   |
@@ -362,11 +362,14 @@ fun onEnterVipArea(player: Player) {
 
 ## MessageUtil
 
-`MessageUtil` sends prefix-decorated messages to players. The prefix is read from `config.yml` under the
+`MessageUtil` sends prefix-decorated messages to any `CommandSender`. The prefix is read from `config.yml` under the
 `message-prefix` key and supports both plain text and
 [MiniMessage](https://docs.advntr.dev/minimessage/index.html) formatting. The plugin initialises `MessageUtil`
 automatically at startup and after every `/tritown reload`, so no manual setup is required in your own commands or
 listeners.
+
+Every `CommandSender` is an Adventure `Audience` on Paper, so the console and command blocks receive the same prefixed
+output as players. Commands never need to branch on `sender is Player` just to pick a send method.
 
 ### Configuration
 
@@ -396,6 +399,9 @@ player.sendPrefixed("<red>Something went wrong.")
 
 // Adventure Component
 player.sendPrefixed(Component.text("Hello!", NamedTextColor.GREEN))
+
+// The console and command blocks work the same way
+sender.sendPrefixed("<green>Configuration reloaded!")
 ```
 
 ### Methods
@@ -403,10 +409,10 @@ player.sendPrefixed(Component.text("Hello!", NamedTextColor.GREEN))
 | Method / Extension                                 | Description                                                                                  |
 |:---------------------------------------------------|:---------------------------------------------------------------------------------------------|
 | `MessageUtil.init(prefixString)`                   | Loads the prefix (plain text or MiniMessage). Called automatically at startup and on reload. |
-| `MessageUtil.sendPrefixed(player, msg: String)`    | Sends a plain-text or MiniMessage string with the prefix prepended.                          |
-| `MessageUtil.sendPrefixed(player, msg: Component)` | Sends an Adventure `Component` with the prefix prepended.                                    |
-| `Player.sendPrefixed(msg: String)`                 | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
-| `Player.sendPrefixed(msg: Component)`              | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
+| `MessageUtil.sendPrefixed(sender, msg: String)`    | Sends a plain-text or MiniMessage string with the prefix prepended.                          |
+| `MessageUtil.sendPrefixed(sender, msg: Component)` | Sends an Adventure `Component` with the prefix prepended.                                    |
+| `CommandSender.sendPrefixed(msg: String)`          | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
+| `CommandSender.sendPrefixed(msg: Component)`       | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
 
 ### Example (Listener)
 

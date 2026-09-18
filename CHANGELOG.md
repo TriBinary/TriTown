@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Improvements
+
+#### Misc
+
++ The console now sees the same prefixed, formatted plugin messages as players instead of plain unprefixed text.
+
 ### Fixes
 
 #### Misc

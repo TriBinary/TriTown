@@ -2,10 +2,10 @@ package net.trilleo.mc.plugins.tritown.utils
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
-import org.bukkit.entity.Player
+import org.bukkit.command.CommandSender
 
 /**
- * Utility for sending prefix-decorated messages to players.
+ * Utility for sending prefix-decorated messages to command senders.
  *
  * Call [init] once during plugin startup (and again after a config reload) to
  * load the configured prefix. The prefix string may be plain text or a
@@ -17,12 +17,15 @@ import org.bukkit.entity.Player
  * import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
  *
  * // Plain text or MiniMessage string
- * player.sendPrefixed("Hello!")
+ * sender.sendPrefixed("Hello!")
  * player.sendPrefixed("<green>Operation successful!")
  *
  * // Adventure Component
  * player.sendPrefixed(Component.text("Hello!", NamedTextColor.GREEN))
  * ```
+ *
+ * Every [CommandSender] is an Adventure `Audience` on Paper, so the console and
+ * command blocks receive the same prefixed output as players.
  */
 object MessageUtil {
 
@@ -44,25 +47,25 @@ object MessageUtil {
     }
 
     /**
-     * Sends [message] to [player] with the configured prefix prepended.
+     * Sends [message] to [sender] with the configured prefix prepended.
      *
      * [message] may be a plain text string or a MiniMessage-formatted string.
      *
-     * @param player  the recipient
+     * @param sender  the recipient
      * @param message the message string (plain text or MiniMessage-formatted)
      */
-    fun sendPrefixed(player: Player, message: String) {
-        player.sendMessage(build(mm.deserialize(message)))
+    fun sendPrefixed(sender: CommandSender, message: String) {
+        sender.sendMessage(build(mm.deserialize(message)))
     }
 
     /**
-     * Sends [message] to [player] with the configured prefix prepended.
+     * Sends [message] to [sender] with the configured prefix prepended.
      *
-     * @param player  the recipient
+     * @param sender  the recipient
      * @param message the [Component] to send
      */
-    fun sendPrefixed(player: Player, message: Component) {
-        player.sendMessage(build(message))
+    fun sendPrefixed(sender: CommandSender, message: Component) {
+        sender.sendMessage(build(message))
     }
 
     private fun build(message: Component): Component =
@@ -74,19 +77,19 @@ object MessageUtil {
 }
 
 /**
- * Sends [message] to this player with the plugin prefix prepended.
+ * Sends [message] to this sender with the plugin prefix prepended.
  *
  * [message] may be a plain text string or a MiniMessage-formatted string.
  *
- * @receiver the target player
+ * @receiver the recipient, which may be a player, the console or a command block
  * @param message the message string (plain text or MiniMessage-formatted)
  */
-fun Player.sendPrefixed(message: String) = MessageUtil.sendPrefixed(this, message)
+fun CommandSender.sendPrefixed(message: String) = MessageUtil.sendPrefixed(this, message)
 
 /**
- * Sends [message] to this player with the plugin prefix prepended.
+ * Sends [message] to this sender with the plugin prefix prepended.
  *
- * @receiver the target player
+ * @receiver the recipient, which may be a player, the console or a command block
  * @param message the [Component] to send
  */
-fun Player.sendPrefixed(message: Component) = MessageUtil.sendPrefixed(this, message)
+fun CommandSender.sendPrefixed(message: Component) = MessageUtil.sendPrefixed(this, message)
