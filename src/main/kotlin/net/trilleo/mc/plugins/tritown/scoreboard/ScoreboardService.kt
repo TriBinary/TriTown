@@ -60,7 +60,18 @@ object ScoreboardService {
      */
     fun start(plugin: JavaPlugin) {
         this.plugin = plugin
-        if (!ScoreboardSettings.snapshot.enabled) return
+        val settings = ScoreboardSettings.snapshot
+        if (!settings.enabled) return
+
+        // Registering with no boards would put an empty sidebar on every screen,
+        // showing nothing but the objective's placeholder title.
+        if (settings.boards.isEmpty()) {
+            plugin.logger.warning(
+                "No sidebar boards are configured, so no sidebar will be shown. Check the 'scoreboard.boards' " +
+                    "section of config.yml, or set 'scoreboard.enabled' to false to switch the sidebar off."
+            )
+            return
+        }
 
         registerPlaceholders()
 

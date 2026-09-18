@@ -14,12 +14,16 @@ import org.bukkit.plugin.java.JavaPlugin
  */
 class PluginConfig(private val plugin: JavaPlugin) {
 
-    /** The currently loaded Bukkit [FileConfiguration]. */
-    private var config: FileConfiguration
+    /** The currently loaded Bukkit [FileConfiguration]. Assigned by [reload], which `init` runs. */
+    private lateinit var config: FileConfiguration
 
     init {
         plugin.saveDefaultConfig()
-        config = plugin.config
+        // Through [reload], so a config.yml written by an older version gains the
+        // keys added since. Bukkit exposes the bundled file as defaults, but a
+        // section missing from disk reads back empty rather than falling through
+        // to it, so a new block has to be written out before anything reads it.
+        reload()
     }
 
     /**
@@ -104,7 +108,20 @@ class PluginConfig(private val plugin: JavaPlugin) {
      * as `economy.currencies.<id>`.
      */
     fun getKeys(path: String): List<String> =
-        config.getConfigurationSection(path)?.getKeys(false)?.toList() ?: emptyList()
+        (section(path) ?: defaultSection(path))?.getKeys(false)?.toList() ?: emptyList()
+
+    /**
+     * The section at [path] as written on disk, or `null` when the file omits it.
+     *
+     * Bukkit answers a missing section by creating an empty one rather than
+     * falling through to the bundled defaults, so a section a config.yml predates
+     * would otherwise read back as "present but empty" — indistinguishable from an
+     * owner having deliberately emptied it.
+     */
+    private fun section(path: String) =
+        config.getConfigurationSection(path)?.takeIf { it.getKeys(false).isNotEmpty() }
+
+    private fun defaultSection(path: String) = config.defaults?.getConfigurationSection(path)
 
     /**
      * Returns `true` when [path] exists in the loaded configuration.

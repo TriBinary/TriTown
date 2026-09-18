@@ -135,6 +135,10 @@
 
 #### Misc
 
++ `config.yml` now gains keys added by a new version of TriTown on startup, instead of only when `/tt reload` is run.
+  A config file written by an earlier version was missing whole new sections, and Bukkit answers a missing section by
+  creating an empty one rather than falling back to the bundled defaults — so a new feature read its settings as
+  present but empty. `PluginConfig.getKeys` now falls back to the bundled defaults as well.
 + Added `Lang`, which loads `plugins/TriTown/lang/<id>.yml` and resolves a key for a sender's language, and the
   `CommandSender.tr(key, vararg args)` shorthand every player-facing string now goes through. Translations load in
   `Main.onLoad`, before Vault registration, because Towny can call the economy before TriTown has enabled.

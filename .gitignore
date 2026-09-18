@@ -43,3 +43,6 @@ bin/
 
 ### Local dev server ###
 run/
+
+### Local deploy script ###
+deploy.py
