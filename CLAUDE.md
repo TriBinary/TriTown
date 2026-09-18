@@ -149,6 +149,9 @@ complete stack and no separate economy plugin is needed. See
   typo. Resolve names through `EconomyService.resolveByName`.
 - **Town and nation banks belong to Towny** — change them through Towny commands or Towny's account API. TriTown stores
   the balance behind them, but the rules around them are Towny's.
+- **Never record a Towny bank transaction from an event** — Towny moves bank money through Vault, so both sides already
+  reach TriTown as ordinary deposits and withdrawals. A `BankTransactionEvent` handler that wrote a record would
+  double-count every town deposit.
 - **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
 
 ## Versioning & Releases

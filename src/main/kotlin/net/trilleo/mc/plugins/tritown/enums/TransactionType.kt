@@ -16,7 +16,10 @@ enum class TransactionType {
     TRANSFER_OUT,
 
     /** The balance was set outright rather than adjusted. */
-    SET;
+    SET,
+
+    /** The account was closed, because the town or nation behind it was deleted. */
+    CLOSED;
 
     /** Whether the account gained money. */
     val isCredit: Boolean

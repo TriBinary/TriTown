@@ -74,6 +74,11 @@ economy:
     # Convert every balance when fractional-digits changes, instead of refusing to start.
     allow-rescale: false
 
+  towny:
+    # Remove a town's or nation's account when Towny deletes it. When false the account is
+    # emptied but kept, so it can still be audited.
+    delete-accounts-on-delete: true
+
   history:
     # Record every transaction to <plugin folder>/economy/transactions.log.
     enabled: true

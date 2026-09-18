@@ -29,6 +29,7 @@ data class EconomySettings(
     val storageType: String,
     val flushIntervalSeconds: Long,
     val allowRescale: Boolean,
+    val deleteAccountsOnDelete: Boolean,
     val history: HistorySettings,
 ) {
 
@@ -112,6 +113,7 @@ data class EconomySettings(
                 storageType = config.getString("economy.storage.type", "json").lowercase(),
                 flushIntervalSeconds = config.getLong("economy.storage.flush-interval", 60L).coerceAtLeast(5L),
                 allowRescale = config.getBoolean("economy.storage.allow-rescale", false),
+                deleteAccountsOnDelete = config.getBoolean("economy.towny.delete-accounts-on-delete", true),
                 history = HistorySettings(
                     enabled = config.getBoolean("economy.history.enabled", true),
                     maxEntriesPerAccount = config.getInt("economy.history.max-entries-per-account", 100)

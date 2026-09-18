@@ -2152,3 +2152,27 @@ Other behaviour worth knowing:
 
 Town and nation bank *rules* still belong to Towny — change them through Towny commands or Towny's account API.
 TriTown stores the balance behind them, nothing more.
+
+### Town and nation lifecycle
+
+`TownyObjectListener` keeps bank accounts in step with Towny.
+
+**Renames are mandatory to handle, not optional.** `TownyEconomyHandler.canRenameAccounts()` returns true only for
+VaultUnlocked, so with plain Vault Towny never tells the economy that a town was renamed. No money moves — accounts
+are keyed by UUID — but a stale `town-Riverbend` entry left in the name index would be handed to a *newly created*
+town that reuses the name, quietly merging two towns' banks.
+
+**On deletion** Towny has already emptied the bank through Vault by the time the event fires, moving the balance to
+its server account if its closed economy is on. What is left is TriTown's own bookkeeping: a `CLOSED` record, and then
+either removing the account or keeping it empty for auditing, per `economy.towny.delete-accounts-on-delete`.
+
+**There is deliberately no listener recording bank transactions.** It is tempting to add one, so it is worth writing
+down why it would be wrong: `BankAccount.addMoney` calls `TownyEconomyHandler.add`, which calls the Vault provider, so
+a town deposit already reaches TriTown as an ordinary deposit into the `town-X` account — and the player's side
+arrives the same way. Both sides are recorded before any event fires. A `BankTransactionEvent` handler that wrote
+another record would double-count every town deposit on the server.
+
+What the provider cannot know is *why* the money moved. `EconomyService.record` marks anything arriving through Vault
+for a Towny-owned account as coming from Towny, which is the most that can honestly be claimed — Towny's own reason
+string ("New town", "Upkeep") is not exposed on the event. See the note under the transaction log for the clean way to
+get it later.

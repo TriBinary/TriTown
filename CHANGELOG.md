@@ -32,6 +32,11 @@
     + Recent entries are also kept in memory per account, so viewing a history never reads from disk. Only accounts
       active since the last restart use any memory.
     + Turn the whole thing off with `economy.history.enabled` if you would rather not keep records.
++ Town and nation bank accounts now follow Towny. Renaming a town keeps its bank intact, and a new town that reuses an
+  old name gets a fresh one instead of inheriting the old town's money. Deleting a town records the closure and, by
+  default, removes the account; set `economy.towny.delete-accounts-on-delete` to `false` to keep it empty for auditing.
++ Money moved by Towny is now marked as such in the history, so a town's records read differently from another
+  plugin's.
 + Added `/eco history [player]`, a paged menu of an account's recorded transactions showing the amount, the resulting
   balance, who was on the other side, and what caused it.
 + Added `/eco` for administering balances: `give`, `take` and `set` an amount, `reset` a player to the starting

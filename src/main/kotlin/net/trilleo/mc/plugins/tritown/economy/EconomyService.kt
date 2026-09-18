@@ -213,6 +213,21 @@ object EconomyService {
         }
     }
 
+    /**
+     * Files [uuid]'s account under [newName].
+     *
+     * No money moves — accounts are keyed by UUID — but the name index has to
+     * follow, or a town that later reuses the old name would be handed this
+     * account.
+     */
+    fun renameAccount(uuid: UUID, newName: String) {
+        if (storage == null) return
+        val account = ledger.get(uuid) ?: return
+        if (account.name == newName) return
+        ledger.rename(account, newName)
+        flushAccount(uuid)
+    }
+
     /** Removes [uuid] from the ledger and from storage. */
     fun deleteAccount(uuid: UUID) {
         if (storage == null) return
@@ -303,7 +318,23 @@ object EconomyService {
         balanceAfter: Money,
         meta: Map<String, String> = emptyMap(),
     ) {
-        transactions?.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+        val log = transactions ?: return
+        // Money reaching a town, nation or NPC account through Vault has come
+        // from Towny; saying so is more useful than the generic default. Towny
+        // does not expose its own reason for the movement, so that is all that
+        // can honestly be claimed here.
+        if (EconomyContext.current() == EconomyContext.DEFAULT && isTownyOwned(account)) {
+            EconomyContext.with(EconomyContext.SOURCE_TOWNY, "Towny") {
+                log.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+            }
+            return
+        }
+        log.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+    }
+
+    private fun isTownyOwned(uuid: UUID): Boolean = when (ledger.get(uuid)?.type) {
+        AccountType.TOWN, AccountType.NATION, AccountType.NPC, AccountType.SERVER -> true
+        else -> false
     }
 
     private fun EconomyResult.alsoRecord(

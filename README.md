@@ -95,6 +95,7 @@ TriTown's version stays available as `/tritown:balance` and so on.
 | `economy.storage.type`                 | `json`           | Where balances are kept                                                     |
 | `economy.storage.flush-interval`       | `60`             | Seconds between writes; a crash loses at most this long                     |
 | `economy.storage.allow-rescale`        | `false`          | Convert balances when `fractional-digits` changes, instead of refusing to start |
+| `economy.towny.delete-accounts-on-delete` | `true`        | Remove a town's or nation's account when Towny deletes it                   |
 | `economy.history.enabled`              | `true`           | Record every transaction to a log                                           |
 | `economy.history.max-entries-per-account` | `100`         | Recent entries kept in memory per account                                   |
 | `economy.history.retention-days`       | `30`             | How long rolled log files are kept; `0` keeps them forever                  |

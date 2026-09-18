@@ -130,12 +130,14 @@ class TransactionHistoryGUI : PagedPluginGUI(
         TransactionType.TRANSFER_IN -> "Payment in"
         TransactionType.TRANSFER_OUT -> "Payment out"
         TransactionType.SET -> "Balance set"
+        TransactionType.CLOSED -> "Account closed"
     }
 
     private fun material(type: TransactionType): Material = when (type) {
         TransactionType.DEPOSIT, TransactionType.TRANSFER_IN -> Material.LIME_DYE
         TransactionType.WITHDRAW, TransactionType.TRANSFER_OUT -> Material.RED_DYE
         TransactionType.SET -> Material.PAPER
+        TransactionType.CLOSED -> Material.BARRIER
     }
 
     private fun timestampFormatter(): DateTimeFormatter {
