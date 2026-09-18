@@ -37,9 +37,11 @@ dependencies {
     }
     serverPlugins("com.palmergames.bukkit.towny:towny:${providers.gradleProperty("towny_version").get()}")
     testImplementation(kotlin("test"))
+    // Aligned with what Paper 26.2 bundles, since the plugin uses these at runtime through paper-api.
     testImplementation("net.kyori:adventure-api:5.2.0")
     testImplementation("net.kyori:adventure-text-minimessage:5.2.0")
     testImplementation("net.kyori:adventure-text-serializer-plain:5.2.0")
+    testImplementation("com.google.code.gson:gson:2.14.0")
 }
 
 kotlin {

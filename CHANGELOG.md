@@ -21,6 +21,12 @@
 + Added the economy core: `Money` (balances held as whole minor units so repeated arithmetic cannot drift), `Currency`
   and `CurrencyRegistry`, `AccountType`, `MoneyAccount`, `EconomyResult`, `LedgerLimits`, the thread-safe
   `EconomyLedger`, and `EconomyFormat` for plain and MiniMessage rendering.
++ Added the `EconomyStorage` interface and its JSON implementation, so an SQL backend can be added later without
+  touching anything above it. Accounts are written atomically with a `.bak` fallback; unreadable data, a schema written
+  by a newer build, and a changed currency scale each stop the plugin instead of silently losing balances.
++ Added `EconomySettings`, an immutable snapshot of the `economy` block of `config.yml`, and the `economy` section
+  itself.
++ Added Gson to the test dependencies, since it reaches the plugin through the `compileOnly` Paper API.
 
 #### Misc
 

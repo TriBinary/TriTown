@@ -1964,6 +1964,53 @@ MiniMessage tags. `EconomyFormat.rich` produces the component TriTown puts in it
 `%symbol%`, `%amount%` and `%currency%` into the configured pattern, and both are safe to call from any thread —
 `DecimalFormat` is not thread-safe, so formatters are held per thread and rebuilt after `invalidate()`.
 
+### Settings
+
+`EconomySettings` is an immutable snapshot of the `economy` block of `config.yml`, reachable as
+`EconomySettings.snapshot`. Settings are never read field by field from a live `FileConfiguration`, because the economy
+is read from Towny's threads; a reload builds a whole new snapshot and swaps it in, so no caller can observe a
+half-applied configuration. `ledgerLimits()` turns the configured balance cap into the per-currency minor-unit caps the
+ledger wants.
+
+---
+
+## Economy Storage
+
+`EconomyStorage` is the interface between the ledger and wherever balances are kept. `JsonEconomyStorage` ships today;
+an SQL backend only has to satisfy the same interface, and nothing above it knows the difference.
+
+| Method                     | When it runs                                                     |
+|:---------------------------|:-------------------------------------------------------------------|
+| `initialize()`             | Once at startup, synchronously — creates directories or tables    |
+| `loadAccounts()`           | Once at startup, synchronously — the full eager read              |
+| `saveAccounts(accounts)`   | From the flush task and on shutdown, off the main thread          |
+| `deleteAccount(uuid)`      | When a Towny town or nation is deleted                            |
+| `close()`                  | On shutdown, after the final flush                                |
+
+### Durability rules
+
+These are the parts worth not rediscovering the hard way:
+
+* **A failed read throws.** Starting with an empty ledger and writing that emptiness back a minute later is the one
+  outcome worse than not starting at all, so an unreadable store stops the plugin with a message naming the files.
+* **Writes are atomic.** The JSON backend writes to `accounts.json.tmp`, moves the current file to `accounts.json.bak`,
+  then moves the temporary file into place. A crash mid-write leaves either the old file or the new one.
+* **A corrupt main file falls back to `.bak`**, with a warning. Only when both are unreadable does startup fail.
+* **The schema version is checked before anything is parsed.** `StorageSchema.checkReadable` refuses data written by a
+  newer build outright, because an older build would drop what it did not understand and write that loss back.
+* **A changed currency scale is refused**, not guessed at. `accounts.json` records the `fractionalDigits` it was
+  written with; if `economy.currency.fractional-digits` no longer matches, the plugin stops and names both values
+  unless `economy.storage.allow-rescale` is set, in which case every balance is converted once during load.
+* **A malformed individual account is skipped** with a warning rather than failing the whole load — one bad row should
+  not cost the server its economy.
+
+### Crash window
+
+Accounts are written on an interval (`economy.storage.flush-interval`, 60 seconds by default), on shutdown, and
+whenever an administrator changes a balance. `onDisable` does **not** run on a hard crash or a killed process, so a
+crash loses at most one flush interval of changes. An SQL backend writing through on each transaction would close that
+window.
+
 ---
 
 ## Economy (Vault)

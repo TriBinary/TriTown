@@ -53,9 +53,27 @@ All commands are sub-commands of `/tritown` (alias `/tt`).
 
 ## Configuration
 
-| Key              | Default | Description                                     |
-|:-----------------|:--------|:------------------------------------------------|
-| `message-prefix` | —       | MiniMessage prefix shown before plugin messages |
+| Key                                    | Default          | Description                                                                 |
+|:---------------------------------------|:-----------------|:-----------------------------------------------------------------------------|
+| `message-prefix`                       | —                | MiniMessage prefix shown before plugin messages                             |
+| `economy.enabled`                      | `true`           | Turn the economy off entirely                                               |
+| `economy.currency.id`                  | `dollar`         | Stable key used in storage and commands                                     |
+| `economy.currency.singular` / `.plural`| `Dollar(s)`      | Display names                                                               |
+| `economy.currency.symbol`              | `$`              | Short prefix shown before an amount                                         |
+| `economy.currency.fractional-digits`   | `2`              | Digits kept after the decimal point (see below)                             |
+| `economy.currency.format`              | `%symbol%%amount%` | Plain pattern other plugins print verbatim — no MiniMessage tags           |
+| `economy.currency.rich-format`         | `<gold>…</gold>` | MiniMessage pattern for TriTown's own messages                              |
+| `economy.starting-balance`             | `100.0`          | Balance granted on a player's first join                                    |
+| `economy.balance-cap`                  | `1000000000.0`   | Largest balance an account may hold; `0` removes the cap                    |
+| `economy.minimum-payment`              | `0.01`           | Smallest amount a payment will accept                                       |
+| `economy.allow-negative-balances`      | `false`          | Whether a withdrawal may take an account below zero                         |
+| `economy.storage.type`                 | `json`           | Where balances are kept                                                     |
+| `economy.storage.flush-interval`       | `60`             | Seconds between writes; a crash loses at most this long                     |
+| `economy.storage.allow-rescale`        | `false`          | Convert balances when `fractional-digits` changes, instead of refusing to start |
+
+Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how
+every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;
+set `economy.storage.allow-rescale` to `true` to convert every balance once instead.
 
 ## Developer Documentation
 

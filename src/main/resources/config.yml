@@ -2,3 +2,42 @@
 
 # A friendly prefix shown before plugin messages
 message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown]"
+
+# ── Economy ─────────────────────────────────────────────────────────────────
+economy:
+  # Turn the economy off entirely. TriTown then needs another plugin to supply one.
+  enabled: true
+
+  currency:
+    # Stable key used in storage and commands. Never shown to players.
+    id: dollar
+    singular: Dollar
+    plural: Dollars
+    symbol: "$"
+    # Digits kept after the decimal point. Balances are stored as whole units of the
+    # smallest denomination, so changing this once accounts exist stops the plugin
+    # unless storage.allow-rescale is turned on.
+    fractional-digits: 2
+    # Plain text only. Other plugins print this verbatim, so no MiniMessage tags here.
+    # Placeholders: %symbol%, %amount%, %currency%
+    format: "%symbol%%amount%"
+    # Used for TriTown's own messages. MiniMessage, same placeholders.
+    rich-format: "<gold>%symbol%%amount%</gold>"
+
+  # Balance granted to a player the first time they join.
+  starting-balance: 100.0
+  # Largest balance an account may hold. Set to 0 to remove the cap.
+  # A payment that would break the cap fails rather than being trimmed to fit.
+  balance-cap: 1000000000.0
+  # Smallest amount /pay will accept.
+  minimum-payment: 0.01
+  # Whether a withdrawal may take an account below zero.
+  allow-negative-balances: false
+
+  storage:
+    # Where balances are kept. Only "json" ships today.
+    type: json
+    # Seconds between writing changed accounts to disk. A crash loses at most this long.
+    flush-interval: 60
+    # Convert every balance when fractional-digits changes, instead of refusing to start.
+    allow-rescale: false
