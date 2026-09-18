@@ -199,8 +199,8 @@ scoreboard:
 
   # Wrapped around every board.
   frame:
-    divider: "<dark_gray><strikethrough>                  "
-    website: "<gradient:#8a8f98:#c7ccd4>mc.trilleo.net</gradient>"
+    divider: "<dark_gray><strikethrough>                                   "
+    website: "<gradient:#8a8f98:#c7ccd4>         mc.trilleo.net</gradient>"
 
   # Headings that group the lines under them.
   section:

@@ -196,8 +196,8 @@ scoreboard:
 
   # 包裹在每个板面外侧。
   frame:
-    divider: "<dark_gray><strikethrough>                  "
-    website: "<gradient:#8a8f98:#c7ccd4>mc.trilleo.net</gradient>"
+    divider: "<dark_gray><strikethrough>                                   "
+    website: "<gradient:#8a8f98:#c7ccd4>         mc.trilleo.net</gradient>"
 
   # 用于给下方各行分组的小标题。
   section:
