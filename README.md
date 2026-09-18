@@ -52,12 +52,18 @@ Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/
 
 ## Commands
 
-All commands are sub-commands of `/tritown` (alias `/tt`).
+| Command            | Description                         |
+|:-------------------|:------------------------------------|
+| `/tt help`         | List all available commands         |
+| `/tt reload`       | Reload the configuration (OP only)  |
+| `/balance [player]`| Check your balance, or someone else's |
+| `/pay <player> <amount>` | Send money to another player  |
+| `/baltop [page]`   | List the richest accounts           |
 
-| Command      | Description                        |
-|:-------------|:-----------------------------------|
-| `/tt help`   | List all available commands        |
-| `/tt reload` | Reload the configuration (OP only) |
+Commands are sub-commands of `/tritown` (alias `/tt`) unless noted. The economy commands are registered as top-level
+commands as well, which `economy.commands.top-level-aliases` turns off — they are then only reachable as
+`/tt balance`, `/tt pay` and `/tt baltop`. If another plugin already owns one of those names it keeps it, and
+TriTown's version stays available as `/tritown:balance` and so on.
 
 ## Configuration
 
@@ -77,6 +83,9 @@ All commands are sub-commands of `/tritown` (alias `/tt`).
 | `economy.balance-cap`                  | `1000000000.0`   | Largest balance an account may hold; `0` removes the cap                    |
 | `economy.minimum-payment`              | `0.01`           | Smallest amount a payment will accept                                       |
 | `economy.allow-negative-balances`      | `false`          | Whether a withdrawal may take an account below zero                         |
+| `economy.commands.top-level-aliases`   | `true`           | Register `/balance`, `/pay` and `/baltop` as their own commands (restart)   |
+| `economy.commands.baltop-size`         | `10`             | Entries per page of `/baltop`                                               |
+| `economy.commands.baltop-include-towns`| `false`          | List town and nation banks on `/baltop` alongside players                   |
 | `economy.storage.type`                 | `json`           | Where balances are kept                                                     |
 | `economy.storage.flush-interval`       | `60`             | Seconds between writes; a crash loses at most this long                     |
 | `economy.storage.allow-rescale`        | `false`          | Convert balances when `fractional-digits` changes, instead of refusing to start |
@@ -85,9 +94,9 @@ Balances are stored as whole units of the smallest denomination, so `economy.cur
 every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;
 set `economy.storage.allow-rescale` to `true` to convert every balance once instead.
 
-`economy.provider.mode` and `economy.provider.*` only take effect on a restart. TriTown has to register its economy
-with Vault before Towny starts up, and Towny picks an economy exactly once, so this cannot be changed with
-`/tt reload`. Everything else in the table is applied by `/tt reload`.
+`economy.provider.*` and `economy.commands.top-level-aliases` only take effect on a restart — TriTown has to register
+its economy with Vault, and its commands with the server, before either can be changed again. Everything else in the
+table is applied by `/tt reload`.
 
 ## Developer Documentation
 

@@ -88,8 +88,17 @@ object CommandRegistrar {
 
                 if (command.isMainCommand) {
                     val bukkitCommand = createBukkitCommand(command)
-                    commandMap.register(plugin.name.lowercase(), bukkitCommand)
-                    plugin.logger.info("Registered main command: /${command.name}")
+                    // register returns false when another plugin already owns the
+                    // label; Bukkit then keeps ours only under the fallback prefix,
+                    // so we never break the other plugin's command.
+                    if (commandMap.register(plugin.name.lowercase(), bukkitCommand)) {
+                        plugin.logger.info("Registered main command: /${command.name}")
+                    } else {
+                        plugin.logger.info(
+                            "/${command.name} is already taken by another plugin; " +
+                                "TriTown's is available as /${plugin.name.lowercase()}:${command.name}"
+                        )
+                    }
                     mainCount++
                 } else {
                     subCommands[command.name.lowercase()] = command

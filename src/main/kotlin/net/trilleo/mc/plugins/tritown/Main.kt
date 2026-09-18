@@ -74,7 +74,7 @@ class Main : JavaPlugin() {
         // Towny is enabled by now, so its account prefixes can be cached before
         // anything classifies an account.
         TownyAccountNaming.load()
-        EconomyService.start()
+        EconomyService.start(EconomySettings.snapshot.baltopIncludeTowns)
 
         ItemRegistrar.registerAll(this)
         RecipeRegistrar.registerAll(this)

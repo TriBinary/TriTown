@@ -16,6 +16,15 @@
       instead. On `auto`, TriTown stands aside automatically when a known economy plugin is installed.
     + TriTown warns in the console when a second economy plugin registers after it, because Towny will not notice the
       newcomer and the two would disagree about balances.
++ Added `/balance [player]`, `/pay <player> <amount>` and `/baltop [page]`.
+    + `/balance` shows your own balance; checking someone else's needs `tritown.economy.balance.others`.
+    + `/pay` moves money in a single step, so a payment can never go missing halfway. The smallest allowed payment is
+      configurable.
+    + `/baltop` lists players only by default. Town and nation banks can be included with
+      `economy.commands.baltop-include-towns`, and the footer says how recently the list was rebuilt.
+    + The three are registered as top-level commands as well as `/tt` sub-commands. Set
+      `economy.commands.top-level-aliases` to `false` to keep them under `/tt` only. A name another plugin already owns
+      stays that plugin's, and TriTown's is still reachable as `/tritown:balance`.
 
 ### Improvements
 
@@ -46,6 +55,10 @@
   to find it — Towny picks its economy while enabling, and TriTown depends on Towny.
 + `EconomyUtil` gained `isInternal`, `transfer` and `formatRich`, and the startup check now reports which provider won
   instead of assuming another plugin supplies one.
++ Added `BaltopCache`, rebuilt off the main thread by `EconomyFlushTask`, so `/baltop` never sorts every account on the
+  server thread.
++ `CommandRegistrar` now logs when another plugin already owns a main command's name, rather than silently leaving it
+  reachable only under the `tritown:` prefix.
 + Added Gson to the test dependencies, since it reaches the plugin through the `compileOnly` Paper API.
 
 #### Misc

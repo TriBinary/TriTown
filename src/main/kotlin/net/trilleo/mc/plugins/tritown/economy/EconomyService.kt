@@ -73,10 +73,12 @@ object EconomyService {
     }
 
     /** Marks the economy open and gives anyone already online an account. */
-    fun start() {
+    fun start(includeGovernmentsInBaltop: Boolean) {
         if (storage == null) return
         isReady = true
         Bukkit.getOnlinePlayers().forEach { ensurePlayerAccount(it) }
+        // Built once here so the leaderboard works before the first flush.
+        BaltopCache.rebuild(ledger, CurrencyRegistry.primary, includeGovernmentsInBaltop)
     }
 
     /** Re-applies the settings that can change without a restart. */
@@ -92,6 +94,7 @@ object EconomyService {
         flush()
         runCatching { storage?.close() }
         storage = null
+        BaltopCache.clear()
     }
 
     // ── Accounts ────────────────────────────────────────────────────────

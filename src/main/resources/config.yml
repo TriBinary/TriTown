@@ -54,6 +54,18 @@ economy:
   # Whether a withdrawal may take an account below zero.
   allow-negative-balances: false
 
+  commands:
+    # Register /balance, /pay and /baltop as commands of their own. When false they are
+    # only reachable as /tritown balance, /tritown pay and so on. Needs a restart.
+    # Another plugin that already owns one of these names keeps it either way; TriTown's
+    # version stays reachable as /tritown:balance.
+    top-level-aliases: true
+    # Entries per page of /baltop.
+    baltop-size: 10
+    # List town and nation banks alongside players. Off by default, because Towny already
+    # shows those and caches them, so the two lists would disagree.
+    baltop-include-towns: false
+
   storage:
     # Where balances are kept. Only "json" ships today.
     type: json
