@@ -78,6 +78,9 @@
 + `CommandRegistrar` now logs when another plugin already owns a main command's name, rather than silently leaving it
   reachable only under the `tritown:` prefix.
 + Added Gson to the test dependencies, since it reaches the plugin through the `compileOnly` Paper API.
++ Documented the economy end to end: the core and storage layers, the Vault surface and why it implements `Economy`
+  directly, the transaction log, the Towny lifecycle rules, and an owner-facing runbook covering provider modes,
+  restart-only settings, the crash window and moving from another economy plugin.
 
 #### Misc
 

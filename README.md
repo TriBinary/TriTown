@@ -110,6 +110,52 @@ set `economy.storage.allow-rescale` to `true` to convert every balance once inst
 its economy with Vault, and its commands with the server, before either can be changed again. Everything else in the
 table is applied by `/tt reload`.
 
+## Running the Economy
+
+### Choosing who supplies it
+
+TriTown supplies the Vault economy by default, and Towny picks it up automatically. On startup the console says which
+economy won:
+
+```
+[TriTown] Registered TriTown as a Vault economy provider (mode=AUTO, priority=Low)
+[TriTown] TriTown is supplying the server economy (Towny sees: TriTown via Vault)
+```
+
+If you already run an economy plugin, leave `economy.provider.mode` on `auto` — TriTown stands aside when a known
+economy plugin is installed. Set it to `external` to always stand aside, or `internal` to always win.
+
+Two things about this are worth knowing:
+
+- **It is decided at startup.** TriTown has to register with Vault before Towny starts, and Towny chooses an economy
+  exactly once, so `/tt reload` cannot change it. Restart the server.
+- **A plugin that registers an economy after TriTown will be ignored by Towny.** TriTown warns in the console when
+  this happens. Remove one of the two plugins and restart, or run `/townyadmin eco convert modern` to make Towny look
+  again.
+
+### Where the data lives
+
+| File                                  | What it is                                                         |
+|:--------------------------------------|:---------------------------------------------------------------------|
+| `plugins/TriTown/economy/accounts.json` | Every balance                                                      |
+| `plugins/TriTown/economy/accounts.json.bak` | The previous copy, used automatically if the main file is damaged |
+| `plugins/TriTown/economy/transactions.log` | The transaction record                                           |
+
+Balances are written every `economy.storage.flush-interval` seconds, whenever an administrator changes one, when a
+player logs out, and on a clean shutdown. **A clean shutdown is the important one** — `/stop` writes everything, but a
+crashed or killed process does not, so a crash loses at most one flush interval of activity. Lower the interval if
+that matters more to you than the extra writes.
+
+TriTown would rather not start than start with the wrong money. It refuses to start if `accounts.json` and its backup
+are both unreadable, if the data was written by a newer version of TriTown, or if `economy.currency.fractional-digits`
+no longer matches what the data was written with. Each of those says what to do in the console message.
+
+### Moving from another economy plugin
+
+There is no automatic import. Either keep the other plugin and set `economy.provider.mode` to `external`, or move the
+balances across once with `/eco set <player> <amount>` and then remove it. Do this with the server quiet, and take a
+copy of `plugins/TriTown/economy/` first.
+
 ## Developer Documentation
 
 Full development guides are in the `docs/` directory:

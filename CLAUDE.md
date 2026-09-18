@@ -51,9 +51,9 @@ Before finishing any task that changes the plugin, do all of the following:
 ```
 
 The local test server lives in `run/` (gitignored). `copyPlugin` puts the matching Towny jar in `run/plugins/`, but the
-Paper 26.2 jar (`run/paper-*.jar`), Vault, and an economy plugin (e.g. EssentialsX) must be downloaded by hand, and
-`eula.txt` accepted, before `startServer` works. Without an economy plugin TriTown disables itself on startup. The server
-console reads commands from the terminal running Gradle.
+Paper 26.2 jar (`run/paper-*.jar`) and Vault must be downloaded by hand, and `eula.txt` accepted, before `startServer`
+works. No economy plugin is needed — TriTown supplies the economy itself. The server console reads commands from the
+terminal running Gradle.
 
 ## Repository Layout
 
@@ -63,9 +63,10 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── commands/                # Sub-commands (auto-registered)
 │   ├── info/
 │   └── moderation/
-├── config/                  # PluginConfig (typed config.yml wrapper)
+├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
-├── enums/                   # DisplayLocation, FillMode, PagedGUIMode
+├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, storage (not scanned)
+├── enums/                   # AccountType, DisplayLocation, FillMode, PagedGUIMode, ProviderMode, TransactionType
 ├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI)
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
@@ -81,7 +82,9 @@ src/main/resources/
 ## Auto-Registration System
 
 The plugin uses `PackageScanner` to discover components at startup — you **never** edit `plugin.yml` or wire things
-manually. Just extend the right base class and place the file in the correct package.
+manually. Just extend the right base class and place the file in the correct package. Packages outside the table below
+are never scanned, which is why the economy core lives in `economy/`: it has to be alive in `onLoad`, long before the
+registrars run.
 
 | Component   | Base Class                     | Package                 |
 |:------------|:-------------------------------|:------------------------|

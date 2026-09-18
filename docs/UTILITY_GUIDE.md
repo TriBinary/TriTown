@@ -10,7 +10,7 @@ boilerplate and provide commonly needed functionality out of the box.
 | `TeamUtil`      | Custom team management with server-data persistence                |
 | `TagUtil`       | Per-player string tag management with player-data persistence      |
 | `MessageUtil`   | Prefix-decorated message sender for any command sender             |
-| `EconomyUtil`   | Vault economy access: balances, withdrawals, deposits, formatting  |
+| `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
 | `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack |
 | `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules   |
 | `LoreUtil`      | Word-aware text wrapping for item lore with style carry-over       |
