@@ -1,30 +1,30 @@
 # TriTown - Utility Guide
 
-This guide covers the utility helpers provided in `net.trilleo.mc.plugins.tritown.utils`. Each utility is designed to reduce
-boilerplate and provide commonly needed functionality out of the box.
+This guide covers the utility helpers provided in `net.trilleo.mc.plugins.tritown.utils`. Each utility is designed to
+reduce boilerplate and provide commonly needed functionality out of the box.
 
-| Utility         | Description                                                        |
-|:----------------|:-------------------------------------------------------------------|
-| `itemStack`     | DSL builder for creating `ItemStack` instances concisely           |
-| `CountdownUtil` | Per-player countdown with configurable display and sound           |
-| `TeamUtil`      | Custom team management with server-data persistence                |
-| `TagUtil`       | Per-player string tag management with player-data persistence      |
-| `Lang`          | Translations: per-player language files and the `tr()` helper      |
-| `MessageUtil`   | Prefix-decorated message sender for any command sender             |
+| Utility         | Description                                                            |
+|:----------------|:-----------------------------------------------------------------------|
+| `itemStack`     | DSL builder for creating `ItemStack` instances concisely               |
+| `CountdownUtil` | Per-player countdown with configurable display and sound               |
+| `TeamUtil`      | Custom team management with server-data persistence                    |
+| `TagUtil`       | Per-player string tag management with player-data persistence          |
+| `Lang`          | Translations: per-player language files and the `tr()` helper          |
+| `MessageUtil`   | Prefix-decorated message sender for any command sender                 |
 | `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
-| `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack |
-| `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules   |
-| `LoreUtil`      | Word-aware text wrapping for item lore with style carry-over       |
-| `TownyUtil`     | Reads and formats Towny data: names, balances, upkeep, the new day |
-| `ComponentUtil` | Parses a MiniMessage string into a Component, and escapes input    |
+| `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack     |
+| `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules       |
+| `LoreUtil`      | Word-aware text wrapping for item lore with style carry-over           |
+| `TownyUtil`     | Reads and formats Towny data: names, balances, upkeep, the new day     |
+| `ComponentUtil` | Parses a MiniMessage string into a Component, and escapes input        |
 
 ---
 
 ## ItemStack Builder DSL
 
 Building `ItemStack` instances with custom names, lore, enchantments, and flags normally requires verbose boilerplate.
-The `itemStack` DSL in `net.trilleo.mc.plugins.tritown.utils` lets you create fully configured items in a single expression.
-All text is parsed through
+The `itemStack` DSL in `net.trilleo.mc.plugins.tritown.utils` lets you create fully configured items in a single
+expression. All text is parsed through
 [MiniMessage](https://docs.advntr.dev/minimessage/index.html), so rich formatting tags like `<bold>`, `<red>`, and
 `<gradient>` work out of the box.
 
@@ -369,7 +369,7 @@ fun onEnterVipArea(player: Player) {
 [Translations in the Developer Guide](DEVELOPER_GUIDE.md#translations) for the file layout and the rules a new string
 has to follow.
 
-| Method                               | Description                                                                                         |
+| Method                               | Description                                                                                          |
 |:-------------------------------------|:-----------------------------------------------------------------------------------------------------|
 | `Lang.load(plugin, language)`        | Copies the bundled files to `plugins/TriTown/lang/` if missing and loads every language file.        |
 | `Lang.tr(sender, key, vararg args)`  | The translation of `key` for `sender`, with `{name}` placeholders filled; the key itself if missing. |
@@ -389,8 +389,8 @@ sender.sendPrefixed(sender.tr("command.reload.done"))
 val line = player.tr("command.balance.yours", "balance" to EconomyUtil.format(balance))
 ```
 
-Values are MiniMessage with `{placeholder}` arguments, and arguments are inserted verbatim — escape player-written
-text with `MiniMessage.miniMessage().escapeTags(...)` before passing it.
+Values are MiniMessage with `{placeholder}` arguments, and arguments are inserted verbatim — escape player-written text
+with `MiniMessage.miniMessage().escapeTags(...)` before passing it.
 
 ---
 
@@ -495,26 +495,26 @@ EconomyUtil.deposit(player, 100.0)
 
 ### Methods
 
-| Method / Property             | Description                                                                                 |
-|:------------------------------|:--------------------------------------------------------------------------------------------|
-| `economy`                     | The Vault `Economy` provider, for anything not wrapped below. Throws if none is registered. |
-| `isAvailable`                 | Whether an economy provider is registered.                                                  |
-| `isInternal`                  | Whether the economy in use is TriTown's own rather than another plugin's.                   |
-| `balance(player)`             | The player's balance.                                                                       |
-| `has(player, amount)`         | Whether the player has at least `amount`.                                                   |
-| `withdraw(player, amount)`    | Takes `amount`; returns `false` without charging if the player cannot afford it.            |
-| `deposit(player, amount)`     | Gives `amount`; returns `false` if the provider refuses.                                    |
-| `transfer(from, to, amount)`  | Moves `amount` between two players.                                                         |
-| `format(amount)`              | Formats `amount` as plain text, the way other plugins print it.                             |
-| `formatRich(amount)`          | Formats `amount` as a `Component`, using the configured MiniMessage pattern.                |
-| `reset()`                     | Forgets the cached provider. Called automatically on disable.                               |
+| Method / Property            | Description                                                                                 |
+|:-----------------------------|:--------------------------------------------------------------------------------------------|
+| `economy`                    | The Vault `Economy` provider, for anything not wrapped below. Throws if none is registered. |
+| `isAvailable`                | Whether an economy provider is registered.                                                  |
+| `isInternal`                 | Whether the economy in use is TriTown's own rather than another plugin's.                   |
+| `balance(player)`            | The player's balance.                                                                       |
+| `has(player, amount)`        | Whether the player has at least `amount`.                                                   |
+| `withdraw(player, amount)`   | Takes `amount`; returns `false` without charging if the player cannot afford it.            |
+| `deposit(player, amount)`    | Gives `amount`; returns `false` if the provider refuses.                                    |
+| `transfer(from, to, amount)` | Moves `amount` between two players.                                                         |
+| `format(amount)`             | Formats `amount` as plain text, the way other plugins print it.                             |
+| `formatRich(amount)`         | Formats `amount` as a `Component`, using the configured MiniMessage pattern.                |
+| `reset()`                    | Forgets the cached provider. Called automatically on disable.                               |
 
 `withdraw`, `deposit` and `transfer` reject negative amounts with an `IllegalArgumentException`. All methods take an
 `OfflinePlayer`, so they also work for offline players.
 
 Prefer `transfer` over a withdrawal followed by a deposit. On TriTown's own economy it is a single atomic step, so a
-payment can never leave money in neither account; on another plugin's economy it falls back to withdraw-then-deposit
-and refunds the sender if the deposit fails.
+payment can never leave money in neither account; on another plugin's economy it falls back to withdraw-then-deposit and
+refunds the sender if the deposit fails.
 
 Use `format` for anything another plugin will print — it must never contain MiniMessage tags — and `formatRich` for
 TriTown's own messages.
@@ -826,18 +826,18 @@ player.sendPrefixed(
 
 ### Methods
 
-| Method                          | Description                                                                 |
-|:--------------------------------|:-----------------------------------------------------------------------------|
-| `text(value)`                   | Strips legacy colour codes and escapes MiniMessage tags in player-written text |
-| `name(name)`                    | A Towny object name with underscores shown as spaces, escaped                |
-| `money(amount)`                 | Formats an amount with the server currency, or `-` when there is no economy  |
-| `balance(government)`           | Formats a town's or nation's bank balance from Towny's cached value          |
-| `townUpkeep(town)`              | What the town pays at the next new day, with overclaim and neutrality costs  |
-| `nationUpkeep(nation)`          | What the nation pays at the next new day, with its neutrality cost           |
-| `cannotAffordUpkeep(town)`      | Whether the town's bank will not cover its upkeep                            |
-| `secondsUntilNewDay()`          | Seconds until Towny collects taxes and upkeep                                |
-| `duration(player, seconds)`     | Hours and minutes in the player's language (`common.duration`)               |
-| `onOff(player, value)`          | An On/Off label in the player's language (`common.on` / `common.off`)        |
+| Method                      | Description                                                                    |
+|:----------------------------|:-------------------------------------------------------------------------------|
+| `text(value)`               | Strips legacy colour codes and escapes MiniMessage tags in player-written text |
+| `name(name)`                | A Towny object name with underscores shown as spaces, escaped                  |
+| `money(amount)`             | Formats an amount with the server currency, or `-` when there is no economy    |
+| `balance(government)`       | Formats a town's or nation's bank balance from Towny's cached value            |
+| `townUpkeep(town)`          | What the town pays at the next new day, with overclaim and neutrality costs    |
+| `nationUpkeep(nation)`      | What the nation pays at the next new day, with its neutrality cost             |
+| `cannotAffordUpkeep(town)`  | Whether the town's bank will not cover its upkeep                              |
+| `secondsUntilNewDay()`      | Seconds until Towny collects taxes and upkeep                                  |
+| `duration(player, seconds)` | Hours and minutes in the player's language (`common.duration`)                 |
+| `onOff(player, value)`      | An On/Off label in the player's language (`common.on` / `common.off`)          |
 
 **Always escape before embedding.** Town names, mayor names and boards are player-written, and `Lang.tr` inserts
 arguments verbatim into a MiniMessage string. `name()` and `text()` are what stand between a town called
@@ -850,8 +850,8 @@ this is called once per player per sidebar refresh.
 
 ## ComponentUtil
 
-`Lang.tr` returns a MiniMessage **string** so that callers can substitute into it, which leaves every caller needing
-the same final parse. `ComponentUtil` is that step, and holds the one `MiniMessage` instance used for both parsing and
+`Lang.tr` returns a MiniMessage **string** so that callers can substitute into it, which leaves every caller needing the
+same final parse. `ComponentUtil` is that step, and holds the one `MiniMessage` instance used for both parsing and
 escaping.
 
 ### Usage
@@ -863,7 +863,7 @@ val safe = ComponentUtil.escape(player.name)
 
 ### Methods
 
-| Method            | Description                                                      |
-|:------------------|:-------------------------------------------------------------------|
-| `parse(message)`  | Parses a MiniMessage string into an Adventure `Component`         |
-| `escape(value)`   | Escapes MiniMessage tags so player-written text renders as typed  |
+| Method           | Description                                                      |
+|:-----------------|:-----------------------------------------------------------------|
+| `parse(message)` | Parses a MiniMessage string into an Adventure `Component`        |
+| `escape(value)`  | Escapes MiniMessage tags so player-written text renders as typed |

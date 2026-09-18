@@ -20,11 +20,10 @@ starting balance, balance cap and formatting are all configurable. If you would 
 
 **A sidebar that follows you.** A scoreboard that changes with where you are standing: a new player without a town is
 pointed at joining one, your own claims show your town's level, residents, land, bank, upkeep and any warning, another
-town's claims show whose land it is and what the plot costs, and enemy territory says so. Values sit under headings
-that group them, inside a shared header and footer carrying the server name and address. Which lines appear is set per
-board in `config.yml`; the wording lives in the language files, so everyone reads it in their own language. Players turn
-it on and off with `/tt scoreboard`, and it takes turns with Towny's own plot HUD rather than fighting it for the
-screen.
+town's claims show whose land it is and what the plot costs, and enemy territory says so. Values sit under headings that
+group them, inside a shared header and footer carrying the server name and address. Which lines appear is set per board
+in `config.yml`; the wording lives in the language files, so everyone reads it in their own language. Players turn it on
+and off with `/tt scoreboard`, and it takes turns with Towny's own plot HUD rather than fighting it for the screen.
 
 **English and Simplified Chinese.** Every message, menu and item TriTown shows is translated. By default each player
 sees whichever of the two their Minecraft client is set to, and everyone else sees English. Set `language` in
@@ -36,13 +35,13 @@ built on.
 
 ## Requirements
 
-| Dependency     | Version                                  |
-|:---------------|:-----------------------------------------|
-| Paper          | 26.2+                                    |
-| Java           | 25+                                      |
-| Towny          | 0.103.2.7+                               |
-| Vault          | 1.7+                                     |
-| Economy plugin | Not required — TriTown provides one      |
+| Dependency     | Version                             |
+|:---------------|:------------------------------------|
+| Paper          | 26.2+                               |
+| Java           | 25+                                 |
+| Towny          | 0.103.2.7+                          |
+| Vault          | 1.7+                                |
+| Economy plugin | Not required — TriTown provides one |
 
 TriTown is an addon: Towny and Vault must both be installed, or TriTown will not load. An economy plugin is optional —
 install one only if you want it to supply the economy instead of TriTown, and set `economy.provider.mode` accordingly.
@@ -65,15 +64,15 @@ Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/
 
 ## Commands
 
-| Command            | Description                         |
-|:-------------------|:------------------------------------|
-| `/tt help`         | List all available commands         |
-| `/tt reload`       | Reload the configuration (OP only)  |
-| `/balance [player]`| Check your balance, or someone else's |
-| `/pay <player> <amount>` | Send money to another player  |
-| `/baltop [page]`   | List the richest accounts           |
-| `/eco <action> …`  | Administer balances (OP only)       |
-| `/tt scoreboard`   | Show or hide the sidebar            |
+| Command                  | Description                           |
+|:-------------------------|:--------------------------------------|
+| `/tt help`               | List all available commands           |
+| `/tt reload`             | Reload the configuration (OP only)    |
+| `/balance [player]`      | Check your balance, or someone else's |
+| `/pay <player> <amount>` | Send money to another player          |
+| `/baltop [page]`         | List the richest accounts             |
+| `/eco <action> …`        | Administer balances (OP only)         |
+| `/tt scoreboard`         | Show or hide the sidebar              |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -82,52 +81,52 @@ viewing someone else's history additionally needs `tritown.economy.admin.history
 
 Commands are sub-commands of `/tritown` (alias `/tt`) unless noted. The economy commands are registered as top-level
 commands as well, which `economy.commands.top-level-aliases` turns off — they are then only reachable as
-`/tt balance`, `/tt pay` and `/tt baltop`. If another plugin already owns one of those names it keeps it, and
-TriTown's version stays available as `/tritown:balance` and so on.
+`/tt balance`, `/tt pay` and `/tt baltop`. If another plugin already owns one of those names it keeps it, and TriTown's
+version stays available as `/tritown:balance` and so on.
 
 ## Configuration
 
-| Key                                    | Default          | Description                                                                 |
-|:---------------------------------------|:-----------------|:-----------------------------------------------------------------------------|
-| `message-prefix`                       | —                | MiniMessage prefix shown before plugin messages                             |
-| `language`                             | `auto`           | `auto` follows each player's client, or a language id such as `zh_CN`        |
-| `economy.enabled`                      | `true`           | Turn the economy off entirely                                               |
-| `economy.provider.mode`                | `auto`           | `internal`, `external` or `auto` — who supplies the Vault economy (restart) |
-| `economy.provider.defer-to`            | common eco plugins | Which installed plugins `auto` stands aside for                           |
-| `economy.currency.id`                  | `dollar`         | Stable key used in storage and commands                                     |
-| `economy.currency.singular` / `.plural`| `Dollar(s)`      | Display names                                                               |
-| `economy.currency.symbol`              | `$`              | Short prefix shown before an amount                                         |
-| `economy.currency.fractional-digits`   | `2`              | Digits kept after the decimal point (see below)                             |
-| `economy.currency.format`              | `%symbol%%amount%` | Plain pattern other plugins print verbatim — no MiniMessage tags           |
-| `economy.currency.rich-format`         | `<gold>…</gold>` | MiniMessage pattern for TriTown's own messages                              |
-| `economy.starting-balance`             | `100.0`          | Balance granted on a player's first join                                    |
-| `economy.balance-cap`                  | `1000000000.0`   | Largest balance an account may hold; `0` removes the cap                    |
-| `economy.minimum-payment`              | `0.01`           | Smallest amount a payment will accept                                       |
-| `economy.allow-negative-balances`      | `false`          | Whether a withdrawal may take an account below zero                         |
-| `economy.commands.top-level-aliases`   | `true`           | Register `/balance`, `/pay` and `/baltop` as their own commands (restart)   |
-| `economy.commands.baltop-size`         | `10`             | Entries per page of `/baltop`                                               |
-| `economy.commands.baltop-include-towns`| `false`          | List town and nation banks on `/baltop` alongside players                   |
-| `economy.storage.type`                 | `json`           | Where balances are kept                                                     |
-| `economy.storage.flush-interval`       | `60`             | Seconds between writes; a crash loses at most this long                     |
-| `economy.storage.allow-rescale`        | `false`          | Convert balances when `fractional-digits` changes, instead of refusing to start |
-| `economy.towny.delete-accounts-on-delete` | `true`        | Remove a town's or nation's account when Towny deletes it                   |
-| `economy.history.enabled`              | `true`           | Record every transaction to a log                                           |
-| `economy.history.max-entries-per-account` | `100`         | Recent entries kept in memory per account                                   |
-| `economy.history.retention-days`       | `30`             | How long rolled log files are kept; `0` keeps them forever                  |
-| `economy.history.roll-size-mb`         | `16`             | Size at which the transaction log is rolled aside                           |
-| `economy.history.time-format`          | `yyyy-MM-dd HH:mm` | How timestamps are shown in the history view                              |
-| `scoreboard.enabled`                   | `true`           | Turn the sidebar off entirely                                               |
-| `scoreboard.refresh-interval`          | `2`              | Seconds between redraws of a sidebar nothing has changed on                 |
-| `scoreboard.default-on`                | `true`           | Whether a player who has never used `/tt scoreboard` sees one               |
-| `scoreboard.title-frame-interval`      | `10`             | Ticks between title frames; a single frame disables the animation           |
-| `scoreboard.title`                     | four frames      | Translation keys for the title, cycled in order                             |
-| `scoreboard.header`                    | a divider        | Translation keys prepended to every board                                   |
-| `scoreboard.footer`                    | divider, address | Translation keys appended to every board                                    |
-| `scoreboard.boards.<id>`               | six boards       | A board's `priority`, `condition` and `lines` (translation keys)            |
+| Key                                       | Default            | Description                                                                     |
+|:------------------------------------------|:-------------------|:--------------------------------------------------------------------------------|
+| `message-prefix`                          | —                  | MiniMessage prefix shown before plugin messages                                 |
+| `language`                                | `auto`             | `auto` follows each player's client, or a language id such as `zh_CN`           |
+| `economy.enabled`                         | `true`             | Turn the economy off entirely                                                   |
+| `economy.provider.mode`                   | `auto`             | `internal`, `external` or `auto` — who supplies the Vault economy (restart)     |
+| `economy.provider.defer-to`               | common eco plugins | Which installed plugins `auto` stands aside for                                 |
+| `economy.currency.id`                     | `dollar`           | Stable key used in storage and commands                                         |
+| `economy.currency.singular` / `.plural`   | `Dollar(s)`        | Display names                                                                   |
+| `economy.currency.symbol`                 | `$`                | Short prefix shown before an amount                                             |
+| `economy.currency.fractional-digits`      | `2`                | Digits kept after the decimal point (see below)                                 |
+| `economy.currency.format`                 | `%symbol%%amount%` | Plain pattern other plugins print verbatim — no MiniMessage tags                |
+| `economy.currency.rich-format`            | `<gold>…</gold>`   | MiniMessage pattern for TriTown's own messages                                  |
+| `economy.starting-balance`                | `100.0`            | Balance granted on a player's first join                                        |
+| `economy.balance-cap`                     | `1000000000.0`     | Largest balance an account may hold; `0` removes the cap                        |
+| `economy.minimum-payment`                 | `0.01`             | Smallest amount a payment will accept                                           |
+| `economy.allow-negative-balances`         | `false`            | Whether a withdrawal may take an account below zero                             |
+| `economy.commands.top-level-aliases`      | `true`             | Register `/balance`, `/pay` and `/baltop` as their own commands (restart)       |
+| `economy.commands.baltop-size`            | `10`               | Entries per page of `/baltop`                                                   |
+| `economy.commands.baltop-include-towns`   | `false`            | List town and nation banks on `/baltop` alongside players                       |
+| `economy.storage.type`                    | `json`             | Where balances are kept                                                         |
+| `economy.storage.flush-interval`          | `60`               | Seconds between writes; a crash loses at most this long                         |
+| `economy.storage.allow-rescale`           | `false`            | Convert balances when `fractional-digits` changes, instead of refusing to start |
+| `economy.towny.delete-accounts-on-delete` | `true`             | Remove a town's or nation's account when Towny deletes it                       |
+| `economy.history.enabled`                 | `true`             | Record every transaction to a log                                               |
+| `economy.history.max-entries-per-account` | `100`              | Recent entries kept in memory per account                                       |
+| `economy.history.retention-days`          | `30`               | How long rolled log files are kept; `0` keeps them forever                      |
+| `economy.history.roll-size-mb`            | `16`               | Size at which the transaction log is rolled aside                               |
+| `economy.history.time-format`             | `yyyy-MM-dd HH:mm` | How timestamps are shown in the history view                                    |
+| `scoreboard.enabled`                      | `true`             | Turn the sidebar off entirely                                                   |
+| `scoreboard.refresh-interval`             | `2`                | Seconds between redraws of a sidebar nothing has changed on                     |
+| `scoreboard.default-on`                   | `true`             | Whether a player who has never used `/tt scoreboard` sees one                   |
+| `scoreboard.title-frame-interval`         | `10`               | Ticks between title frames; a single frame disables the animation               |
+| `scoreboard.title`                        | four frames        | Translation keys for the title, cycled in order                                 |
+| `scoreboard.header`                       | a divider          | Translation keys prepended to every board                                       |
+| `scoreboard.footer`                       | divider, address   | Translation keys appended to every board                                        |
+| `scoreboard.boards.<id>`                  | six boards         | A board's `priority`, `condition` and `lines` (translation keys)                |
 
-Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how
-every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;
-set `economy.storage.allow-rescale` to `true` to convert every balance once instead.
+Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how every
+balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values; set
+`economy.storage.allow-rescale` to `true` to convert every balance once instead.
 
 `economy.provider.*` and `economy.commands.top-level-aliases` only take effect on a restart — TriTown has to register
 its economy with Vault, and its commands with the server, before either can be changed again. Everything else in the
@@ -145,29 +144,29 @@ A line names a translation key rather than carrying text, so you arrange the lay
 `%plot_owner%`, `%balance%` and so on — `config.yml` lists every available marker beside the block.
 
 Every board is wrapped in the shared `header` and `footer`, so the frame around the sidebar is written once instead of
-being repeated in each board. Minecraft shows at most 15 lines; the header and footer count towards that, leaving 12
-per board by default. A board that declares more than fits loses its own last lines, never the frame, and says so in
-the console.
+being repeated in each board. Minecraft shows at most 15 lines; the header and footer count towards that, leaving 12 per
+board by default. A board that declares more than fits loses its own last lines, never the frame, and says so in the
+console.
 
 The sidebar and Towny's `/towny plot perm hud` are mutually exclusive: turning either on puts the other away, and
 TriTown's returns once Towny's is switched off. Everything under `scoreboard` is applied by `/tt reload`.
 
 ## Translations
 
-TriTown ships English (`en_US`) and Simplified Chinese (`zh_CN`). Both are copied into `plugins/TriTown/lang/` the
-first time the plugin starts, and `/tt reload` re-reads them.
+TriTown ships English (`en_US`) and Simplified Chinese (`zh_CN`). Both are copied into `plugins/TriTown/lang/` the first
+time the plugin starts, and `/tt reload` re-reads them.
 
 - `language: auto` (the default) gives each player the file matching their Minecraft client language, falling back to
   `en_US`. A client set to a language TriTown does not have but that shares a prefix — `zh_TW`, say — gets the closest
   match (`zh_CN`).
 - Setting `language` to a file's id, such as `zh_CN`, shows that one to everybody.
-- Edit either file to change any wording. Keep every `{placeholder}` — TriTown fills those in — and note that the
-  values use [MiniMessage](https://docs.advntr.dev/minimessage/format.html) formatting. A key you delete falls back to
-  the bundled copy, so nothing breaks if you remove a line.
+- Edit either file to change any wording. Keep every `{placeholder}` — TriTown fills those in — and note that the values
+  use [MiniMessage](https://docs.advntr.dev/minimessage/format.html) formatting. A key you delete falls back to the
+  bundled copy, so nothing breaks if you remove a line.
 - To add a language, drop a `<id>.yml` of your own beside them; anything it does not define falls back to English.
 
-The `money.error.*` entries are the exception: they are plain text with no formatting, because they also travel to
-other plugins as Vault's error message and are printed verbatim.
+The `money.error.*` entries are the exception: they are plain text with no formatting, because they also travel to other
+plugins as Vault's error message and are printed verbatim.
 
 ## Running the Economy
 
@@ -188,22 +187,21 @@ Two things about this are worth knowing:
 
 - **It is decided at startup.** TriTown has to register with Vault before Towny starts, and Towny chooses an economy
   exactly once, so `/tt reload` cannot change it. Restart the server.
-- **A plugin that registers an economy after TriTown will be ignored by Towny.** TriTown warns in the console when
-  this happens. Remove one of the two plugins and restart, or run `/townyadmin eco convert modern` to make Towny look
-  again.
+- **A plugin that registers an economy after TriTown will be ignored by Towny.** TriTown warns in the console when this
+  happens. Remove one of the two plugins and restart, or run `/townyadmin eco convert modern` to make Towny look again.
 
 ### Where the data lives
 
-| File                                  | What it is                                                         |
-|:--------------------------------------|:---------------------------------------------------------------------|
-| `plugins/TriTown/economy/accounts.json` | Every balance                                                      |
+| File                                        | What it is                                                        |
+|:--------------------------------------------|:------------------------------------------------------------------|
+| `plugins/TriTown/economy/accounts.json`     | Every balance                                                     |
 | `plugins/TriTown/economy/accounts.json.bak` | The previous copy, used automatically if the main file is damaged |
-| `plugins/TriTown/economy/transactions.log` | The transaction record                                           |
+| `plugins/TriTown/economy/transactions.log`  | The transaction record                                            |
 
 Balances are written every `economy.storage.flush-interval` seconds, whenever an administrator changes one, when a
 player logs out, and on a clean shutdown. **A clean shutdown is the important one** — `/stop` writes everything, but a
-crashed or killed process does not, so a crash loses at most one flush interval of activity. Lower the interval if
-that matters more to you than the extra writes.
+crashed or killed process does not, so a crash loses at most one flush interval of activity. Lower the interval if that
+matters more to you than the extra writes.
 
 TriTown would rather not start than start with the wrong money. It refuses to start if `accounts.json` and its backup
 are both unreadable, if the data was written by a newer version of TriTown, or if `economy.currency.fractional-digits`
