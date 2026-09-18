@@ -1,9 +1,13 @@
 package net.trilleo.mc.plugins.tritown.economy.storage
 
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import java.io.BufferedWriter
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.nio.file.AtomicMoveNotSupportedException
@@ -29,18 +33,27 @@ import java.util.logging.Logger
  * @param expectedDigits the currency scale configured right now
  * @param allowRescale   whether a stored scale that differs from [expectedDigits] may be converted
  *                       instead of refused
+ * @param rollSizeBytes  how large the transaction log may grow before it is rolled aside; 0 never rolls
  */
 class JsonEconomyStorage(
     directory: File,
     private val expectedDigits: Int,
     private val allowRescale: Boolean,
     private val logger: Logger,
+    private val rollSizeBytes: Long = 16L * 1024L * 1024L,
 ) : EconomyStorage {
 
     private val root = File(directory, DIRECTORY)
     private val accountsFile = File(root, ACCOUNTS_FILE)
     private val backupFile = File(root, "$ACCOUNTS_FILE.bak")
+    private val transactionLog = File(root, TRANSACTIONS_FILE)
     private val gson = GsonBuilder().setPrettyPrinting().create()
+
+    /** The transaction log is one record per line, so it must not be pretty-printed. */
+    private val logGson = Gson()
+
+    /** The transaction log has its own lock, so appending never waits on an account rewrite. */
+    private val logLock = Any()
 
     /**
      * The last known state of every account.
@@ -98,7 +111,88 @@ class JsonEconomyStorage(
         }
     }
 
+    // ── Transactions ────────────────────────────────────────────────────
+    //
+    // The log is newline-delimited JSON and only ever appended to, so a crash
+    // can cost the last line but never corrupt the ones before it. It rolls to a
+    // timestamped file once it grows past the configured size, which is also
+    // what makes pruning by age a matter of deleting whole files.
+
+    override fun appendTransactions(records: List<StoredTransaction>) {
+        if (records.isEmpty()) return
+        synchronized(logLock) {
+            runCatching {
+                rollIfOversized()
+                transactionLog.parentFile?.mkdirs()
+                BufferedWriter(OutputStreamWriter(FileOutputStream(transactionLog, true), Charsets.UTF_8)).use { writer ->
+                    for (record in records) {
+                        writer.write(logGson.toJson(record))
+                        writer.newLine()
+                    }
+                }
+            }.onFailure {
+                logger.warning("Failed to append to ${transactionLog.name}: [${it.javaClass.simpleName}] ${it.message}")
+            }
+        }
+    }
+
+    override fun loadRecentTransactions(maxPerAccount: Int): Map<String, List<StoredTransaction>> {
+        if (maxPerAccount <= 0 || !transactionLog.exists()) return emptyMap()
+
+        val perAccount = HashMap<String, ArrayDeque<StoredTransaction>>()
+        var skipped = 0
+
+        synchronized(logLock) {
+            runCatching {
+                transactionLog.forEachLine { line ->
+                    val record = parseTransaction(line)
+                    if (record == null) {
+                        if (line.isNotBlank()) skipped++
+                        return@forEachLine
+                    }
+                    val ring = perAccount.getOrPut(record.account) { ArrayDeque(maxPerAccount) }
+                    ring.addLast(record)
+                    while (ring.size > maxPerAccount) ring.removeFirst()
+                }
+            }.onFailure {
+                logger.warning("Could not read ${transactionLog.name}: [${it.javaClass.simpleName}] ${it.message}")
+            }
+        }
+
+        if (skipped > 0) logger.warning("Skipped $skipped unreadable transaction log entries")
+        return perAccount.mapValues { (_, ring) -> ring.toList() }
+    }
+
+    override fun pruneTransactions(olderThanEpochMs: Long) {
+        val rolled = root.listFiles { file -> file.name.startsWith(ROLLED_PREFIX) } ?: return
+        for (file in rolled) {
+            if (file.lastModified() < olderThanEpochMs && file.delete()) {
+                logger.info("Pruned old transaction log ${file.name}")
+            }
+        }
+    }
+
     override fun close() = Unit
+
+    private fun rollIfOversized() {
+        if (rollSizeBytes <= 0L || !transactionLog.exists()) return
+        if (transactionLog.length() < rollSizeBytes) return
+
+        val rolled = File(root, "$ROLLED_PREFIX${System.currentTimeMillis()}.log")
+        if (transactionLog.renameTo(rolled)) {
+            logger.info("Rolled the transaction log to ${rolled.name}")
+        } else {
+            logger.warning("Could not roll ${transactionLog.name}; it will keep growing")
+        }
+    }
+
+    private fun parseTransaction(line: String): StoredTransaction? {
+        if (line.isBlank()) return null
+        return runCatching {
+            val record = logGson.fromJson(line, StoredTransaction::class.java)
+            if (record.v > StorageSchema.CURRENT) null else record
+        }.getOrNull()
+    }
 
     // ── Reading ─────────────────────────────────────────────────────────
 
@@ -221,6 +315,8 @@ class JsonEconomyStorage(
     private companion object {
         const val DIRECTORY = "economy"
         const val ACCOUNTS_FILE = "accounts.json"
+        const val TRANSACTIONS_FILE = "transactions.log"
+        const val ROLLED_PREFIX = "transactions-"
         const val KEY_VERSION = "schemaVersion"
         const val KEY_DIGITS = "fractionalDigits"
         const val KEY_ACCOUNTS = "accounts"

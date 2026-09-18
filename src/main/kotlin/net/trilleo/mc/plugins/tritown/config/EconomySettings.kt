@@ -29,7 +29,23 @@ data class EconomySettings(
     val storageType: String,
     val flushIntervalSeconds: Long,
     val allowRescale: Boolean,
+    val history: HistorySettings,
 ) {
+
+    /**
+     * How much transaction history is kept.
+     *
+     * @param maxEntriesPerAccount how many records each account keeps in memory for the history view
+     * @param retentionDays        how long rolled log files are kept; 0 keeps them forever
+     * @param rollSizeBytes        how large the log may grow before it is rolled aside
+     */
+    data class HistorySettings(
+        val enabled: Boolean,
+        val maxEntriesPerAccount: Int,
+        val retentionDays: Int,
+        val rollSizeBytes: Long,
+        val timeFormat: String,
+    )
 
     /** The bounds the ledger should enforce, with the balance cap converted per currency. */
     fun ledgerLimits(): LedgerLimits = LedgerLimits(
@@ -96,6 +112,15 @@ data class EconomySettings(
                 storageType = config.getString("economy.storage.type", "json").lowercase(),
                 flushIntervalSeconds = config.getLong("economy.storage.flush-interval", 60L).coerceAtLeast(5L),
                 allowRescale = config.getBoolean("economy.storage.allow-rescale", false),
+                history = HistorySettings(
+                    enabled = config.getBoolean("economy.history.enabled", true),
+                    maxEntriesPerAccount = config.getInt("economy.history.max-entries-per-account", 100)
+                        .coerceIn(0, 1_000),
+                    retentionDays = config.getInt("economy.history.retention-days", 30).coerceAtLeast(0),
+                    rollSizeBytes = config.getLong("economy.history.roll-size-mb", 16L)
+                        .coerceAtLeast(0L) * 1024L * 1024L,
+                    timeFormat = config.getString("economy.history.time-format", "yyyy-MM-dd HH:mm"),
+                ),
             )
         }
     }

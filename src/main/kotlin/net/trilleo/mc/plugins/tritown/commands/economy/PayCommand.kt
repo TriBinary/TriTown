@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.commands.economy
 
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
+import net.trilleo.mc.plugins.tritown.economy.EconomyContext
 import net.trilleo.mc.plugins.tritown.economy.EconomyResult
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.MoneyAccount
@@ -60,7 +61,11 @@ class PayCommand : PluginCommand(
             return true
         }
 
-        when (val result = EconomyService.transfer(from, recipient, currency, amount)) {
+        val result = EconomyContext.command("Player payment") {
+            EconomyService.transfer(from, recipient, currency, amount)
+        }
+
+        when (result) {
             is EconomyResult.Success -> {
                 val paid = display(result.moved, currency)
                 sender.sendPrefixed(

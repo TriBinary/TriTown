@@ -73,3 +73,15 @@ economy:
     flush-interval: 60
     # Convert every balance when fractional-digits changes, instead of refusing to start.
     allow-rescale: false
+
+  history:
+    # Record every transaction to <plugin folder>/economy/transactions.log.
+    enabled: true
+    # How many recent entries each account keeps in memory for /eco history.
+    # Only accounts that have been active since the last restart use any memory.
+    max-entries-per-account: 100
+    # How long rolled log files are kept. 0 keeps them forever.
+    retention-days: 30
+    # Size at which the log is rolled aside into a dated file.
+    roll-size-mb: 16
+    time-format: "yyyy-MM-dd HH:mm"

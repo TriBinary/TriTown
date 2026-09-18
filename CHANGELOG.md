@@ -25,6 +25,13 @@
     + The three are registered as top-level commands as well as `/tt` sub-commands. Set
       `economy.commands.top-level-aliases` to `false` to keep them under `/tt` only. A name another plugin already owns
       stays that plugin's, and TriTown's is still reachable as `/tritown:balance`.
++ Every movement of money is now recorded, with a timestamp, both parties, the amount, the resulting balance and what
+  caused it.
+    + The log is written to `economy/transactions.log` and rolled into dated files as it grows; old files are removed
+      after `economy.history.retention-days`.
+    + Recent entries are also kept in memory per account, so viewing a history never reads from disk. Only accounts
+      active since the last restart use any memory.
+    + Turn the whole thing off with `economy.history.enabled` if you would rather not keep records.
 + Added `/eco` for administering balances: `give`, `take` and `set` an amount, `reset` a player to the starting
   balance, `info` for an account's UUID, type, balances and dates, and `flush` to write changed accounts to disk
   immediately. Every action has its own permission, and any change is written out at once rather than waiting for the

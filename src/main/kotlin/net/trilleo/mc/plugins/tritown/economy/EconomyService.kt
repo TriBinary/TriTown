@@ -2,8 +2,11 @@ package net.trilleo.mc.plugins.tritown.economy
 
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.economy.storage.EconomyStorage
+import net.trilleo.mc.plugins.tritown.economy.storage.StorageSchema
 import net.trilleo.mc.plugins.tritown.economy.storage.StoredAccount
+import net.trilleo.mc.plugins.tritown.economy.storage.StoredTransaction
 import net.trilleo.mc.plugins.tritown.enums.AccountType
+import net.trilleo.mc.plugins.tritown.enums.TransactionType
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import java.util.UUID
@@ -35,6 +38,12 @@ object EconomyService {
 
     private lateinit var logger: Logger
     private var storage: EconomyStorage? = null
+
+    /** Null when history is switched off, which is the only reason nothing is recorded. */
+    private var transactions: TransactionLog? = null
+
+    /** When rolled transaction logs were last pruned, so it happens hourly rather than every flush. */
+    private var lastPrune: Long = 0L
 
     /** The book of accounts. Exposed so the leaderboard and admin tools can read it without copying. */
     lateinit var ledger: EconomyLedger
@@ -69,6 +78,19 @@ object EconomyService {
         store.initialize()
         val loaded = store.loadAccounts()
         ledger.load(loaded.accounts.mapNotNull(::toAccount))
+
+        val history = settings.history
+        if (history.enabled && history.maxEntriesPerAccount > 0) {
+            transactions = TransactionLog(history.maxEntriesPerAccount).also { log ->
+                val stored = store.loadRecentTransactions(history.maxEntriesPerAccount)
+                val seeded = stored.mapNotNull { (uuid, records) ->
+                    val account = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return@mapNotNull null
+                    account to records.mapNotNull(::toRecord)
+                }.toMap()
+                log.seed(seeded.values.flatten().maxOfOrNull { it.id } ?: 0L, seeded)
+            }
+        }
+
         storage = store
     }
 
@@ -94,6 +116,8 @@ object EconomyService {
         flush()
         runCatching { storage?.close() }
         storage = null
+        transactions?.clear()
+        transactions = null
         BaltopCache.clear()
     }
 
@@ -184,13 +208,16 @@ object EconomyService {
         if (amount <= 0.0) return
 
         val currency = CurrencyRegistry.primary
-        ledger.deposit(account, currency, currency.of(amount))
+        EconomyContext.with(EconomyContext.SOURCE_COMMAND, "Starting balance") {
+            deposit(account, currency, currency.of(amount))
+        }
     }
 
     /** Removes [uuid] from the ledger and from storage. */
     fun deleteAccount(uuid: UUID) {
         if (storage == null) return
         ledger.remove(uuid) ?: return
+        transactions?.forget(uuid)
         runCatching { storage?.deleteAccount(uuid) }
             .onFailure { logger.log(Level.WARNING, "Failed to delete economy account $uuid", it) }
     }
@@ -231,18 +258,63 @@ object EconomyService {
     /** Adds [amount] to [account]. */
     fun deposit(account: MoneyAccount, currency: Currency, amount: Money): EconomyResult =
         guard { ledger.deposit(account, currency, amount) }
+            .alsoRecord(account, null, currency, TransactionType.DEPOSIT)
 
     /** Takes [amount] from [account]. */
     fun withdraw(account: MoneyAccount, currency: Currency, amount: Money): EconomyResult =
         guard { ledger.withdraw(account, currency, amount) }
+            .alsoRecord(account, null, currency, TransactionType.WITHDRAW)
 
     /** Sets [account]'s balance to exactly [amount]. */
     fun setBalance(account: MoneyAccount, currency: Currency, amount: Money): EconomyResult =
         guard { ledger.setBalance(account, currency, amount) }
+            .alsoRecord(account, null, currency, TransactionType.SET)
 
     /** Moves [amount] between two accounts as a single atomic step. */
-    fun transfer(from: MoneyAccount, to: MoneyAccount, currency: Currency, amount: Money): EconomyResult =
-        guard { ledger.transfer(from, to, currency, amount) }
+    fun transfer(from: MoneyAccount, to: MoneyAccount, currency: Currency, amount: Money): EconomyResult {
+        val result = guard { ledger.transfer(from, to, currency, amount) }
+        if (result is EconomyResult.Success) {
+            // Two records, one per account: each side has its own history, which
+            // is also why a payment never shows up twice in one account's view.
+            record(from.uuid, to.uuid, currency, TransactionType.TRANSFER_OUT, result.moved, result.balance)
+            result.counterpartyBalance?.let {
+                record(to.uuid, from.uuid, currency, TransactionType.TRANSFER_IN, result.moved, it)
+            }
+        }
+        return result
+    }
+
+    // ── History ─────────────────────────────────────────────────────────
+
+    /** The recent transactions filed against [uuid], most recent first. */
+    fun history(uuid: UUID): List<TransactionRecord> = transactions?.recent(uuid) ?: emptyList()
+
+    /**
+     * Files a transaction against [account], if history is switched on.
+     *
+     * Recording never blocks: the record goes on a queue the flush task drains.
+     */
+    fun record(
+        account: UUID,
+        counterparty: UUID?,
+        currency: Currency,
+        type: TransactionType,
+        amount: Money,
+        balanceAfter: Money,
+        meta: Map<String, String> = emptyMap(),
+    ) {
+        transactions?.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+    }
+
+    private fun EconomyResult.alsoRecord(
+        account: MoneyAccount,
+        counterparty: UUID?,
+        currency: Currency,
+        type: TransactionType,
+    ): EconomyResult {
+        if (this is EconomyResult.Success) record(account.uuid, counterparty, currency, type, moved, balance)
+        return this
+    }
 
     // ── Persistence ─────────────────────────────────────────────────────
 
@@ -255,12 +327,35 @@ object EconomyService {
      */
     fun flush() {
         val store = storage ?: return
-        val batch = ledger.drainDirty()
-        if (batch.isEmpty()) return
 
-        val snapshots = batch.mapNotNull { uuid -> ledger.snapshot(uuid) { it.toStored() } }
-        runCatching { store.saveAccounts(snapshots) }
-            .onFailure { logger.log(Level.SEVERE, "Failed to write economy accounts", it) }
+        val batch = ledger.drainDirty()
+        if (batch.isNotEmpty()) {
+            val snapshots = batch.mapNotNull { uuid -> ledger.snapshot(uuid) { it.toStored() } }
+            runCatching { store.saveAccounts(snapshots) }
+                .onFailure { logger.log(Level.SEVERE, "Failed to write economy accounts", it) }
+        }
+
+        transactions?.drainPending()?.takeIf { it.isNotEmpty() }?.let { records ->
+            runCatching { store.appendTransactions(records.map(::toStored)) }
+                .onFailure { logger.log(Level.WARNING, "Failed to write the economy transaction log", it) }
+        }
+
+        pruneHistory(store)
+    }
+
+    /** Deletes rolled transaction logs past their retention, at most once an hour. */
+    private fun pruneHistory(store: EconomyStorage) {
+        if (!EconomySettings.isLoaded) return
+        val retentionDays = EconomySettings.snapshot.history.retentionDays
+        if (retentionDays <= 0) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastPrune < PRUNE_INTERVAL_MS) return
+        lastPrune = now
+
+        val cutoff = now - retentionDays * MILLIS_PER_DAY
+        runCatching { store.pruneTransactions(cutoff) }
+            .onFailure { logger.log(Level.WARNING, "Failed to prune old transaction logs", it) }
     }
 
     /** Writes one account immediately, for changes that should not wait for the next flush. */
@@ -283,6 +378,42 @@ object EconomyService {
         updatedAt = updatedAt,
         startingBalanceGranted = startingBalanceGranted,
     )
+
+    private const val PRUNE_INTERVAL_MS = 60L * 60L * 1000L
+    private const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L
+
+    private fun toStored(record: TransactionRecord) = StoredTransaction(
+        v = StorageSchema.CURRENT,
+        id = record.id,
+        timestamp = record.timestamp,
+        account = record.account.toString(),
+        counterparty = record.counterparty?.toString(),
+        currency = record.currency,
+        type = record.type.name,
+        amount = record.amount,
+        balanceAfter = record.balanceAfter,
+        source = record.source,
+        reason = record.reason,
+        meta = record.meta,
+    )
+
+    private fun toRecord(stored: StoredTransaction): TransactionRecord? {
+        val account = runCatching { UUID.fromString(stored.account) }.getOrNull() ?: return null
+        val type = runCatching { TransactionType.valueOf(stored.type) }.getOrNull() ?: return null
+        return TransactionRecord(
+            id = stored.id,
+            timestamp = stored.timestamp,
+            account = account,
+            counterparty = stored.counterparty?.let { runCatching { UUID.fromString(it) }.getOrNull() },
+            currency = stored.currency,
+            type = type,
+            amount = stored.amount,
+            balanceAfter = stored.balanceAfter,
+            source = stored.source,
+            reason = stored.reason,
+            meta = stored.meta,
+        )
+    }
 
     private fun toAccount(stored: StoredAccount): MoneyAccount? {
         val uuid = runCatching { UUID.fromString(stored.uuid) }.getOrNull() ?: run {

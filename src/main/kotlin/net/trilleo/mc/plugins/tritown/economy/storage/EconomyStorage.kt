@@ -66,6 +66,21 @@ interface EconomyStorage {
     /** Removes the account for [uuid], if it is stored. */
     fun deleteAccount(uuid: UUID)
 
+    /** Appends [records] to the transaction log. */
+    fun appendTransactions(records: List<StoredTransaction>)
+
+    /**
+     * Reads back the most recent [maxPerAccount] transactions for each account,
+     * to seed the in-memory history at startup.
+     *
+     * Unlike the accounts, a transaction log that cannot be read is logged and
+     * skipped rather than fatal. History is worth keeping, but it is not money.
+     */
+    fun loadRecentTransactions(maxPerAccount: Int): Map<String, List<StoredTransaction>>
+
+    /** Discards logged transactions older than [olderThanEpochMs]. */
+    fun pruneTransactions(olderThanEpochMs: Long)
+
     /** Flushes anything buffered and releases resources. */
     fun close()
 }

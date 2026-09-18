@@ -94,6 +94,11 @@ TriTown's version stays available as `/tritown:balance` and so on.
 | `economy.storage.type`                 | `json`           | Where balances are kept                                                     |
 | `economy.storage.flush-interval`       | `60`             | Seconds between writes; a crash loses at most this long                     |
 | `economy.storage.allow-rescale`        | `false`          | Convert balances when `fractional-digits` changes, instead of refusing to start |
+| `economy.history.enabled`              | `true`           | Record every transaction to a log                                           |
+| `economy.history.max-entries-per-account` | `100`         | Recent entries kept in memory per account                                   |
+| `economy.history.retention-days`       | `30`             | How long rolled log files are kept; `0` keeps them forever                  |
+| `economy.history.roll-size-mb`         | `16`             | Size at which the transaction log is rolled aside                           |
+| `economy.history.time-format`          | `yyyy-MM-dd HH:mm` | How timestamps are shown in the history view                              |
 
 Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how
 every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;

@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.commands.economy
 import net.trilleo.mc.plugins.tritown.Main
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
+import net.trilleo.mc.plugins.tritown.economy.EconomyContext
 import net.trilleo.mc.plugins.tritown.economy.EconomyResult
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.Money
@@ -94,7 +95,10 @@ class EconomyAdminCommand : PluginCommand(
     private fun reset(sender: CommandSender, account: MoneyAccount) {
         val currency = primaryCurrency()
         val starting = currency.of(EconomySettings.snapshot.startingBalance)
-        apply(sender, account, EconomyService.setBalance(account, currency, starting)) {
+        val result = EconomyContext.command("Reset by ${sender.name}") {
+            EconomyService.setBalance(account, currency, starting)
+        }
+        apply(sender, account, result) {
             "Reset <white>${displayName(account)}</white> to <white>${display(it, currency)}</white>"
         }
     }
@@ -122,10 +126,12 @@ class EconomyAdminCommand : PluginCommand(
             return
         }
 
-        val result = when (action) {
-            "give" -> EconomyService.deposit(account, currency, amount)
-            "take" -> EconomyService.withdraw(account, currency, amount)
-            else -> EconomyService.setBalance(account, currency, amount)
+        val result = EconomyContext.command("Set by ${sender.name}") {
+            when (action) {
+                "give" -> EconomyService.deposit(account, currency, amount)
+                "take" -> EconomyService.withdraw(account, currency, amount)
+                else -> EconomyService.setBalance(account, currency, amount)
+            }
         }
 
         apply(sender, account, result) { balance ->

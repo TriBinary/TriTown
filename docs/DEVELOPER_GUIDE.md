@@ -2004,6 +2004,45 @@ These are the parts worth not rediscovering the hard way:
 * **A malformed individual account is skipped** with a warning rather than failing the whole load — one bad row should
   not cost the server its economy.
 
+### The transaction log
+
+Every movement of money is recorded as a `TransactionRecord` filed against one account. A transfer produces two
+records, one per side, which is why `/eco history` for a player never shows the same payment twice.
+
+There are two stores, for two different jobs:
+
+* **On disk** — `<dataFolder>/economy/transactions.log`, newline-delimited JSON, only ever appended to, so a crash can
+  cost the last line but never corrupt the ones before it. It rolls to `transactions-<epoch>.log` past
+  `economy.history.roll-size-mb`, and rolled files are deleted past `economy.history.retention-days`. Pruning runs at
+  most once an hour from the flush task.
+* **In memory** — a ring per account, capped at `economy.history.max-entries-per-account`, seeded at startup from the
+  tail of the log. Rings are created lazily, so only accounts touched since the last restart use any memory. This is
+  what the history view reads, so opening it never touches the disk.
+
+`EconomyService` is the only thing that writes records. Recording never blocks the thread that made the transaction —
+records go on a queue the flush task drains — which matters because Towny makes plenty of them from its own threads.
+
+**Attribution** comes from `EconomyContext`, a thread-local wrapping whatever TriTown is currently doing:
+
+```kotlin
+EconomyContext.command("Player payment") {
+    EconomyService.transfer(from, to, currency, amount)
+}
+```
+
+Money that moves because Towny or another plugin asked Vault to move it arrives with nothing to identify it, so it
+falls back to `EconomyContext.DEFAULT`. `with` restores the previous attribution rather than clearing it, so these
+nest safely.
+
+`meta` on a record is the extension point for later features — a shop id, a banknote serial, a payday tag — so they
+add keys rather than needing a new field.
+
+> A limitation worth knowing before extending this: Towny's own `Account.deposit(amount, reason)` carries a human
+> reason such as "New town" or "Upkeep", but `BankTransactionEvent` does not expose it, so records from Towny carry
+> the event type rather than Towny's own wording. Do **not** try to recover it by matching timestamps and amounts —
+> that produces a confidently wrong audit trail. The clean route is a Towny `AccountObserver`, which does receive the
+> reason.
+
 ### Crash window
 
 Accounts are written on an interval (`economy.storage.flush-interval`, 60 seconds by default), on shutdown, and

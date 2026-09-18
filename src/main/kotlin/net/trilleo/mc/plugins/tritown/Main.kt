@@ -125,6 +125,7 @@ class Main : JavaPlugin() {
             expectedDigits = CurrencyRegistry.primary.fractionalDigits,
             allowRescale = settings.allowRescale,
             logger = logger,
+            rollSizeBytes = settings.history.rollSizeBytes,
         )
     }
 
