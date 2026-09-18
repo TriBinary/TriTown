@@ -1,29 +1,29 @@
-# ExamplePlugin - Developer Guide
+# TriTown - Developer Guide
 
-This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, and
-work with the **configuration** system using ExamplePlugin's registration system. Commands, listeners, GUIs, tasks,
-custom items, and recipes all follow the same pattern: extend a base class (or implement an interface), place the file
-in the correct package, and the plugin handles the rest automatically at startup. The configuration system provides
-typed access to `config.yml` values.
+This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, work
+with **translations** and the **configuration** system using TriTown's registration system, and how to build on
+**Towny**, the **Vault economy**, and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
+follow the same pattern: extend a base class (or implement an interface), place the file in the correct package, and the
+plugin handles the rest automatically at startup. The configuration system provides typed access to `config.yml` values.
 
 ## How Auto-Registration Works
 
-ExamplePlugin uses a `PackageScanner` to discover classes at runtime. When the plugin starts, it scans specific packages
-for concrete (non-abstract) classes and registers them automatically. You never need to edit `plugin.yml` or manually
-wire anything up.
+TriTown uses a `PackageScanner` to discover classes at runtime. When the plugin starts, it scans specific packages for
+concrete (non-abstract) classes and registers them automatically. You never need to edit `plugin.yml` or manually wire
+anything up.
 
-| System        | Base Class / Interface    | Package                               |
-|:--------------|:--------------------------|:--------------------------------------|
-| Commands      | `PluginCommand`           | `com.example.exampleplugin.commands`  |
-| Permissions   | *(derived from commands)* | *(automatic — no package needed)*     |
-| Listeners     | `Listener`                | `com.example.exampleplugin.listeners` |
-| GUIs          | `PluginGUI`               | `com.example.exampleplugin.guis`      |
-| Tasks         | `PluginTask`              | `com.example.exampleplugin.tasks`     |
-| Custom Items  | `PluginItem`              | `com.example.exampleplugin.items`     |
-| Recipes       | `PluginRecipe`            | `com.example.exampleplugin.recipes`   |
-| Configuration | `PluginConfig`            | `com.example.exampleplugin.config`    |
-| Player Data   | `PlayerData`              | `com.example.exampleplugin.data`      |
-| Server Data   | `ServerData`              | `com.example.exampleplugin.data`      |
+| System        | Base Class / Interface    | Package                                    |
+|:--------------|:--------------------------|:-------------------------------------------|
+| Commands      | `PluginCommand`           | `net.trilleo.mc.plugins.tritown.commands`  |
+| Permissions   | *(derived from commands)* | *(automatic — no package needed)*          |
+| Listeners     | `Listener`                | `net.trilleo.mc.plugins.tritown.listeners` |
+| GUIs          | `PluginGUI`               | `net.trilleo.mc.plugins.tritown.guis`      |
+| Tasks         | `PluginTask`              | `net.trilleo.mc.plugins.tritown.tasks`     |
+| Custom Items  | `PluginItem`              | `net.trilleo.mc.plugins.tritown.items`     |
+| Recipes       | `PluginRecipe`            | `net.trilleo.mc.plugins.tritown.recipes`   |
+| Configuration | `PluginConfig`            | `net.trilleo.mc.plugins.tritown.config`    |
+| Player Data   | `PlayerData`              | `net.trilleo.mc.plugins.tritown.data`      |
+| Server Data   | `ServerData`              | `net.trilleo.mc.plugins.tritown.data`      |
 
 Subpackages are also scanned, so you can freely organize classes into folders like `commands/game/`,
 `listeners/player/`, or `guis/menus/`.
@@ -45,16 +45,16 @@ The plugin instance is injected automatically when a `JavaPlugin` constructor is
 
 To create a command, extend `PluginCommand` and place the class anywhere inside the `commands` package or a subpackage.
 
-By default every command is registered as a **sub-command** of `/exampleplugin` (alias `/ep`). For example, a command
-with `name = "reload"` becomes `/exampleplugin reload`. Set `isMainCommand = true` to register the command as a
-standalone top-level command instead.
+By default every command is registered as a **sub-command** of `/tritown` (alias `/tt`). For example, a command with
+`name = "reload"` becomes `/tritown reload`. Set `isMainCommand = true` to register the command as a standalone
+top-level command instead.
 
-When a player types `/exampleplugin` in-game, tab-completion automatically lists all available sub-commands.
+When a player types `/tritown` in-game, tab-completion automatically lists all available sub-commands.
 
 ### Categories
 
 Commands are automatically categorised based on their **subpackage** (folder) inside the `commands` package. The
-category is used by the built-in `/exampleplugin help` command to group commands for display.
+category is used by the built-in `/tritown help` command to group commands for display.
 
 | Command Location                | Category |
 |:--------------------------------|:---------|
@@ -64,20 +64,30 @@ category is used by the built-in `/exampleplugin help` command to group commands
 
 ### Help Command
 
-The plugin ships with a built-in `/exampleplugin help` command. It lists every registered command grouped by category,
-sorted alphabetically within each group, and formatted with colours for readability. Every command should provide a
-meaningful `description` so the help output is informative.
+The plugin ships with a built-in `/tritown help` command. It lists every registered command grouped by category, sorted
+alphabetically within each group, and formatted with colours for readability.
+
+The list is translated: it shows `command.<name>.description` and `command.category.<category>` from the language files,
+falling back to the Kotlin `description` and the raw category name when a key is missing. Every command should still
+provide a meaningful `description` — it is what the server sees in Bukkit's own command list — and add the matching
+`command.<name>.description` key to both language files. See [Translations](#translations).
 
 ### PluginCommand Properties
 
 | Property        | Type           | Default        | Description                                                              |
 |:----------------|:---------------|:---------------|:-------------------------------------------------------------------------|
-| `name`          | `String`       | *(required)*   | The command name (e.g. `"reload"` for `/exampleplugin reload`)           |
-| `description`   | `String`       | `""`           | A brief description shown in `/exampleplugin help` — always provide one  |
+| `name`          | `String`       | *(required)*   | The command name (e.g. `"reload"` for `/tritown reload`)                 |
+| `description`   | `String`       | `""`           | A brief description shown in `/tritown help` — always provide one        |
 | `usage`         | `String`       | `"/<command>"` | Usage hint shown when the command fails                                  |
 | `aliases`       | `List<String>` | `emptyList()`  | Alternative names for the command (applicable to main commands only)     |
 | `permission`    | `String?`      | `null`         | Permission node required to use the command (auto-registered at startup) |
 | `isMainCommand` | `Boolean`      | `false`        | When `true`, the command is registered as a standalone top-level command |
+
+One further property is an overridable `val` rather than a constructor parameter:
+
+| Property           | Type           | Default       | Description                                                              |
+|:-------------------|:---------------|:--------------|:-------------------------------------------------------------------------|
+| `extraPermissions` | `List<String>` | `emptyList()` | Extra nodes the command checks itself, registered alongside `permission` |
 
 ### Automatic Permission Registration
 
@@ -92,6 +102,23 @@ automatically registers it with Bukkit's `PluginManager`. This means:
 You do **not** need to declare permissions in `plugin.yml`; simply set the `permission` property on your command and the
 system handles the rest.
 
+A command that checks further nodes itself — a per-action node for a sub-action, or a `.others` node guarding another
+player as the target — lists them in `extraPermissions` so they are registered too. Without this they still *work*,
+because an unregistered node falls back to operator-only, but they stay invisible to permission-management plugins:
+
+```kotlin
+class EconomyAdminCommand : PluginCommand(
+    name = "eco",
+    description = "Administer player balances",
+    permission = "tritown.economy.admin"
+) {
+    override val extraPermissions = listOf(
+        "tritown.economy.admin.give",
+        "tritown.economy.admin.take"
+    )
+}
+```
+
 ### Methods to Override
 
 | Method        | Required | Description                                      |
@@ -101,27 +128,28 @@ system handles the rest.
 
 ### Example (Sub-Command)
 
-This command is registered as `/exampleplugin ping` (the default behavior):
+This command is registered as `/tritown ping` (the default behavior):
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 class PingCommand : PluginCommand(
     name = "ping",
     description = "Check your latency",
-    usage = "/exampleplugin ping",
-    permission = "exampleplugin.ping"
+    usage = "/tritown ping",
+    permission = "tritown.ping"
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("This command can only be used by players.")
+            sender.sendPrefixed("<red>This command can only be used by players.")
             return true
         }
-        sender.sendMessage("Pong! Your ping is ${sender.ping}ms.")
+        sender.sendPrefixed("Pong! Your ping is <yellow>${sender.ping}</yellow>ms.")
         return true
     }
 }
@@ -129,26 +157,26 @@ class PingCommand : PluginCommand(
 
 ### Example with Tab Completion (Sub-Command)
 
-This command is registered as `/exampleplugin team`:
+This command is registered as `/tritown team`:
 
 ```kotlin
-package com.example.exampleplugin.commands.game
+package net.trilleo.mc.plugins.tritown.commands.game
 
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 class TeamCommand : PluginCommand(
     name = "team",
     description = "Join a team",
-    usage = "/exampleplugin team <hunters|runners>",
-    permission = "exampleplugin.team"
+    usage = "/tritown team <hunters|runners>",
+    permission = "tritown.team"
 ) {
     private val teams = listOf("hunters", "runners")
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (args.isEmpty() || args[0] !in teams) {
-            sender.sendMessage("Usage: /exampleplugin team <hunters|runners>")
+            sender.sendMessage("Usage: /tritown team <hunters|runners>")
             return false
         }
         sender.sendMessage("You joined the ${args[0]} team!")
@@ -166,28 +194,29 @@ class TeamCommand : PluginCommand(
 
 ### Example with Plugin Instance (Sub-Command)
 
-This command is registered as `/exampleplugin reload`:
+This command is registered as `/tritown reload`:
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 
 class ReloadCommand(private val plugin: JavaPlugin) : PluginCommand(
     name = "reload",
     description = "Reload the plugin configuration",
-    permission = "exampleplugin.reload"
+    permission = "tritown.reload"
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
-        val main = plugin as? com.example.exampleplugin.Main
+        val main = plugin as? net.trilleo.mc.plugins.tritown.Main
         if (main == null) {
-            sender.sendMessage("Error: Plugin instance type mismatch. Unable to reload configuration.")
+            sender.sendPrefixed("<red>Error: Plugin instance type mismatch. Unable to reload configuration.")
             return true
         }
-        main.pluginConfig.reload()
-        sender.sendMessage("Configuration reloaded!")
+        main.reload()
+        sender.sendPrefixed("Configuration reloaded!")
         return true
     }
 }
@@ -198,9 +227,9 @@ class ReloadCommand(private val plugin: JavaPlugin) : PluginCommand(
 Set `isMainCommand = true` to register a standalone top-level command. This command is registered as `/globaltool`:
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import org.bukkit.command.CommandSender
 
 class GlobalToolCommand : PluginCommand(
@@ -230,7 +259,7 @@ Annotate each event handler method with `@EventHandler`. The method must accept 
 ### Example
 
 ```kotlin
-package com.example.exampleplugin.listeners
+package net.trilleo.mc.plugins.tritown.listeners
 
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -250,7 +279,7 @@ class JoinListener : Listener {
 ### Example with Subpackage and Plugin Instance
 
 ```kotlin
-package com.example.exampleplugin.listeners.player
+package net.trilleo.mc.plugins.tritown.listeners.player
 
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -275,12 +304,15 @@ or a subpackage.
 
 ### PluginGUI Properties
 
-| Property   | Type        | Default         | Description                                                      |
-|:-----------|:------------|:----------------|:-----------------------------------------------------------------|
-| `id`       | `String`    | *(required)*    | Unique identifier used to open the GUI                           |
-| `title`    | `Component` | *(required)*    | Title displayed at the top of the chest                          |
-| `rows`     | `Int`       | `3`             | Number of rows (1–6, each row = 9 slots)                         |
-| `fillMode` | `FillMode`  | `FillMode.NONE` | Controls how empty slots are pre-filled before `setup` is called |
+| Property   | Type       | Default         | Description                                                 |
+|:-----------|:-----------|:----------------|:------------------------------------------------------------|
+| `id`       | `String`   | *(required)*    | Unique identifier used to open the GUI                      |
+| `titleKey` | `String`   | *(required)*    | Translation key of the title shown at the top of the chest  |
+| `rows`     | `Int`      | `3`             | Number of rows (1–6, each row = 9 slots)                    |
+| `fillMode` | `FillMode` | `FillMode.NONE` | Controls how empty slots are pre-filled before `setup` runs |
+
+The title is translated for whoever opens the GUI. Override `title(player)` when it carries live data, such as a name or
+a count, and translate the key yourself there.
 
 #### FillMode values
 
@@ -292,18 +324,19 @@ or a subpackage.
 
 ### Methods to Override
 
-| Method    | Required | Description                                           |
-|:----------|:---------|:------------------------------------------------------|
-| `setup`   | Yes      | Populate the inventory with items before it opens     |
-| `onClick` | No       | Handle click events (clicks are cancelled by default) |
-| `onClose` | No       | Handle cleanup when the GUI is closed                 |
+| Method    | Required | Description                                                  |
+|:----------|:---------|:-------------------------------------------------------------|
+| `setup`   | Yes      | Populate the inventory with items before it opens            |
+| `title`   | No       | Build the title yourself when `titleKey` alone is not enough |
+| `onClick` | No       | Handle click events (clicks are cancelled by default)        |
+| `onClose` | No       | Handle cleanup when the GUI is closed                        |
 
 ### Opening a GUI
 
 Use `GUIManager.open(player, id)` to open a registered GUI for a player:
 
 ```kotlin
-import com.example.exampleplugin.registration.GUIManager
+import net.trilleo.mc.plugins.tritown.registration.GUIManager
 
 // Returns true if the GUI was found and opened, false otherwise
 GUIManager.open(player, "settings")
@@ -312,36 +345,35 @@ GUIManager.open(player, "settings")
 ### Example
 
 ```kotlin
-package com.example.exampleplugin.guis
+package net.trilleo.mc.plugins.tritown.guis
 
-import com.example.exampleplugin.enums.FillMode
-import com.example.exampleplugin.registration.PluginGUI
-import net.kyori.adventure.text.Component
+import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.registration.PluginGUI
+import net.trilleo.mc.plugins.tritown.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 
 class SettingsGUI : PluginGUI(
     id = "settings",
-    title = Component.text("Settings"),
+    titleKey = "gui.settings.title",
     rows = 3,
     fillMode = FillMode.DARK
 ) {
     override fun setup(player: Player, inventory: Inventory) {
-        val compass = ItemStack(Material.COMPASS)
-        val meta = compass.itemMeta
-        meta.displayName(Component.text("Tracker"))
-        compass.itemMeta = meta
-        inventory.setItem(13, compass)
+        inventory.setItem(13, itemStack(Material.COMPASS) {
+            name(player.tr("gui.settings.tracker"))
+        })
     }
 
     override fun onClick(event: InventoryClickEvent) {
         event.isCancelled = true
         val player = event.whoClicked as? Player ?: return
         if (event.slot == 13) {
-            player.sendMessage("Tracker selected!")
+            player.sendPrefixed(player.tr("gui.settings.tracker-selected"))
         }
     }
 }
@@ -349,24 +381,24 @@ class SettingsGUI : PluginGUI(
 
 ### Opening a GUI from a Command
 
-A common pattern is opening a GUI when a player runs a command. This command is registered as `/exampleplugin settings`:
+A common pattern is opening a GUI when a player runs a command. This command is registered as `/tritown settings`:
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.registration.GUIManager
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.registration.GUIManager
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 class SettingsCommand : PluginCommand(
     name = "settings",
     description = "Open the settings menu",
-    permission = "exampleplugin.settings"
+    permission = "tritown.settings"
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("This command can only be used by players.")
+            sender.sendPrefixed("<red>This command can only be used by players.")
             return true
         }
         GUIManager.open(sender, "settings")
@@ -393,7 +425,7 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 | Property   | Type           | Default             | Description                                                                        |
 |:-----------|:---------------|:--------------------|:-----------------------------------------------------------------------------------|
 | `id`       | `String`       | *(required)*        | Unique identifier used to open the GUI                                             |
-| `title`    | `Component`    | *(required)*        | Title displayed at the top of the chest                                            |
+| `titleKey` | `String`       | *(required)*        | Translation key of the title shown at the top of the chest                         |
 | `rows`     | `Int`          | `6`                 | Number of rows (2–6, each row = 9 slots)                                           |
 | `fillMode` | `FillMode`     | `FillMode.NONE`     | Controls background filler; re-applied on every page render, not just initial open |
 | `mode`     | `PagedGUIMode` | `PagedGUIMode.LIST` | Controls how items are supplied — see [Modes](#modes) below                        |
@@ -432,10 +464,12 @@ The last row of the inventory contains:
 ### Example (LIST mode)
 
 ```kotlin
-package com.example.exampleplugin.guis
+package net.trilleo.mc.plugins.tritown.guis
 
-import com.example.exampleplugin.registration.PagedPluginGUI
-import net.kyori.adventure.text.Component
+import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
+import net.trilleo.mc.plugins.tritown.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -443,22 +477,20 @@ import org.bukkit.inventory.ItemStack
 
 class RewardsGUI : PagedPluginGUI(
     id = "rewards",
-    title = Component.text("Rewards"),
+    titleKey = "gui.rewards.title",
     rows = 6
 ) {
     override fun getItems(player: Player): List<ItemStack> {
         return List(100) { index ->
-            val item = ItemStack(Material.DIAMOND)
-            val meta = item.itemMeta
-            meta.displayName(Component.text("Reward #${index + 1}"))
-            item.itemMeta = meta
-            item
+            itemStack(Material.DIAMOND) {
+                name(player.tr("gui.rewards.entry", "number" to index + 1))
+            }
         }
     }
 
     override fun onContentClick(event: InventoryClickEvent, page: Int) {
         val player = event.whoClicked as? Player ?: return
-        player.sendMessage("You clicked slot ${event.slot} on page ${page + 1}!")
+        player.sendPrefixed(player.tr("gui.rewards.clicked", "slot" to event.slot, "page" to page + 1))
     }
 }
 ```
@@ -470,18 +502,17 @@ key is the **zero-based page index**; the inner map key is the **zero-based cont
 `contentSlots - 1`).
 
 ```kotlin
-package com.example.exampleplugin.guis
+package net.trilleo.mc.plugins.tritown.guis
 
-import com.example.exampleplugin.enums.PagedGUIMode
-import com.example.exampleplugin.registration.PagedPluginGUI
-import net.kyori.adventure.text.Component
+import net.trilleo.mc.plugins.tritown.enums.PagedGUIMode
+import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 class StagesGUI : PagedPluginGUI(
     id = "stages",
-    title = Component.text("Stages"),
+    titleKey = "gui.stages.title",
     rows = 4,
     mode = PagedGUIMode.SET
 ) {
@@ -504,21 +535,21 @@ class StagesGUI : PagedPluginGUI(
 Paged GUIs are opened the same way as regular GUIs, using `GUIManager.open(player, id)`:
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.registration.GUIManager
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.registration.GUIManager
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 class RewardsCommand : PluginCommand(
     name = "rewards",
     description = "Browse available rewards",
-    permission = "exampleplugin.rewards"
+    permission = "tritown.rewards"
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("This command can only be used by players.")
+            sender.sendPrefixed("<red>This command can only be used by players.")
             return true
         }
         GUIManager.open(sender, "rewards")
@@ -565,9 +596,9 @@ The combination of `period` and `async` determines which Bukkit scheduler method
 This task broadcasts a message to all players every 5 minutes:
 
 ```kotlin
-package com.example.exampleplugin.tasks
+package net.trilleo.mc.plugins.tritown.tasks
 
-import com.example.exampleplugin.registration.PluginTask
+import net.trilleo.mc.plugins.tritown.registration.PluginTask
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -578,7 +609,7 @@ class BroadcastTask : PluginTask(
 ) {
     override fun run() {
         Bukkit.broadcast(
-            Component.text("[ExamplePlugin] ", NamedTextColor.GOLD)
+            Component.text("[TriTown] ", NamedTextColor.GOLD)
                 .append(Component.text("The server is running smoothly!", NamedTextColor.YELLOW))
         )
     }
@@ -590,9 +621,9 @@ class BroadcastTask : PluginTask(
 This task runs once 5 seconds after the plugin enables, off the main thread:
 
 ```kotlin
-package com.example.exampleplugin.tasks
+package net.trilleo.mc.plugins.tritown.tasks
 
-import com.example.exampleplugin.registration.PluginTask
+import net.trilleo.mc.plugins.tritown.registration.PluginTask
 
 class CleanupTask : PluginTask(
     delay = 100L,
@@ -609,9 +640,9 @@ class CleanupTask : PluginTask(
 When you need access to the plugin, declare a `JavaPlugin` constructor parameter:
 
 ```kotlin
-package com.example.exampleplugin.tasks
+package net.trilleo.mc.plugins.tritown.tasks
 
-import com.example.exampleplugin.registration.PluginTask
+import net.trilleo.mc.plugins.tritown.registration.PluginTask
 import org.bukkit.plugin.java.JavaPlugin
 
 class MetricsTask(private val plugin: JavaPlugin) : PluginTask(
@@ -633,7 +664,7 @@ The item is automatically discovered by `ItemRegistrar` at startup and added to 
 
 Each stack produced by `create()` has the item's `id` embedded in its
 [Persistent Data Container](https://docs.papermc.io/paper/dev/pdc) under the key
-`exampleplugin:custom_item_id`. This marker is used by `matches()` to identify the item in inventory checks, and by
+`tritown:custom_item_id`. This marker is used by `matches()` to identify the item in inventory checks, and by
 `asChoice()` to match the item as a recipe ingredient.
 
 ### Declaring Items as Kotlin Objects
@@ -651,22 +682,22 @@ constructor is needed.
 
 ### PluginItem Properties and Methods
 
-| Member        | Signature                  | Description                                                                       |
-|:--------------|:---------------------------|:----------------------------------------------------------------------------------|
-| `id`          | `String` *(constructor)*   | Unique lower-case identifier stored in every produced stack's PDC                 |
-| `ITEM_ID_KEY` | `NamespacedKey` *(static)* | The PDC key used to stamp the ID; namespace `exampleplugin`, key `custom_item_id` |
-| `create`      | `create(amount: Int = 1)`  | Returns a fully configured, ID-stamped `ItemStack`                                |
-| `buildItem`   | `buildItem(amount: Int)`   | **Override** — define material, name, lore, etc. using the `itemStack` DSL        |
-| `matches`     | `matches(ItemStack)`       | Returns `true` when the stack carries this item's ID in its PDC                   |
-| `asChoice`    | `asChoice()`               | Returns a `RecipeChoice.ExactChoice` for use as a recipe ingredient               |
+| Member        | Signature                  | Description                                                                 |
+|:--------------|:---------------------------|:----------------------------------------------------------------------------|
+| `id`          | `String` *(constructor)*   | Unique lower-case identifier stored in every produced stack's PDC           |
+| `ITEM_ID_KEY` | `NamespacedKey` *(static)* | The PDC key used to stamp the ID; namespace `tritown`, key `custom_item_id` |
+| `create`      | `create(amount: Int = 1)`  | Returns a fully configured, ID-stamped `ItemStack`                          |
+| `buildItem`   | `buildItem(amount: Int)`   | **Override** — define material, name, lore, etc. using the `itemStack` DSL  |
+| `matches`     | `matches(ItemStack)`       | Returns `true` when the stack carries this item's ID in its PDC             |
+| `asChoice`    | `asChoice()`               | Returns a `RecipeChoice.ExactChoice` for use as a recipe ingredient         |
 
 ### Example (Kotlin Object)
 
 ```kotlin
-package com.example.exampleplugin.items
+package net.trilleo.mc.plugins.tritown.items
 
-import com.example.exampleplugin.registration.PluginItem
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.registration.PluginItem
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
@@ -692,10 +723,10 @@ When you need access to the plugin (e.g. for a `NamespacedKey` beyond the built-
 constructor parameter:
 
 ```kotlin
-package com.example.exampleplugin.items
+package net.trilleo.mc.plugins.tritown.items
 
-import com.example.exampleplugin.registration.PluginItem
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.registration.PluginItem
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
@@ -717,7 +748,7 @@ class TrackedItem(private val plugin: JavaPlugin) : PluginItem("tracked_item") {
 Use `matches` in a listener to detect when a player is holding or using a specific custom item:
 
 ```kotlin
-import com.example.exampleplugin.items.ExcaliburItem
+import net.trilleo.mc.plugins.tritown.items.ExcaliburItem
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
@@ -741,7 +772,7 @@ class ExcaliburListener : Listener {
 When you only have the item ID as a string (e.g. from config), use `ItemRegistrar.get`:
 
 ```kotlin
-import com.example.exampleplugin.registration.ItemRegistrar
+import net.trilleo.mc.plugins.tritown.registration.ItemRegistrar
 
 val item = ItemRegistrar.get("excalibur") ?: return
 player.inventory.addItem(item.create())
@@ -794,10 +825,10 @@ Recipe classes follow the same constructor rules as commands and tasks:
 ### Example (Shaped Crafting Recipe — Custom Item Result)
 
 ```kotlin
-package com.example.exampleplugin.recipes
+package net.trilleo.mc.plugins.tritown.recipes
 
-import com.example.exampleplugin.items.ExcaliburItem
-import com.example.exampleplugin.registration.PluginRecipe
+import net.trilleo.mc.plugins.tritown.items.ExcaliburItem
+import net.trilleo.mc.plugins.tritown.registration.PluginRecipe
 import org.bukkit.Material
 import org.bukkit.inventory.Recipe
 import org.bukkit.inventory.ShapedRecipe
@@ -823,10 +854,10 @@ class ExcaliburRecipe : PluginRecipe("excalibur_recipe") {
 Use `customChoice(item)` to require a plugin custom item as an ingredient:
 
 ```kotlin
-package com.example.exampleplugin.recipes
+package net.trilleo.mc.plugins.tritown.recipes
 
-import com.example.exampleplugin.items.ExcaliburItem
-import com.example.exampleplugin.registration.PluginRecipe
+import net.trilleo.mc.plugins.tritown.items.ExcaliburItem
+import net.trilleo.mc.plugins.tritown.registration.PluginRecipe
 import org.bukkit.Material
 import org.bukkit.inventory.Recipe
 import org.bukkit.inventory.ShapelessRecipe
@@ -846,9 +877,9 @@ class ExcaliburRepairRecipe : PluginRecipe("excalibur_repair") {
 ### Example (Furnace Recipe)
 
 ```kotlin
-package com.example.exampleplugin.recipes
+package net.trilleo.mc.plugins.tritown.recipes
 
-import com.example.exampleplugin.registration.PluginRecipe
+import net.trilleo.mc.plugins.tritown.registration.PluginRecipe
 import org.bukkit.Material
 import org.bukkit.inventory.FurnaceRecipe
 import org.bukkit.inventory.ItemStack
@@ -872,10 +903,10 @@ class IronNuggetRecipe : PluginRecipe("iron_nugget_smelt") {
 ### Example (Smithing Table Recipe)
 
 ```kotlin
-package com.example.exampleplugin.recipes
+package net.trilleo.mc.plugins.tritown.recipes
 
-import com.example.exampleplugin.items.ExcaliburItem
-import com.example.exampleplugin.registration.PluginRecipe
+import net.trilleo.mc.plugins.tritown.items.ExcaliburItem
+import net.trilleo.mc.plugins.tritown.registration.PluginRecipe
 import org.bukkit.Material
 import org.bukkit.inventory.Recipe
 import org.bukkit.inventory.SmithingTransformRecipe
@@ -896,6 +927,108 @@ class ExcaliburUpgradeRecipe : PluginRecipe("excalibur_upgrade") {
 ```
 
 ---
+
+## Translations
+
+Every player-facing string lives in `src/main/resources/lang/<id>.yml`. TriTown bundles `en_US` and `zh_CN`, and a
+server owner can edit either or drop in a new `<id>.yml`.
+
+### How it works
+
+1. On startup (in `Main.onLoad`, before Vault registration) and again on `/tritown reload`, `Lang.load` copies any
+   missing bundled file into `plugins/TriTown/lang/` and loads every `.yml` there. Keys missing from a file fall back to
+   the bundled copy of that language, then to English.
+2. `language` in `config.yml` is `auto` or a language id. With `auto`, each player gets the file matching their client
+   locale exactly (`zh_cn`), else one sharing its language prefix (`zh_tw` → `zh_CN`), else `en_US`. The console, and
+   anything with no player behind it, uses the configured language, or `en_US` under `auto`.
+3. `tr(key, "name" to value)` looks the key up and replaces each `{name}` with `value.toString()`. A key no file defines
+   is returned as-is, so a missing translation is visible in game.
+
+### Using it
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
+
+// Anywhere there is a CommandSender or Player
+sender.sendPrefixed(sender.tr("command.reload.done"))
+player.sendPrefixed(player.tr("command.pay.minimum", "amount" to display(minimum, currency)))
+
+// In an item or menu
+name(player.tr("gui.history.credit", "amount" to amount))
+```
+
+`Lang.find(sender, key)` returns `null` instead of the key, for the places that fall back to something else — the help
+list's command descriptions and a transaction's recorded source.
+
+### Rules
+
+- **No player-facing string in Kotlin.** Messages, item names, lore lines and menu titles all come from a key.
+- **Colours go in the translation**, so a translator sees the whole line. The one exception is `money.error.*`, which is
+  plain text because Vault passes it to other plugins that print it verbatim; `common.error` colours it for TriTown's
+  own messages.
+- **Escape player-written text** with `MiniMessage.miniMessage().escapeTags(...)` before passing it as an argument.
+  Arguments are inserted verbatim.
+- **Write keys as whole string literals.** `tr(if (credit) "gui.history.credit" else "gui.history.debit")` is fine;
+  `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list) and
+  `money.source.*` are the only runtime-built keys.
+- **Placeholder names are lowercase letters only** — `{name}`, `{balance}`, `{pages}`.
+- **Server-log messages stay English.** `logger.info`/`warning`/`severe` are for the owner, not the player.
+- Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
+  per menu. Reuse before adding.
+- Quote YAML keys that YAML 1.1 reads as booleans (`"on"`, `"off"`, `"yes"`, `"no"`).
+- Chinese terms follow Towny's own zh_CN wording: 城镇 (town), 国家 (nation), 镇长 (mayor), 居民 (resident), 银行
+  (bank).
+
+### Translating a GUI
+
+A GUI passes a `titleKey`, and the base class translates it for whoever opens it:
+
+```kotlin
+class TransactionHistoryGUI : PagedPluginGUI(
+    id = "eco-history",
+    titleKey = "gui.history.title",
+    rows = 6,
+)
+```
+
+```yaml
+# src/main/resources/lang/en_US.yml
+gui:
+  history:
+    title: "<dark_gray>Transaction History"
+```
+
+```yaml
+# src/main/resources/lang/zh_CN.yml
+gui:
+  history:
+    title: "<dark_gray>交易记录"
+```
+
+Override `title(player)` instead when the title carries live data. The **Previous** / **Next** / page buttons that
+`PagedPluginGUI` draws are already translated from `gui.previous-page`, `gui.next-page` and `gui.page`.
+
+### Recorded reasons
+
+A transaction's reason is written to `economy/transactions.log`, so it cannot be a translated sentence — the server's
+language may change, and the log has to stay readable either way. `TransactionReason.of(key, "name" to value)` encodes
+it as `money.reason.admin-set?admin=Steve`, and the history view translates it back with
+`TransactionReason.translate(viewer, reason)`. A reason another plugin recorded is shown as it was written.
+
+### LangFilesTest
+
+`./gradlew build` runs `LangFilesTest`, which fails when:
+
+- a bundled language is missing a key English has, or has one English lacks;
+- a translation's `{placeholders}` differ from English;
+- the code uses a key no language defines;
+- `en_US.yml` defines a key no code uses (outside the runtime-built prefixes).
+
+Doc comments are stripped before the scan, so an example key in KDoc does not count as used.
+
+To bundle another language, add `lang/<id>.yml` to the resources and its id to `Lang.BUNDLED` and to the test's language
+list.
 
 ## Adventure Library
 
@@ -1059,7 +1192,7 @@ val headerStyle = Style.style(
     TextDecoration.BOLD
 )
 
-val header = Component.text("ExamplePlugin", headerStyle)
+val header = Component.text("TriTown", headerStyle)
 sender.sendMessage(header)
 ```
 
@@ -1089,7 +1222,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 
-val message = Component.text("[ExamplePlugin] ", NamedTextColor.GOLD, TextDecoration.BOLD)
+val message = Component.text("[TriTown] ", NamedTextColor.GOLD, TextDecoration.BOLD)
     .append(Component.text("Welcome to the server!", NamedTextColor.YELLOW))
 
 sender.sendMessage(message)
@@ -1404,7 +1537,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 
 player.sendPlayerListHeaderAndFooter(
-    Component.text("ExamplePlugin Server", NamedTextColor.GOLD, TextDecoration.BOLD),
+    Component.text("TriTown Server", NamedTextColor.GOLD, TextDecoration.BOLD),
     Component.text("${player.ping}ms", NamedTextColor.GRAY)
 )
 ```
@@ -1419,13 +1552,13 @@ player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty())
 
 ## Utilities
 
-The `utils` package (`com.example.exampleplugin.utils`) contains helper classes and functions that reduce boilerplate
-across the plugin. See the [Utility Guide](UTILITY_GUIDE.md) for full documentation on the
-`itemStack` DSL builder and `CountdownUtil`.
+The `utils` package (`net.trilleo.mc.plugins.tritown.utils`) contains helper classes and functions that reduce
+boilerplate across the plugin. See the [Utility Guide](UTILITY_GUIDE.md) for full documentation on the
+`itemStack` DSL builder, `Lang` and `CountdownUtil`.
 
 ### Enums
 
-Plugin-wide enums live in `com.example.exampleplugin.enums`.
+Plugin-wide enums live in `net.trilleo.mc.plugins.tritown.enums`.
 
 #### DisplayLocation
 
@@ -1458,8 +1591,8 @@ Plugin-wide enums live in `com.example.exampleplugin.enums`.
 
 ## Configuration
 
-ExamplePlugin provides a typed configuration wrapper — `PluginConfig` — around the standard Bukkit `config.yml`. It
-lives in the `com.example.exampleplugin.config` package and is created automatically when the plugin starts.
+TriTown provides a typed configuration wrapper — `PluginConfig` — around the standard Bukkit `config.yml`. It lives in
+the `net.trilleo.mc.plugins.tritown.config` package and is created automatically when the plugin starts.
 
 ### How It Works
 
@@ -1489,10 +1622,13 @@ Place default values in `src/main/resources/config.yml`. They are copied to the 
 run:
 
 ```yaml
-# ExamplePlugin Configuration
+# TriTown Configuration
 
 # A friendly prefix shown before plugin messages
-message-prefix: "[ExamplePlugin]"
+message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown]"
+
+# Message language: "auto" follows each player's client, or a language id such as "zh_CN" for everyone.
+language: auto
 ```
 
 ### Typed Getters
@@ -1500,14 +1636,37 @@ message-prefix: "[ExamplePlugin]"
 `PluginConfig` provides the following typed getter methods. Each method accepts a YAML path and a default value that is
 returned when the key is absent or has the wrong type:
 
-| Method          | Signature                           | Description                                       |
-|:----------------|:------------------------------------|:--------------------------------------------------|
-| `getString`     | `getString(path, default = "")`     | Returns a `String` value                          |
-| `getInt`        | `getInt(path, default = 0)`         | Returns an `Int` value                            |
-| `getDouble`     | `getDouble(path, default = 0.0)`    | Returns a `Double` value                          |
-| `getBoolean`    | `getBoolean(path, default = false)` | Returns a `Boolean` value                         |
-| `getStringList` | `getStringList(path)`               | Returns a `List<String>` (empty list if absent)   |
-| `contains`      | `contains(path)`                    | Returns `true` when the path exists in the config |
+| Method          | Signature                           | Description                                               |
+|:----------------|:------------------------------------|:----------------------------------------------------------|
+| `getString`     | `getString(path, default = "")`     | Returns a `String` value                                  |
+| `getInt`        | `getInt(path, default = 0)`         | Returns an `Int` value                                    |
+| `getLong`       | `getLong(path, default = 0L)`       | Returns a `Long` value                                    |
+| `getDouble`     | `getDouble(path, default = 0.0)`    | Returns a `Double` value                                  |
+| `getBoolean`    | `getBoolean(path, default = false)` | Returns a `Boolean` value                                 |
+| `getStringList` | `getStringList(path)`               | Returns a `List<String>` (empty list if absent)           |
+| `getKeys`       | `getKeys(path)`                     | Returns the immediate child keys of the section at `path` |
+| `contains`      | `contains(path)`                    | Returns `true` when the path exists in the config         |
+
+Use `getLong` rather than `getInt` for money amounts held in minor units and for durations in milliseconds — both
+overflow an `Int`. Use `getKeys` to iterate configuration written as a map of named entries:
+
+```yaml
+economy:
+  currencies:
+    dollar:
+      symbol: "$"
+    credit:
+      symbol: "₡"
+```
+
+```kotlin
+for (id in pluginConfig.getKeys("economy.currencies")) {
+    val symbol = pluginConfig.getString("economy.currencies.$id.symbol", "$")
+}
+```
+
+`PluginConfig` deliberately exposes no `getConfigurationSection`. Returning a Bukkit `ConfigurationSection` would leak
+the type the wrapper exists to hide, and callers would bypass the typed getters; `getKeys` covers the same need.
 
 ### Reloading
 
@@ -1518,28 +1677,30 @@ into the file, saves it, and refreshes the in-memory values:
 pluginConfig.reload()
 ```
 
-The built-in `/exampleplugin reload` command already calls this method.
+The built-in `/tritown reload` command calls `Main.reload()`, which reloads the config, re-applies the message prefix
+and re-reads the language files. Add anything else that depends on config values to `Main.reload()` so the command picks
+it up.
 
 ### Accessing the Config from a Command
 
 Cast the injected `JavaPlugin` to `Main` to reach `pluginConfig`:
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.Main
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.Main
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 
 class PrefixCommand(private val plugin: JavaPlugin) : PluginCommand(
     name = "prefix",
     description = "Show the configured message prefix",
-    permission = "exampleplugin.prefix"
+    permission = "tritown.prefix"
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val main = plugin as? Main ?: return true
-        val prefix = main.pluginConfig.getString("message-prefix", "[ExamplePlugin]")
+        val prefix = main.pluginConfig.getString("message-prefix", "[TriTown]")
         sender.sendMessage("Current prefix: $prefix")
         return true
     }
@@ -1551,9 +1712,9 @@ class PrefixCommand(private val plugin: JavaPlugin) : PluginCommand(
 The same pattern works for listeners — accept a `JavaPlugin` constructor parameter and cast to `Main`:
 
 ```kotlin
-package com.example.exampleplugin.listeners
+package net.trilleo.mc.plugins.tritown.listeners
 
-import com.example.exampleplugin.Main
+import net.trilleo.mc.plugins.tritown.Main
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
@@ -1564,7 +1725,7 @@ class WelcomeListener(private val plugin: JavaPlugin) : Listener {
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val main = plugin as? Main ?: return
-        val prefix = main.pluginConfig.getString("message-prefix", "[ExamplePlugin]")
+        val prefix = main.pluginConfig.getString("message-prefix", "[TriTown]")
         event.player.sendMessage("$prefix Welcome, ${event.player.name}!")
     }
 }
@@ -1587,7 +1748,7 @@ The manager is already initialised in `Main.onEnable` and requires no further se
 Retrieve a player's data container from anywhere with a `Player` reference:
 
 ```kotlin
-import com.example.exampleplugin.data.PlayerDataManager
+import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 
 val data = PlayerDataManager.get(player)
 val kills = data.getInt("kills")
@@ -1612,7 +1773,7 @@ data.set("kills", kills + 1)
 Extend `PlayerData` to add strongly-typed Kotlin properties:
 
 ```kotlin
-package com.example.exampleplugin.data
+package net.trilleo.mc.plugins.tritown.data
 
 import java.util.UUID
 
@@ -1647,9 +1808,9 @@ data.kills++
 ### Example Listener
 
 ```kotlin
-package com.example.exampleplugin.listeners
+package net.trilleo.mc.plugins.tritown.listeners
 
-import com.example.exampleplugin.data.PlayerDataManager
+import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -1681,7 +1842,7 @@ The manager is already initialised in `Main.onEnable` and requires no further se
 Retrieve the server data container from anywhere:
 
 ```kotlin
-import com.example.exampleplugin.data.ServerDataManager
+import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 
 val data = ServerDataManager.get()
 val events = data.getInt("eventCount")
@@ -1708,7 +1869,7 @@ data.set("eventCount", events + 1)
 Extend `ServerData` to add strongly-typed Kotlin properties:
 
 ```kotlin
-package com.example.exampleplugin.data
+package net.trilleo.mc.plugins.tritown.data
 
 class MyServerData : ServerData() {
     var totalKills: Int
@@ -1740,16 +1901,16 @@ data.totalKills++
 ### Example Command
 
 ```kotlin
-package com.example.exampleplugin.commands
+package net.trilleo.mc.plugins.tritown.commands
 
-import com.example.exampleplugin.data.ServerDataManager
-import com.example.exampleplugin.registration.PluginCommand
+import net.trilleo.mc.plugins.tritown.data.ServerDataManager
+import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import org.bukkit.command.CommandSender
 
 class StatsCommand : PluginCommand(
     name = "stats",
     description = "Show server-wide statistics",
-    permission = "exampleplugin.stats"
+    permission = "tritown.stats"
 ) {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val data = ServerDataManager.get()
@@ -1758,3 +1919,471 @@ class StatsCommand : PluginCommand(
     }
 }
 ```
+
+---
+
+## Working with Towny
+
+TriTown is a Towny addon: Towny is `compileOnly` in the build and listed under `depend` in `plugin.yml`, so it is always
+loaded before TriTown. Never shade Towny into the jar.
+
+### Reading Towny Data
+
+Use `TownyAPI` and handle `null` results — a player may have no resident record, town, or nation:
+
+```kotlin
+import com.palmergames.bukkit.towny.TownyAPI
+
+val resident = TownyAPI.getInstance().getResident(player) ?: return
+val town = resident.townOrNull ?: return
+val nation = town.nationOrNull
+```
+
+Towny's `com.palmergames.bukkit.towny.object` package needs backticks in Kotlin imports:
+
+```kotlin
+import com.palmergames.bukkit.towny.`object`.Town
+```
+
+### Changing Towny State
+
+Prefer running the equivalent Towny command as the player (always with the `towny:` namespace) over calling Towny's
+mutating API, so Towny's permission checks, costs, confirmations, and messages still apply:
+
+```kotlin
+player.performCommand("towny:town deposit 100")
+```
+
+Only call the API directly when no command covers the action, and then enforce the same permission nodes Towny would.
+
+### Towny Events
+
+Listen to Towny's Bukkit events (`com.palmergames.bukkit.towny.event.*`) in the `listeners` package like any other
+event:
+
+```kotlin
+package net.trilleo.mc.plugins.tritown.listeners
+
+import com.palmergames.bukkit.towny.event.NewTownEvent
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+
+class NewTownListener : Listener {
+    @EventHandler
+    fun onNewTown(event: NewTownEvent) {
+        event.town.mayor?.player?.sendPrefixed("<green>Welcome to your new town!")
+    }
+}
+```
+
+### Bumping Towny
+
+Change `towny_version` in `gradle.properties` and the Requirements table in `README.md` together.
+`./gradlew copyPlugin` copies the matching Towny jar into `run/plugins/`.
+
+---
+
+## Economy Core
+
+The economy lives in `net.trilleo.mc.plugins.tritown.economy`, which the package scanner never touches. Commands,
+listeners, GUIs and tasks live in their own scanned packages and delegate inward. Two facts shape the whole design:
+
+* **Towny calls the economy from its own threads.** Towny's `economy.use_async` defaults to `true`, so every type here
+  is written to be thread-safe.
+* **Balances are whole numbers.** Money is held as minor units in a `Long` — cents, for a currency with two fractional
+  digits — so repeated arithmetic cannot drift the way `Double` addition does. A `Double` appears only at the Vault
+  boundary, where the API demands one.
+
+### Money
+
+`Money` is a value class over a `Long` count of minor units.
+
+| Member                                      | Description                                                                             |
+|:--------------------------------------------|:----------------------------------------------------------------------------------------|
+| `Money.ofDouble(value, scale)`              | Converts a `Double`, rounding half away from zero. Throws on NaN, infinity or overflow. |
+| `toDouble(scale)`                           | Converts back at the given scale                                                        |
+| `toPlainString(scale)`                      | Renders as a decimal string with no grouping                                            |
+| `plusExact` / `minusExact`                  | Arithmetic that throws `ArithmeticException` rather than wrapping                       |
+| `abs`, `isZero`, `isPositive`, `isNegative` | Sign helpers                                                                            |
+
+Never build a `Money` from a `Double` yourself — go through `Currency.of`, which supplies the right scale.
+
+### Currency
+
+A `Currency` carries its display names, symbol, scale and its two format patterns. `CurrencyRegistry` holds the
+configured set and names one of them primary:
+
+```kotlin
+val currency = CurrencyRegistry.primary
+val amount = currency.of(100.0)                      // Money, at this currency's scale
+val text = EconomyFormat.plain(currency, amount)
+```
+
+Only `CurrencyRegistry.primary` is exposed through Vault — the Vault API has room for exactly one currency — so any
+additional currency is reachable only through TriTown's own commands and services. Towny will not see it.
+
+### EconomyLedger
+
+`EconomyLedger` is the in-memory book of accounts and the only place a balance is ever changed. It has no Bukkit, Vault
+or Towny imports, which is what makes it testable without a running server; working out who an account belongs to is the
+surrounding service's job.
+
+| Method                                     | Description                                                                   |
+|:-------------------------------------------|:------------------------------------------------------------------------------|
+| `getOrCreate(uuid, name, type)`            | Returns the account, creating it when absent and refreshing its name and type |
+| `get(uuid)` / `byName(name)` / `has(uuid)` | Lookup; `byName` is case-insensitive                                          |
+| `balance(uuid, currency)`                  | The balance, or zero when the account does not exist                          |
+| `deposit` / `withdraw` / `setBalance`      | Single-account mutations, each returning an `EconomyResult`                   |
+| `transfer(from, to, currency, amount)`     | Two-account mutation applied as one atomic step                               |
+| `rename(account, name)` / `remove(uuid)`   | Name-index maintenance                                                        |
+| `drainDirty()` / `snapshot(uuid) { }`      | Persistence support, used by the flush task                                   |
+| `suggestNames(prefix, limit)`              | Tab completion straight from the in-memory index, with no disk access         |
+
+Every operation returns an `EconomyResult` — `Success(moved, balance, counterpartyBalance)` or `Failure(key)` — rather
+than throwing. The Vault provider runs on Towny's threads, where an exception would be swallowed or would spam the
+console, so a refused operation is an ordinary return value.
+
+The failure carries a `money.error.*` **translation key**, not a sentence. The ledger has no idea who will read it, so
+the language is chosen where the failure is shown: a command translates it for the sender, and the Vault provider
+translates it into the configured language because Vault hands the message straight to another plugin. Those values are
+plain text for that reason — `common.error` adds the colour for TriTown's own messages.
+
+`LedgerLimits` supplies the bounds: a per-currency balance cap in minor units, and whether a withdrawal may take an
+account below zero. A deposit that would break the cap **fails** instead of clamping — clamping destroys money silently
+and leaves the ledger impossible to audit.
+
+#### Locking
+
+The maps are concurrent, and account creation goes through `computeIfAbsent`, so one UUID can never produce two
+accounts. Beyond that:
+
+* Every read-modify-write on a balance holds that account's own monitor.
+* Reading a single balance does not take the lock; the map is concurrent and a `Long` cannot tear.
+* A two-account transfer takes both monitors **in UUID order**. That ordering is what stops two players paying each
+  other at the same instant from deadlocking, and `EconomyLedgerConcurrencyTest` fails by timing out if it is broken.
+* Anything needing an internally consistent view of one account — a storage snapshot, for instance — goes through
+  `snapshot(uuid) { }`, which applies the mapper under the lock.
+
+### Account types
+
+`AccountType` records what an account represents: `PLAYER`, `TOWN`, `NATION`, `NPC`, `SERVER` or `UNKNOWN`. Towny
+addresses town, nation and NPC banks through the same Vault player-account methods real players use, passing a synthetic
+offline player whose name carries a configured prefix, so the type is resolved once from that name when the account is
+created. `UNKNOWN` covers a wallet created before its owner has ever joined, and is promoted to `PLAYER` on their first
+join. Only `PLAYER` accounts appear on the balance leaderboard.
+
+### EconomyFormat
+
+`EconomyFormat.plain` produces the string Vault hands to other plugins, which print it verbatim and must never receive
+MiniMessage tags. `EconomyFormat.rich` produces the component TriTown puts in its own messages. Both substitute
+`%symbol%`, `%amount%` and `%currency%` into the configured pattern, and both are safe to call from any thread —
+`DecimalFormat` is not thread-safe, so formatters are held per thread and rebuilt after `invalidate()`.
+
+### Settings
+
+`EconomySettings` is an immutable snapshot of the `economy` block of `config.yml`, reachable as
+`EconomySettings.snapshot`. Settings are never read field by field from a live `FileConfiguration`, because the economy
+is read from Towny's threads; a reload builds a whole new snapshot and swaps it in, so no caller can observe a
+half-applied configuration. `ledgerLimits()` turns the configured balance cap into the per-currency minor-unit caps the
+ledger wants.
+
+---
+
+## Economy Storage
+
+`EconomyStorage` is the interface between the ledger and wherever balances are kept. `JsonEconomyStorage` ships today;
+an SQL backend only has to satisfy the same interface, and nothing above it knows the difference.
+
+| Method                   | When it runs                                                   |
+|:-------------------------|:---------------------------------------------------------------|
+| `initialize()`           | Once at startup, synchronously — creates directories or tables |
+| `loadAccounts()`         | Once at startup, synchronously — the full eager read           |
+| `saveAccounts(accounts)` | From the flush task and on shutdown, off the main thread       |
+| `deleteAccount(uuid)`    | When a Towny town or nation is deleted                         |
+| `close()`                | On shutdown, after the final flush                             |
+
+### Durability rules
+
+These are the parts worth not rediscovering the hard way:
+
+* **A failed read throws.** Starting with an empty ledger and writing that emptiness back a minute later is the one
+  outcome worse than not starting at all, so an unreadable store stops the plugin with a message naming the files.
+* **Writes are atomic.** The JSON backend writes to `accounts.json.tmp`, moves the current file to `accounts.json.bak`,
+  then moves the temporary file into place. A crash mid-write leaves either the old file or the new one.
+* **A corrupt main file falls back to `.bak`**, with a warning. Only when both are unreadable does startup fail.
+* **The schema version is checked before anything is parsed.** `StorageSchema.checkReadable` refuses data written by a
+  newer build outright, because an older build would drop what it did not understand and write that loss back.
+* **A changed currency scale is refused**, not guessed at. `accounts.json` records the `fractionalDigits` it was written
+  with; if `economy.currency.fractional-digits` no longer matches, the plugin stops and names both values unless
+  `economy.storage.allow-rescale` is set, in which case every balance is converted once during load.
+* **A malformed individual account is skipped** with a warning rather than failing the whole load — one bad row should
+  not cost the server its economy.
+
+### The transaction log
+
+Every movement of money is recorded as a `TransactionRecord` filed against one account. A transfer produces two records,
+one per side, which is why `/eco history` for a player never shows the same payment twice.
+
+There are two stores, for two different jobs:
+
+* **On disk** — `<dataFolder>/economy/transactions.log`, newline-delimited JSON, only ever appended to, so a crash can
+  cost the last line but never corrupt the ones before it. It rolls to `transactions-<epoch>.log` past
+  `economy.history.roll-size-mb`, and rolled files are deleted past `economy.history.retention-days`. Pruning runs at
+  most once an hour from the flush task.
+* **In memory** — a ring per account, capped at `economy.history.max-entries-per-account`, seeded at startup from the
+  tail of the log. Rings are created lazily, so only accounts touched since the last restart use any memory. This is
+  what the history view reads, so opening it never touches the disk.
+
+`EconomyService` is the only thing that writes records. Recording never blocks the thread that made the transaction —
+records go on a queue the flush task drains — which matters because Towny makes plenty of them from its own threads.
+
+**Attribution** comes from `EconomyContext`, a thread-local wrapping whatever TriTown is currently doing:
+
+```kotlin
+EconomyContext.command("Player payment") {
+    EconomyService.transfer(from, to, currency, amount)
+}
+```
+
+Money that moves because Towny or another plugin asked Vault to move it arrives with nothing to identify it, so it falls
+back to `EconomyContext.DEFAULT`. `with` restores the previous attribution rather than clearing it, so these nest
+safely.
+
+`meta` on a record is the extension point for later features — a shop id, a banknote serial, a payday tag — so they add
+keys rather than needing a new field.
+
+`TransactionHistoryGUI` shows the result, and is a worked example of the constraints a `PagedPluginGUI` imposes:
+
+* **GUIs are singletons.** One instance serves every viewer, so the account being looked at and the rendered items live
+  in a `ConcurrentHashMap` keyed by viewer UUID, not in fields.
+* **`getItems` must be cheap.** It is called on every render *and* again inside every page count, so it is an O (1) map
+  lookup; the items are built once, in `open()`.
+* **An override of `onClose` must call `super.onClose(event)`**, which is where the base class drops the page it is
+  holding for that viewer.
+* **The title says only what the menu is** — it is translated from `titleKey` for the viewer, so the account being
+  looked at is shown in a header item in the first slot instead of in the title.
+* Anything that came from a player, including a town name and a recorded reason, goes through
+  `MiniMessage.miniMessage().escapeTags(...)` before it reaches a name or lore.
+
+> A limitation worth knowing before extending this: Towny's own `Account.deposit(amount, reason)` carries a human
+> reason such as "New town" or "Upkeep", but `BankTransactionEvent` does not expose it, so records from Towny carry
+> the event type rather than Towny's own wording. Do **not** try to recover it by matching timestamps and amounts —
+> that produces a confidently wrong audit trail. The clean route is a Towny `AccountObserver`, which does receive the
+> reason.
+
+### Crash window
+
+Accounts are written on an interval (`economy.storage.flush-interval`, 60 seconds by default), on shutdown, and whenever
+an administrator changes a balance. `onDisable` does **not** run on a hard crash or a killed process, so a crash loses
+at most one flush interval of changes. An SQL backend writing through on each transaction would close that window.
+
+---
+
+## Economy (Vault)
+
+Vault is a hard dependency (`depend` in `plugin.yml`); the Vault API is `compileOnly` (`vault_api_version` in
+`gradle.properties`). **TriTown implements Vault's `Economy` itself**, so Vault + Towny + TriTown is a complete stack
+and no separate economy plugin is needed.
+
+### Feature code
+
+All economy access goes through [`EconomyUtil`](UTILITY_GUIDE.md#economyutil), because an owner can hand the economy to
+another plugin and feature code should not care which provider won:
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+
+val cost = 500.0
+if (!EconomyUtil.withdraw(player, cost)) {
+    player.sendPrefixed("<red>You need ${EconomyUtil.format(cost)}.")
+    return true
+}
+```
+
+Do not call `EconomyUtil` from `onEnable` or from registration code: the winning provider is not settled until every
+plugin has enabled.
+
+### Registration happens in `onLoad`
+
+Towny decides which economy to use inside `TownyEconomyHandler.setupEconomy()`, which runs while **Towny** is enabling.
+TriTown depends on Towny, so Towny always enables first — registering the Vault service from TriTown's `onEnable` would
+be too late, and Towny would report no economy at all.
+
+`Main.onLoad` therefore loads the config, opens the ledger and registers the provider, all before any plugin enables.
+Two consequences worth knowing:
+
+* `onLoad` **cannot** disable the plugin — it is not enabled yet. A startup failure is recorded in `bootFailure` and
+  acted on at the top of `onEnable`.
+* `PluginConfig` is built in `onLoad`, so the data folder is created one lifecycle phase earlier than a plugin without
+  an economy would create it.
+
+If the order is ever disturbed, `/townyadmin eco convert modern` makes Towny look for an economy again; otherwise a
+restart does it.
+
+### Provider modes
+
+`economy.provider.mode` decides whether TriTown supplies the economy:
+
+| Mode       | Behaviour                                                                                      |
+|:-----------|:-----------------------------------------------------------------------------------------------|
+| `auto`     | Supplies it unless a plugin under `economy.provider.defer-to` is installed; registers at `Low` |
+| `internal` | Always supplies it, at `Highest` priority                                                      |
+| `external` | Never supplies it; TriTown uses whichever provider another plugin registers                    |
+
+`auto` checks what is **installed**, not what has already registered. TriTown has to register during `onLoad`, and at
+that moment no economy plugin has registered anything — they all do it when they enable, so a registration check would
+always come back empty and `auto` would silently behave like `internal`. Registering at `ServicePriority.Low` is the
+second line of defence: an economy plugin that is not on the list still wins the Vault service.
+
+`EconomyServiceListener` warns when a second provider registers after TriTown, because Towny has already chosen by then
+and will not notice the newcomer. Changing the mode needs a restart.
+
+### The Vault surface
+
+`TriTownVaultEconomy` implements `net.milkbowl.vault.economy.Economy` **directly**, never Vault's `AbstractEconomy`.
+`AbstractEconomy` reduces every `OfflinePlayer` overload to `player.getName()`, and Towny addresses a town's bank with a
+synthetic offline player whose UUID is the town's and whose name is `town-Riverbend` — routing that through the name
+would throw away the identity the account is keyed on.
+
+Towny reaches the economy two ways, and both must land on the same account:
+
+* **`economy.advanced.modern: true`** (Towny's default) — the `OfflinePlayer` overloads, keyed on UUID.
+* **`economy.advanced.modern: false`** — the deprecated name-based overloads. `AccountResolver.resolveName` bridges
+  these through `TownyEconomyHandler.getTownyObjectUUID`, which maps `town-Riverbend` back to the town's UUID.
+
+Other behaviour worth knowing:
+
+* World parameters are accepted and ignored. A balance is global per currency.
+* Reads never create an account; `depositPlayer` creates one on demand so a Towny refund is never dropped; a withdrawal
+  from an account that does not exist fails unless the amount is zero.
+* `hasBankSupport()` is `false`. Towny's town and nation banks are ordinary accounts reached through the player methods,
+  which is exactly how Towny expects to find them; Vault's separate bank API is an unrelated concept.
+* The provider is named `TriTown`. The name must be unique — Towny keys its providers by it and throws on a duplicate,
+  and it treats `EssentialsX Economy` specially by rewriting the UUID version of non-player accounts.
+* `isEnabled()` reports `EconomyService.isReady`, so a reference another plugin kept across a reload fails loudly rather
+  than mutating a ledger on its way out. Restart the server rather than using `/reload`.
+
+Town and nation bank *rules* still belong to Towny — change them through Towny commands or Towny's account API. TriTown
+stores the balance behind them, nothing more.
+
+### Town and nation lifecycle
+
+`TownyObjectListener` keeps bank accounts in step with Towny.
+
+**Renames are mandatory to handle, not optional.** `TownyEconomyHandler.canRenameAccounts()` returns true only for
+VaultUnlocked, so with plain Vault Towny never tells the economy that a town was renamed. No money moves — accounts are
+keyed by UUID — but a stale `town-Riverbend` entry left in the name index would be handed to a *newly created*
+town that reuses the name, quietly merging two towns' banks.
+
+**On deletion** Towny has already emptied the bank through Vault by the time the event fires, moving the balance to its
+server account if its closed economy is on. What is left is TriTown's own bookkeeping: a `CLOSED` record, and then
+either removing the account or keeping it empty for auditing, per `economy.towny.delete-accounts-on-delete`.
+
+**There is deliberately no listener recording bank transactions.** It is tempting to add one, so it is worth writing
+down why it would be wrong: `BankAccount.addMoney` calls `TownyEconomyHandler.add`, which calls the Vault provider, so a
+town deposit already reaches TriTown as an ordinary deposit into the `town-X` account — and the player's side arrives
+the same way. Both sides are recorded before any event fires. A `BankTransactionEvent` handler that wrote another record
+would double-count every town deposit on the server.
+
+What the provider cannot know is *why* the money moved. `EconomyService.record` marks anything arriving through Vault
+for a Towny-owned account as coming from Towny, which is the most that can honestly be claimed — Towny's own reason
+string ("New town", "Upkeep") is not exposed on the event. See the note under the transaction log for the clean way to
+get it later.
+
+---
+
+## Sidebar
+
+The sidebar lives in `net.trilleo.mc.plugins.tritown.scoreboard`, which — like `economy` — is **not** one of the
+packages `PackageScanner` walks. `ScoreboardService` is started explicitly from `Main.onEnable`, after every registrar
+has run so that Towny's HUD manager and TriTown's own listeners are both live.
+
+### Towny renders it, TriTown decides what it says
+
+TriTown contains no `org.bukkit.scoreboard` code. Towny already has a sidebar renderer for its own plot and map HUDs and
+accepts other plugins' HUDs through `HUDManager.addHUD`, so `TriTownHud` implements Towny's `HUDImplementer` and
+`ScoreboardService` registers a `PaperHUD` (or `FoliaHUD`) wrapping it.
+
+Registering there rather than driving the scoreboard directly is what makes TriTown's sidebar and
+`/towny plot perm hud` **mutually exclusive**: `HUDManager.toggleHUD` takes every other HUD down before raising one, so
+the two never fight over the single sidebar slot a player has. Towny also takes every registered HUD down on quit.
+
+Three things Towny does **not** do for a HUD it did not create, which `ScoreboardService` handles itself:
+
+- Towny refreshes only `permHUD` and `mapHUD` by name when a player crosses a chunk border, so
+  `ScoreboardTownyListener` listens to `PlayerChangePlotEvent` itself.
+- Towny never says when one of its own HUDs is switched off, so the refresh tick restores a sidebar that was taken over
+  and has since been released.
+- `PaperHUD.setLines` reverses the list it is given, so every render passes a fresh `ArrayList`.
+
+### Boards, conditions and priorities
+
+A board is a named layout in `config.yml` with a `condition` and a `priority`. Each render resolves the player's
+`PlayerContext` — their resident, town and nation, and the claim under their feet — and shows the highest-priority board
+whose `BoardCondition` matches. That is what lets one player see different information at home, on another town's land,
+and out in the wild.
+
+Every board is wrapped in the shared `header` and `footer`, folded in by `ScoreboardSettings.readBoards` at parse time
+rather than at render time, so a `BoardDefinition` is a finished list of lines by the time anything draws it. The frame
+counts against Minecraft's fifteen-line limit, and overflow trims a board's **own** lines rather than the frame — losing
+the server address off the bottom because a board grew would be the wrong trade.
+
+Nothing about the context is cached. Towny stays the source of truth, so a deleted town cannot linger on a sidebar.
+
+To add a condition, add a `BoardCondition` entry with its `config.yml` name and extend the `matches` branch:
+
+```kotlin
+IN_CAPITAL("in-capital"),
+...
+IN_CAPITAL -> context.plotTown?.isCapital == true
+```
+
+### Placeholders
+
+A line is **translated first and substituted second**, so a translator can move a value to wherever it reads best.
+`PlaceholderEngine` holds the `%marker%` resolvers; the four `placeholders/` objects register them when the service
+starts. An unknown marker is left on screen as written, so a typo shows up instead of silently blanking a value, and a
+resolver that throws falls back to `common.none` rather than taking the whole sidebar down.
+
+```kotlin
+PlaceholderEngine.register("town_plot_price") { context ->
+    context.town?.let { TownyUtil.money(it.plotPrice) } ?: context.none()
+}
+```
+
+Every value a resolver returns must already be escaped — the line it lands in is parsed as MiniMessage afterwards. Use
+`TownyUtil.name` / `TownyUtil.text` for anything player-written.
+
+### Rendering and cost
+
+`BoardRenderer` turns a context and a board into the strings a sidebar shows, and knows nothing about the server;
+`ScoreboardService` owns the lifecycle, the HUD and the diffing. Keeping them apart means what a sidebar *says* can be
+reasoned about without the plumbing around it.
+
+One task ticks every tick and decides internally when to redraw, because a `PluginTask`'s period is fixed at
+construction and tasks are not re-registered on `/tritown reload` — counting ticks is what lets
+`scoreboard.refresh-interval` take effect on a reload.
+
+Renders are **diffed twice over**, because MiniMessage parsing dominates the cost:
+
+1. If the title and every line match what the player already sees, nothing is parsed or sent at all.
+2. Otherwise only the lines whose text actually changed are parsed; the rest reuse the components cached in `Shown`. A
+   board whose balance ticks over re-parses one line out of fifteen.
+
+Towny events (`ScoreboardTownyListener`) call `refreshSoon`, which collapses a burst into a single redraw on the main
+thread — which is also what makes the asynchronous `PlayerChangePlotEvent` safe to handle.
+
+Everything runs on the main thread: Towny's objects and Towny's renderer both require it, and every value the sidebar
+reads is an in-memory lookup.
+
+### Translations
+
+Board lines name a translation key rather than carrying text, so a server owner controls the layout in `config.yml`
+while wording and colour stay in the language files and each player reads the sidebar in their own language.
+
+`LangFilesTest` knows about this: it treats the strings under `scoreboard.title`, `scoreboard.header`,
+`scoreboard.footer` and `scoreboard.boards.*.lines` as used keys, and subtracts `config.yml`'s own paths from the keys
+it scans out of Kotlin — necessary because a settings block and a translation section can share a name, as `scoreboard`
+does. A misspelled line therefore fails the build instead of rendering the raw key.

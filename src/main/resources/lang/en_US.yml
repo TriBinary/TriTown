@@ -1,0 +1,235 @@
+# TriTown - English (en_US)
+#
+# Values are MiniMessage (https://docs.advntr.dev/minimessage/format.html). Keep every {placeholder}: TriTown fills
+# them in. Keys missing here fall back to the bundled copy of this file, then to English.
+# Run /tritown reload after editing.
+
+command:
+  usage: "Usage: /{command} <subcommand>"
+  available: "Available sub-commands: {commands}"
+  unknown: "Unknown sub-command: {command}"
+  no-permission: "<red>You don't have permission to use this command!"
+
+  # The help list is plain text: no MiniMessage tags.
+  category:
+    general: "General"
+    economy: "Economy"
+    info: "Info"
+    moderation: "Moderation"
+
+  help:
+    header: "TriTown Commands"
+    description: "Show all available commands"
+
+  reload:
+    description: "Reload the plugin configuration and translations"
+    done: "Configuration reloaded!"
+    error: "<red>Error: Plugin instance type mismatch. Unable to reload configuration."
+
+  balance:
+    description: "Check your balance"
+    yours: "Your balance: <white>{balance}</white>"
+    other: "<white>{name}</white>: <white>{balance}</white>"
+    console-needs-player: "<red>Specify a player: <white>/balance <player></white>"
+    no-permission-others: "<red>You don't have permission to check another player's balance!"
+
+  pay:
+    description: "Pay another player"
+    players-only: "<red>Only players can pay. Use <white>/eco give</white> from the console."
+    usage: "<red>Usage: <white>/pay <player> <amount></white>"
+    minimum: "<red>The smallest payment is <white>{amount}</white>."
+    self: "<red>You cannot pay yourself."
+    government: "<red>Use Towny's own deposit commands to pay a town or nation bank."
+    server-account: "<red>You cannot pay the server account."
+    no-account: "<red>Your account could not be opened."
+    sent: "Paid <white>{amount}</white> to <white>{name}</white>. Balance: <white>{balance}</white>"
+    received: "<white>{name}</white> paid you <white>{amount}</white>."
+
+  baltop:
+    description: "List the richest players"
+    empty: "<gray>Nobody has any money yet."
+    header: "<gold><bold>Richest accounts</bold></gold> <gray>(page {page}/{pages})"
+    entry: "<gray>{rank}.</gray> <white>{name}</white>{tag} <dark_gray>-</dark_gray> <white>{balance}</white>"
+    tag: " <gray>[{type}]</gray>"
+    updated: "<dark_gray>Updated {age}."
+    age:
+      now: "just now"
+      seconds: "{seconds} seconds ago"
+      minute: "a minute ago"
+      minutes: "{minutes} minutes ago"
+
+  eco:
+    description: "Administer player balances"
+    no-permission-action: "<red>You don't have permission to use <white>/eco {action}</white>!"
+    flushing: "Writing changed accounts to disk."
+    target-usage: "<red>Usage: <white>/eco {action} <player></white>"
+    amount-usage: "<red>Usage: <white>/eco {action} <player> <amount></white>"
+    unknown-currency: "<red>Unknown currency <white>{currency}</white>."
+    changed-by-admin: "<gray>Your balance was changed by an administrator."
+    gave: "Gave <white>{amount}</white> to <white>{name}</white>. Balance: <white>{balance}</white>"
+    took: "Took <white>{amount}</white> from <white>{name}</white>. Balance: <white>{balance}</white>"
+    set: "Set <white>{name}</white> to <white>{amount}</white>. Balance: <white>{balance}</white>"
+    reset: "Reset <white>{name}</white> to <white>{balance}</white>"
+    info:
+      header: "<gold><bold>{name}</bold></gold>"
+      uuid: "<gray>UUID:</gray> <white>{uuid}</white>"
+      type: "<gray>Type:</gray> <white>{type}</white>"
+      created: "<gray>Created:</gray> <white>{date}</white>"
+      updated: "<gray>Updated:</gray> <white>{date}</white>"
+      balance: "<gray>{currency}:</gray> <white>{balance}</white>"
+    history:
+      players-only: "<red>Only players can open the history view."
+      no-permission-others: "<red>You don't have permission to view another account's history!"
+      unavailable: "<red>The history view is unavailable."
+    usage:
+      header: "<gold><bold>Economy administration</bold></gold>"
+      give: "<white>/eco give <player> <amount> [currency]</white> <gray>- add money"
+      take: "<white>/eco take <player> <amount> [currency]</white> <gray>- remove money"
+      set: "<white>/eco set <player> <amount> [currency]</white> <gray>- set a balance outright"
+      reset: "<white>/eco reset <player></white> <gray>- back to the starting balance"
+      info: "<white>/eco info <player></white> <gray>- account details"
+      history: "<white>/eco history [player]</white> <gray>- browse recorded transactions"
+      flush: "<white>/eco flush</white> <gray>- write changed accounts to disk now"
+
+  scoreboard:
+    description: "Show or hide the sidebar"
+    players-only: "<red>Only players have a sidebar."
+    unavailable: "<red>The sidebar is switched off on this server."
+    usage: "<red>Usage: <white>/tritown scoreboard [on|off]</white>"
+    shown: "Sidebar shown."
+    hidden: "Sidebar hidden."
+    pinned: "Sidebar pinned to the <white>{board}</white> board."
+    unpinned: "Sidebar back to matching where you stand."
+    unknown-board: "<red>No board named <white>{board}</white>."
+
+common:
+  unknown: "unknown"
+  invalid-amount: "<red>That is not a valid amount."
+  economy-unavailable: "<red>The economy is not available on this server."
+  no-account: "<red>No account found for <white>{name}</white>."
+  # Wraps a money.error.* line, which is plain so other plugins can print it.
+  error: "<red>{message}"
+  duration: "{hours}h {minutes}m"
+  "on": "On"
+  "off": "Off"
+  # Shown by a sidebar marker whose value does not exist, such as the town of a
+  # player who has none.
+  none: "-"
+
+money:
+  # Plain text only: these also travel to other plugins as Vault's error message, which they print verbatim.
+  error:
+    negative-amount: "Amount cannot be negative"
+    too-large: "That amount is too large to hold"
+    balance-cap: "Balance cap reached"
+    recipient-balance-cap: "The recipient has reached the balance cap"
+    insufficient-funds: "Insufficient funds"
+    negative-balance: "Balance cannot be negative"
+    same-account: "Cannot transfer to the same account"
+    unavailable: "The economy is not available"
+    no-account: "That account does not exist"
+    unusable-amount: "Amount is not a usable number"
+    account-not-created: "That account could not be created"
+    no-banks: "TriTown does not provide Vault bank accounts"
+
+  # Why a transaction happened, as shown in the history view. These are also written to the transaction
+  # log as keys, so a record stays readable whichever language the server is later set to.
+  reason:
+    external: "External plugin"
+    starting-balance: "Starting balance"
+    payment: "Player payment"
+    towny: "Towny"
+    town-deleted: "{name} was deleted"
+    admin-set: "Set by {admin}"
+    admin-reset: "Reset by {admin}"
+
+  # What asked for the transaction. A source TriTown does not know is shown as it was recorded.
+  source:
+    vault: "Another plugin"
+    command: "TriTown command"
+    towny: "Towny"
+
+  account-type:
+    player: "player"
+    town: "town"
+    nation: "nation"
+    npc: "npc"
+    server: "server"
+    unknown: "unknown"
+
+  transaction:
+    deposit: "Received"
+    withdraw: "Paid out"
+    transfer-in: "Payment in"
+    transfer-out: "Payment out"
+    set: "Balance set"
+    closed: "Account closed"
+
+gui:
+  previous-page: "<yellow>Previous Page"
+  next-page: "<yellow>Next Page"
+  page: "<white>Page {page}/{pages}"
+
+  history:
+    title: "<dark_gray>Transaction History"
+    header: "<gold><bold>{name}</bold></gold>"
+    header-lore: "<gray>Balance: <white>{balance}</white><newline><gray>Records kept: <white>{count}</white><newline><dark_gray>Newest first."
+    empty: "<red>No transactions recorded"
+    empty-lore: "<gray>Nothing has been recorded for this account yet."
+    credit: "<green>+{amount}"
+    debit: "<red>-{amount}"
+    type: "<gray>Type: <white>{type}</white>"
+    balance-after: "<gray>Balance after: <white>{balance}</white>"
+    with: "<gray>With: <white>{name}</white>"
+    reason: "<gray>Reason: <white>{reason}</white>"
+    source: "<gray>Source: <white>{source}</white>"
+    time: "<dark_gray>{time}"
+
+# The sidebar. Which lines appear, and in what order, is set per board in
+# config.yml; the wording and colours are set here. Values are written as
+# %marker% and are listed in config.yml.
+scoreboard:
+  # The server name. The frames differ only in their gradient phase, which makes
+  # the highlight sweep across the name as they cycle.
+  title:
+    frame-1: "<gradient:#e0912f:#fff0c2:#e0912f:0.0><bold>TriRealms</bold></gradient>"
+    frame-2: "<gradient:#e0912f:#fff0c2:#e0912f:-0.25><bold>TriRealms</bold></gradient>"
+    frame-3: "<gradient:#e0912f:#fff0c2:#e0912f:-0.5><bold>TriRealms</bold></gradient>"
+    frame-4: "<gradient:#e0912f:#fff0c2:#e0912f:-0.75><bold>TriRealms</bold></gradient>"
+
+  # Wrapped around every board.
+  frame:
+    divider: "<dark_gray><strikethrough>                                   "
+    website: "<gradient:#8a8f98:#c7ccd4>         mc.trilleo.net</gradient>"
+
+  # Headings that group the lines under them.
+  section:
+    town: "<gold>» <bold>TOWN</bold>"
+    here: "<gold>» <bold>HERE</bold>"
+    you: "<gold>» <bold>YOU</bold>"
+
+  line:
+    town-title: "  <white>%town%<dark_gray> · <gray>Lv <white>%town_level%"
+    town-residents: "  <gray>Residents <white>%town_online%<dark_gray>/<white>%town_residents%"
+    town-claims: "  <gray>Claims <white>%town_claims%<dark_gray>/<white>%town_claims_max%"
+    town-bank: "  <gray>Bank <white>%town_bank%"
+    town-upkeep: "  <gray>Upkeep <white>%town_upkeep%<dark_gray> in %newday%"
+    town-warning: "  <red>%town_warning%"
+    plot-town: "  <gray>Town <white>%plot_town%"
+    plot-nation: "  <gray>Nation <white>%plot_nation%"
+    plot-summary: "  <white>%plot_type%<dark_gray> · <gray>%plot_owner%"
+    plot-price: "  <gray>For sale <green>%plot_price%"
+    wilderness: "  <dark_green>Wilderness"
+    coords: "  <gray>Chunk <white>%plot_coords%"
+    balance: "  <gray>Balance <white>%balance%"
+    enemy-warning: "<dark_red>» <bold>ENEMY LAND</bold> «"
+    townless-hint: "  <yellow>You have no town yet"
+    townless-action: "  <gray>Open <white>/tm<gray> to join one"
+
+  warning:
+    ruined: "Ruined"
+    bankrupt: "Bankrupt"
+    upkeep-short: "Cannot pay upkeep"
+    overclaimed: "Overclaimed"
+    conquered: "Conquered"
+    none: ""

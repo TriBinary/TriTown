@@ -1,4 +1,243 @@
-# ExamplePlugin Configuration
+# TriTown Configuration
 
 # A friendly prefix shown before plugin messages
-message-prefix: "[ExamplePlugin]"
+message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown]"
+
+# Message language. "auto" shows each player their Minecraft client language when TriTown has it
+# (clients in an unsupported language see en_US). Set a language id such as "en_US" or "zh_CN" to use it for everyone.
+# Translations live in plugins/TriTown/lang/ and can be edited or extended with new <id>.yml files.
+language: auto
+
+# ── Economy ─────────────────────────────────────────────────────────────────
+economy:
+  # Turn the economy off entirely. TriTown then needs another plugin to supply one.
+  enabled: true
+
+  provider:
+    # Who supplies the server's Vault economy.
+    #   internal - TriTown always supplies it, at the highest priority
+    #   external - TriTown never supplies it and uses another plugin's instead
+    #   auto     - TriTown supplies it unless one of the plugins below is installed
+    # Changing this needs a restart: TriTown has to register with Vault before
+    # Towny starts up, which happens before any plugin can be reloaded.
+    mode: auto
+    # Checked by plugin name. An economy plugin not listed here still wins, because
+    # "auto" registers at a low service priority.
+    defer-to:
+      - Essentials
+      - EssentialsX
+      - CMI
+      - XConomy
+      - GemsEconomy
+      - iConomy
+      - BOSEconomy
+      - EconomyAPI
+
+  currency:
+    # Stable key used in storage and commands. Never shown to players.
+    id: dollar
+    singular: Dollar
+    plural: Dollars
+    symbol: "$"
+    # Digits kept after the decimal point. Balances are stored as whole units of the
+    # smallest denomination, so changing this once accounts exist stops the plugin
+    # unless storage.allow-rescale is turned on.
+    fractional-digits: 2
+    # Plain text only. Other plugins print this verbatim, so no MiniMessage tags here.
+    # Placeholders: %symbol%, %amount%, %currency%
+    format: "%symbol%%amount%"
+    # Used for TriTown's own messages. MiniMessage, same placeholders.
+    rich-format: "<gold>%symbol%%amount%</gold>"
+
+  # Balance granted to a player the first time they join.
+  starting-balance: 100.0
+  # Largest balance an account may hold. Set to 0 to remove the cap.
+  # A payment that would break the cap fails rather than being trimmed to fit.
+  balance-cap: 1000000000.0
+  # Smallest amount /pay will accept.
+  minimum-payment: 0.01
+  # Whether a withdrawal may take an account below zero.
+  allow-negative-balances: false
+
+  commands:
+    # Register /balance, /pay and /baltop as commands of their own. When false they are
+    # only reachable as /tritown balance, /tritown pay and so on. Needs a restart.
+    # Another plugin that already owns one of these names keeps it either way; TriTown's
+    # version stays reachable as /tritown:balance.
+    top-level-aliases: true
+    # Entries per page of /baltop.
+    baltop-size: 10
+    # List town and nation banks alongside players. Off by default, because Towny already
+    # shows those and caches them, so the two lists would disagree.
+    baltop-include-towns: false
+
+  storage:
+    # Where balances are kept. Only "json" ships today.
+    type: json
+    # Seconds between writing changed accounts to disk. A crash loses at most this long.
+    flush-interval: 60
+    # Convert every balance when fractional-digits changes, instead of refusing to start.
+    allow-rescale: false
+
+  towny:
+    # Remove a town's or nation's account when Towny deletes it. When false the account is
+    # emptied but kept, so it can still be audited.
+    delete-accounts-on-delete: true
+
+  history:
+    # Record every transaction to <plugin folder>/economy/transactions.log.
+    enabled: true
+    # How many recent entries each account keeps in memory for /eco history.
+    # Only accounts that have been active since the last restart use any memory.
+    max-entries-per-account: 100
+    # How long rolled log files are kept. 0 keeps them forever.
+    retention-days: 30
+    # Size at which the log is rolled aside into a dated file.
+    roll-size-mb: 16
+    time-format: "yyyy-MM-dd HH:mm"
+
+# ── Sidebar ─────────────────────────────────────────────────────────────────
+# The scoreboard shown at the right of the screen. Each board names a condition
+# and a priority, and a player sees the highest-priority board whose condition
+# matches where they are standing — so the same player gets different
+# information at home, on someone else's land, and out in the wild.
+#
+# Every board is wrapped in the shared header and footer below, so the frame is
+# written once rather than repeated in each board. The three of them count
+# towards the fifteen lines Minecraft allows, leaving twelve per board.
+#
+# Lines name a translation key, so the wording and colours live in
+# plugins/TriTown/lang/ and each player reads the sidebar in their own language.
+# An empty entry is a blank spacer.
+#
+# Values are written into a line as %marker%. Available markers:
+#   Town    %town% %town_level% %town_residents% %town_online% %town_claims%
+#           %town_claims_max% %town_claims_free% %town_bank% %town_upkeep%
+#           %town_mayor% %town_warning% %newday%
+#   Nation  %nation% %nation_level% %nation_towns% %nation_residents%
+#           %nation_bank% %nation_upkeep% %nation_king% %nation_capital%
+#   Plot    %plot_town% %plot_nation% %plot_type% %plot_owner% %plot_price%
+#           %plot_coords% %plot_pvp% %plot_mobs%
+#   Money   %balance% %balance_raw% %baltop_rank%
+#
+# Conditions: always, no-town, has-town, no-nation, has-nation, in-wilderness,
+#   in-own-town, in-own-plot, in-other-town, in-ally-town, in-enemy-town,
+#   town-has-warning
+scoreboard:
+  # Turn the sidebar off entirely.
+  enabled: true
+  # Seconds between redraws of a sidebar nothing has changed on. Claims, bank
+  # movements and the new day redraw it immediately anyway, so this only bounds
+  # how stale the countdown can get.
+  refresh-interval: 2
+  # Whether a player who has never run /tritown scoreboard sees one.
+  default-on: true
+  # Ticks between title frames. Leave a single frame to switch the animation off.
+  title-frame-interval: 8
+  # The server name, as a gold gradient whose highlight sweeps across it.
+  title:
+    - scoreboard.title.frame-1
+    - scoreboard.title.frame-2
+    - scoreboard.title.frame-3
+    - scoreboard.title.frame-4
+
+  # Prepended to every board, under the title.
+  header:
+    - scoreboard.frame.divider
+
+  # Appended to every board.
+  footer:
+    - scoreboard.frame.divider
+    - scoreboard.frame.website
+
+  boards:
+    # Having no town comes before everything else: a new player needs pointing
+    # at how to get one, not a readout of land they do not own.
+    townless:
+      priority: 90
+      condition: no-town
+      lines:
+        - scoreboard.section.you
+        - scoreboard.line.balance
+        - ""
+        - scoreboard.line.townless-hint
+        - scoreboard.line.townless-action
+        - ""
+        - scoreboard.line.coords
+
+    enemy-town:
+      priority: 60
+      condition: in-enemy-town
+      lines:
+        - scoreboard.line.enemy-warning
+        - ""
+        - scoreboard.section.here
+        - scoreboard.line.plot-town
+        - scoreboard.line.plot-nation
+        - scoreboard.line.plot-summary
+        - ""
+        - scoreboard.section.you
+        - scoreboard.line.balance
+
+    own-town:
+      priority: 40
+      condition: in-own-town
+      lines:
+        - scoreboard.section.town
+        - scoreboard.line.town-title
+        - scoreboard.line.town-residents
+        - scoreboard.line.town-claims
+        - scoreboard.line.town-bank
+        - scoreboard.line.town-upkeep
+        # Renders blank while the town is healthy, so it doubles as the spacer.
+        - scoreboard.line.town-warning
+        - scoreboard.section.here
+        - scoreboard.line.plot-summary
+        - ""
+        - scoreboard.section.you
+        - scoreboard.line.balance
+
+    other-town:
+      priority: 30
+      condition: in-other-town
+      lines:
+        - scoreboard.section.here
+        - scoreboard.line.plot-town
+        - scoreboard.line.plot-nation
+        - scoreboard.line.plot-summary
+        - scoreboard.line.plot-price
+        - ""
+        - scoreboard.section.town
+        - scoreboard.line.town-title
+        - scoreboard.line.town-claims
+        - ""
+        - scoreboard.section.you
+        - scoreboard.line.balance
+
+    wilderness:
+      priority: 20
+      condition: in-wilderness
+      lines:
+        - scoreboard.section.here
+        - scoreboard.line.wilderness
+        - scoreboard.line.coords
+        - ""
+        - scoreboard.section.town
+        - scoreboard.line.town-title
+        - scoreboard.line.town-claims
+        - scoreboard.line.town-bank
+        - scoreboard.line.town-upkeep
+        - ""
+        - scoreboard.section.you
+        - scoreboard.line.balance
+
+    # Never reached by the boards above, which already cover every place a
+    # player can stand. Kept so that editing one of their conditions cannot
+    # leave someone with a stale sidebar.
+    fallback:
+      priority: 0
+      condition: always
+      lines:
+        - scoreboard.section.you
+        - scoreboard.line.balance
+        - scoreboard.line.coords

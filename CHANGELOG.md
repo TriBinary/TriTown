@@ -1,0 +1,180 @@
+# TriTown - Change Log
+
+## Unreleased
+
+## Version 1.0.0
+
+### New Features
+
+#### Economy
+
++ TriTown now provides the server's economy itself. Vault, Towny and TriTown are a complete stack — no separate economy
+  plugin such as EssentialsX is needed for player wallets or for town and nation banks.
+    + The currency name, symbol, decimal places and formatting are all configurable, as are the starting balance, the
+      balance cap and the smallest allowed payment.
+    + Balances are stored as whole units of the smallest denomination, so they never drift the way decimal money in
+      other plugins can, and they are written to disk atomically with a backup copy kept alongside.
+    + Already running another economy plugin? Set `economy.provider.mode` to `external` and TriTown will use it instead.
+      On `auto`, TriTown stands aside automatically when a known economy plugin is installed.
+    + TriTown warns in the console when a second economy plugin registers after it, because Towny will not notice the
+      newcomer and the two would disagree about balances.
++ Added `/balance [player]`, `/pay <player> <amount>` and `/baltop [page]`.
+    + `/balance` shows your own balance; checking someone else's needs `tritown.economy.balance.others`.
+    + `/pay` moves money in a single step, so a payment can never go missing halfway. The smallest allowed payment is
+      configurable.
+    + `/baltop` lists players only by default. Town and nation banks can be included with
+      `economy.commands.baltop-include-towns`, and the footer says how recently the list was rebuilt.
+    + The three are registered as top-level commands as well as `/tt` sub-commands. Set
+      `economy.commands.top-level-aliases` to `false` to keep them under `/tt` only. A name another plugin already owns
+      stays that plugin's, and TriTown's is still reachable as `/tritown:balance`.
++ Every movement of money is now recorded, with a timestamp, both parties, the amount, the resulting balance and what
+  caused it.
+    + The log is written to `economy/transactions.log` and rolled into dated files as it grows; old files are removed
+      after `economy.history.retention-days`.
+    + Recent entries are also kept in memory per account, so viewing a history never reads from disk. Only accounts
+      active since the last restart use any memory.
+    + Turn the whole thing off with `economy.history.enabled` if you would rather not keep records.
++ Town and nation bank accounts now follow Towny. Renaming a town keeps its bank intact, and a new town that reuses an
+  old name gets a fresh one instead of inheriting the old town's money. Deleting a town records the closure and, by
+  default, removes the account; set `economy.towny.delete-accounts-on-delete` to `false` to keep it empty for auditing.
++ Money moved by Towny is now marked as such in the history, so a town's records read differently from another plugin's.
++ Added `/eco history [player]`, a paged menu of an account's recorded transactions showing the amount, the resulting
+  balance, who was on the other side, and what caused it.
++ Added `/eco` for administering balances: `give`, `take` and `set` an amount, `reset` a player to the starting balance,
+  `info` for an account's UUID, type, balances and dates, and `flush` to write changed accounts to disk immediately.
+  Every action has its own permission, and any change is written out at once rather than waiting for the next save.
+
+#### Sidebar
+
++ Added a sidebar that changes with where you are standing. Each board in `config.yml` names a condition and a priority,
+  and you see the highest-priority board that matches, so the same player gets different information at home, on someone
+  else's land, and out in the wild.
+    + Out of the box: a board for players without a town that points them at joining one, a full read-out of your own
+      town's level, residents, claims, bank, upkeep and any warning while you are inside it, a summary of whose land you
+      are on elsewhere, a warning board on enemy territory, and a lighter board in the wilderness.
+    + Boards can show your town and nation, the claim under your feet, your balance and leaderboard place, and a
+      countdown to the next Towny day. Values are written into a line as `%town_bank%`, `%plot_owner%`, `%balance%`
+      and so on; `config.yml` lists every one of them.
+    + Lines name a translation, so the layout is yours to arrange while the wording and colours stay in
+      `plugins/TriTown/lang/` and every player reads the sidebar in their own language.
+    + The sidebar is framed: the server name animates across the top as a gold gradient, a rule separates it from the
+      content, and a rule and `mc.trilleo.net` close it off. The header and footer are written once in `config.yml`
+      and wrap every board.
+    + Values are grouped under headings — `TOWN`, `HERE`, `YOU` — rather than listed flat, so a board can be read at a
+      glance instead of scanned line by line.
+    + `/tt scoreboard` turns it on and off and remembers the choice. `/tt scoreboard board <id>` pins one board for
+      checking a layout, and needs `tritown.scoreboard.admin`.
+    + The sidebar and Towny's own `/towny plot perm hud` take turns rather than fighting: turning either on puts the
+      other away, and yours comes back once Towny's is switched off again.
+    + A sidebar that has not changed is never redrawn, and a claim, a bank movement or the new day redraws it at once
+      rather than waiting for `scoreboard.refresh-interval`.
+
+#### Misc
+
++ TriTown now speaks English and Simplified Chinese. Every message, menu, item name and lore line is translated.
+    + By default each player sees whichever of the two their own Minecraft client is set to, and anyone whose client is
+      in another language sees English. A client set to a language TriTown does not ship but that is close enough —
+      Traditional Chinese, say — gets the nearest match.
+    + Set `language` in `config.yml` to `en_US` or `zh_CN` to show one language to the whole server instead.
+    + The files are copied to `plugins/TriTown/lang/` on first start and can be edited to reword anything, or joined by
+      a language file of your own. `/tt reload` picks the changes up, and a line you remove falls back to the version
+      TriTown ships.
+
+### Improvements
+
+#### Misc
+
++ The console now sees the same prefixed, formatted plugin messages as players instead of plain unprefixed text.
+
+### Fixes
+
+#### Misc
+
++ Fixed players seeing the "Unknown sub-command" message twice.
+
+### Technical Details
+
+#### Economy
+
++ Added the economy core: `Money` (balances held as whole minor units so repeated arithmetic cannot drift), `Currency`
+  and `CurrencyRegistry`, `AccountType`, `MoneyAccount`, `EconomyResult`, `LedgerLimits`, the thread-safe
+  `EconomyLedger`, and `EconomyFormat` for plain and MiniMessage rendering.
++ Added the `EconomyStorage` interface and its JSON implementation, so an SQL backend can be added later without
+  touching anything above it. Accounts are written atomically with a `.bak` fallback; unreadable data, a schema written
+  by a newer build, and a changed currency scale each stop the plugin instead of silently losing balances.
++ Added `EconomySettings`, an immutable snapshot of the `economy` block of `config.yml`, and the `economy` section
+  itself.
++ Added `EconomyService`, `AccountResolver`, `TownyAccountNaming`, `TriTownVaultEconomy` and `VaultRegistration`.
+  `Main.onLoad` now loads the config and registers the Vault service, which is the only point early enough for Towny to
+  find it — Towny picks its economy while enabling, and TriTown depends on Towny.
++ `EconomyUtil` gained `isInternal`, `transfer` and `formatRich`, and the startup check now reports which provider won
+  instead of assuming another plugin supplies one.
++ Added `BaltopCache`, rebuilt off the main thread by `EconomyFlushTask`, so `/baltop` never sorts every account on the
+  server thread.
++ `CommandRegistrar` now logs when another plugin already owns a main command's name, rather than silently leaving it
+  reachable only under the `tritown:` prefix.
++ Added Gson to the test dependencies, since it reaches the plugin through the `compileOnly` Paper API.
++ Documented the economy end to end: the core and storage layers, the Vault surface and why it implements `Economy`
+  directly, the transaction log, the Towny lifecycle rules, and an owner-facing runbook covering provider modes,
+  restart-only settings, the crash window and moving from another economy plugin.
+
+#### Sidebar
+
++ Added the `scoreboard` package: `ScoreboardService` (lifecycle, board selection, render diffing), `TriTownHud`,
+  `PlayerContext`/`ContextResolver`, `BoardCondition`, `BoardDefinition` and `PlaceholderEngine`, plus
+  `ScoreboardSettings`, a refresh task, two listeners and `/tt scoreboard`. Like `economy`, the package is outside the
+  ones `PackageScanner` walks and is started from `Main`.
++ TriTown writes no `org.bukkit.scoreboard` code. `TriTownHud` implements Towny's `HUDImplementer` and registers a
+  `PaperHUD`/`FoliaHUD` through `HUDManager.addHUD`, which is also what makes the sidebar and Towny's own HUDs mutually
+  exclusive and cleans up on quit. Towny only refreshes its own two HUDs on a plot change and never says when one is
+  switched off, so TriTown handles `PlayerChangePlotEvent` and restores a released sidebar itself.
++ `BoardRenderer` now turns a context and a board into the text of a sidebar, leaving `ScoreboardService` the lifecycle,
+  the HUD and the diffing. The shared header and footer are folded into each board when `config.yml` is read rather than
+  at render time, and a board that overflows the fifteen-line limit loses its own lines instead of the frame.
++ A redraw now re-parses only the lines whose text changed, reusing the components cached from the last one, since
+  MiniMessage parsing dominates the cost of a render. An unchanged sidebar is still never parsed or sent at all.
++ The refresh task ticks every tick and counts, rather than being scheduled at the configured rate: a `PluginTask`'s
+  period is fixed at construction and tasks are not re-registered on reload, so `scoreboard.refresh-interval` would
+  otherwise be stuck at whatever it was at startup.
++ Added `TownyUtil`, TriTown's first reader of Towny data — escaping, names, bank balances from Towny's cached value,
+  upkeep including overclaim and neutrality costs, and the new-day countdown — and `ComponentUtil`, which holds the
+  single MiniMessage instance used to parse a translation and to escape player-written text.
++ `LangFilesTest` now counts the translation keys named by `scoreboard.title`, `scoreboard.header`,
+  `scoreboard.footer` and `scoreboard.boards.*.lines` in `config.yml` as used, and subtracts `config.yml`'s own paths
+  from the keys it scans out of Kotlin, since a settings block and a translation section can share a name. A misspelled
+  sidebar line now fails the build.
+
+#### Misc
+
++ `config.yml` now gains keys added by a new version of TriTown on startup, instead of only when `/tt reload` is run. A
+  config file written by an earlier version was missing whole new sections, and Bukkit answers a missing section by
+  creating an empty one rather than falling back to the bundled defaults — so a new feature read its settings as present
+  but empty. `PluginConfig.getKeys` now falls back to the bundled defaults as well.
++ Added `Lang`, which loads `plugins/TriTown/lang/<id>.yml` and resolves a key for a sender's language, and the
+  `CommandSender.tr(key, vararg args)` shorthand every player-facing string now goes through. Translations load in
+  `Main.onLoad`, before Vault registration, because Towny can call the economy before TriTown has enabled.
++ `PluginGUI` now takes a `titleKey` instead of a `Component` and translates the title for whoever opens it;
+  `title(player)` is overridable for a title that carries live data. `PagedPluginGUI`'s navigation row is translated
+  too.
++ `EconomyResult.Failure` now carries a `money.error.*` translation key rather than an English sentence, so the language
+  is chosen where the failure is shown. The Vault provider translates into the configured language, since it has no
+  player to take one from and other plugins print the message verbatim.
++ Added `TransactionReason`, which encodes a recorded reason as its translation key plus arguments
+  (`money.reason.admin-set?admin=Steve`), so the transaction log stays readable whichever language the server is later
+  set to while the history view still shows it translated.
++ Added `LangFilesTest`, which fails the build when the bundled languages disagree on keys or placeholders, when the
+  code uses a key no language defines, or when a translation is left unused. Added snakeyaml to the test dependencies
+  for it.
++ Added `PluginConfig.getLong` and `PluginConfig.getKeys` for long values and for iterating named config sections.
++ Commands can now declare `extraPermissions`, which the permission registrar registers alongside the command's own node
+  so per-action permissions are visible to permission-management plugins.
++ Set up the TriTown project from the Paper plugin template.
+    + Renamed the package to `net.trilleo.mc.plugins.tritown`, the main command to `/tritown` (alias `/tt`), and
+      permissions to `tritown.*`.
+    + Added Towny and Vault as required dependencies. `copyPlugin` copies the Towny version from `gradle.properties`
+      into the test server, and `startServer` passes `--nogui`, forwards console input, and explains when `run/` has no
+      Paper jar.
+    + Added `EconomyUtil` for Vault economy access. TriTown disables itself when no economy plugin is installed.
+    + Added `Main.instance` and `Main.reload()`, which `/tritown reload` now uses.
+    + Aligned the Adventure test dependencies with Paper 26.2 (5.2.0).
+    + Added build and release workflows, agent instructions, and the changelog and release guide.

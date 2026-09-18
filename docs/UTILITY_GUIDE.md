@@ -1,26 +1,30 @@
-# ExamplePlugin - Utility Guide
+# TriTown - Utility Guide
 
-This guide covers the utility helpers provided in `com.example.exampleplugin.utils`. Each utility is designed to reduce
-boilerplate and provide commonly needed functionality out of the box.
+This guide covers the utility helpers provided in `net.trilleo.mc.plugins.tritown.utils`. Each utility is designed to
+reduce boilerplate and provide commonly needed functionality out of the box.
 
-| Utility         | Description                                                        |
-|:----------------|:-------------------------------------------------------------------|
-| `itemStack`     | DSL builder for creating `ItemStack` instances concisely           |
-| `CountdownUtil` | Per-player countdown with configurable display and sound           |
-| `TeamUtil`      | Custom team management with server-data persistence                |
-| `TagUtil`       | Per-player string tag management with player-data persistence      |
-| `MessageUtil`   | Prefix-decorated message sender for players                        |
-| `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack |
-| `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules   |
-| `LoreUtil`      | Word-aware text wrapping for item lore with style carry-over       |
+| Utility         | Description                                                            |
+|:----------------|:-----------------------------------------------------------------------|
+| `itemStack`     | DSL builder for creating `ItemStack` instances concisely               |
+| `CountdownUtil` | Per-player countdown with configurable display and sound               |
+| `TeamUtil`      | Custom team management with server-data persistence                    |
+| `TagUtil`       | Per-player string tag management with player-data persistence          |
+| `Lang`          | Translations: per-player language files and the `tr()` helper          |
+| `MessageUtil`   | Prefix-decorated message sender for any command sender                 |
+| `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
+| `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack     |
+| `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules       |
+| `LoreUtil`      | Word-aware text wrapping for item lore with style carry-over           |
+| `TownyUtil`     | Reads and formats Towny data: names, balances, upkeep, the new day     |
+| `ComponentUtil` | Parses a MiniMessage string into a Component, and escapes input        |
 
 ---
 
 ## ItemStack Builder DSL
 
 Building `ItemStack` instances with custom names, lore, enchantments, and flags normally requires verbose boilerplate.
-The `itemStack` DSL in `com.example.exampleplugin.utils` lets you create fully configured items in a single expression.
-All text is parsed through
+The `itemStack` DSL in `net.trilleo.mc.plugins.tritown.utils` lets you create fully configured items in a single
+expression. All text is parsed through
 [MiniMessage](https://docs.advntr.dev/minimessage/index.html), so rich formatting tags like `<bold>`, `<red>`, and
 `<gradient>` work out of the box.
 
@@ -45,7 +49,7 @@ item.itemMeta = meta
 ### After (using the DSL)
 
 ```kotlin
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 
 val item = itemStack(Material.DIAMOND_SWORD) {
     name("<bold><gradient:gold:yellow>Excalibur</gradient></bold>")
@@ -77,7 +81,7 @@ For advanced use-cases not covered by the builder methods, the `meta` block give
 `ItemMeta`. Any changes made inside `meta` are applied **after** all other builder properties, so they take precedence:
 
 ```kotlin
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 
 val head = itemStack(Material.PLAYER_HEAD) {
     name("<yellow>Custom Head")
@@ -101,8 +105,8 @@ message and callback when the countdown reaches zero.
 ### Usage
 
 ```kotlin
-import com.example.exampleplugin.utils.CountdownUtil
-import com.example.exampleplugin.enums.DisplayLocation
+import net.trilleo.mc.plugins.tritown.utils.CountdownUtil
+import net.trilleo.mc.plugins.tritown.enums.DisplayLocation
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 
@@ -148,8 +152,8 @@ Either or both placeholders may be omitted from the message string.
 ### Example (Chat Countdown)
 
 ```kotlin
-import com.example.exampleplugin.utils.CountdownUtil
-import com.example.exampleplugin.enums.DisplayLocation
+import net.trilleo.mc.plugins.tritown.utils.CountdownUtil
+import net.trilleo.mc.plugins.tritown.enums.DisplayLocation
 
 CountdownUtil().start(
     plugin = plugin,
@@ -165,8 +169,8 @@ CountdownUtil().start(
 ### Example (Boss Bar Countdown)
 
 ```kotlin
-import com.example.exampleplugin.utils.CountdownUtil
-import com.example.exampleplugin.enums.DisplayLocation
+import net.trilleo.mc.plugins.tritown.utils.CountdownUtil
+import net.trilleo.mc.plugins.tritown.enums.DisplayLocation
 import net.kyori.adventure.bossbar.BossBar
 
 CountdownUtil().start(
@@ -194,7 +198,7 @@ into the server-data JSON immediately, so they are flushed to disk when
 ### Usage
 
 ```kotlin
-import com.example.exampleplugin.utils.TeamUtil
+import net.trilleo.mc.plugins.tritown.utils.TeamUtil
 
 // Create a team (returns false if the name is already taken)
 TeamUtil.createTeam("red", "<red>Red Team")
@@ -272,7 +276,7 @@ JSON directly (outside of `TeamUtil`), call `TeamUtil.invalidateCache()` to forc
 ### Example (Game Setup)
 
 ```kotlin
-import com.example.exampleplugin.utils.TeamUtil
+import net.trilleo.mc.plugins.tritown.utils.TeamUtil
 import org.bukkit.entity.Player
 
 fun setupGame(players: List<Player>) {
@@ -306,7 +310,7 @@ explicit setup is required.
 ### Usage
 
 ```kotlin
-import com.example.exampleplugin.utils.TagUtil
+import net.trilleo.mc.plugins.tritown.utils.TagUtil
 
 // Add a tag (returns false if the player already has it)
 TagUtil.addTag(player, "vip")
@@ -345,7 +349,7 @@ is called during `JavaPlugin.onDisable`. No extra save call is needed.
 ### Example (Permission Gate)
 
 ```kotlin
-import com.example.exampleplugin.utils.TagUtil
+import net.trilleo.mc.plugins.tritown.utils.TagUtil
 import org.bukkit.entity.Player
 
 fun onEnterVipArea(player: Player) {
@@ -359,13 +363,47 @@ fun onEnterVipArea(player: Player) {
 
 ---
 
+## Lang
+
+`Lang` holds the translations for every player-facing string. See
+[Translations in the Developer Guide](DEVELOPER_GUIDE.md#translations) for the file layout and the rules a new string
+has to follow.
+
+| Method                               | Description                                                                                          |
+|:-------------------------------------|:-----------------------------------------------------------------------------------------------------|
+| `Lang.load(plugin, language)`        | Copies the bundled files to `plugins/TriTown/lang/` if missing and loads every language file.        |
+| `Lang.tr(sender, key, vararg args)`  | The translation of `key` for `sender`, with `{name}` placeholders filled; the key itself if missing. |
+| `Lang.find(sender, key)`             | The raw translation, or `null` when no language defines `key` (for runtime-built keys).              |
+| `Lang.ids`                           | Ids of every loaded language file (`en_US`, `zh_CN`, and any the server owner added).                |
+| `CommandSender.tr(key, vararg args)` | Extension shorthand for `Lang.tr(this, key, *args)`.                                                 |
+
+`Main` loads the translations in `onLoad` and again on `/tritown reload`, so nothing else has to call `load`. Pass
+`null` as the sender when there is no one to take a language from — the Vault provider does this, and gets the
+configured language, or `en_US` while `language` is `auto`.
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.tr
+
+sender.sendPrefixed(sender.tr("command.reload.done"))
+val line = player.tr("command.balance.yours", "balance" to EconomyUtil.format(balance))
+```
+
+Values are MiniMessage with `{placeholder}` arguments, and arguments are inserted verbatim — escape player-written text
+with `MiniMessage.miniMessage().escapeTags(...)` before passing it.
+
+---
+
 ## MessageUtil
 
-`MessageUtil` sends prefix-decorated messages to players. The prefix is read from `config.yml` under the
+`MessageUtil` sends prefix-decorated messages to any `CommandSender`. The prefix is read from `config.yml` under the
 `message-prefix` key and supports both plain text and
 [MiniMessage](https://docs.advntr.dev/minimessage/index.html) formatting. The plugin initialises `MessageUtil`
-automatically at startup and after every `/exampleplugin reload`, so no manual setup is required in your own commands or
+automatically at startup and after every `/tritown reload`, so no manual setup is required in your own commands or
 listeners.
+
+Every `CommandSender` is an Adventure `Audience` on Paper, so the console and command blocks receive the same prefixed
+output as players. Commands never need to branch on `sender is Player` just to pick a send method.
 
 ### Configuration
 
@@ -373,16 +411,16 @@ listeners.
 # config.yml
 
 # Plain text
-message-prefix: "[ExamplePlugin]"
+message-prefix: "[TriTown]"
 
 # MiniMessage (rich formatting)
-message-prefix: "<gray>[<gold>ExamplePlugin<gray>]"
+message-prefix: "<gray>[<gold>TriTown<gray>]"
 ```
 
 ### Usage
 
 ```kotlin
-import com.example.exampleplugin.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
@@ -395,6 +433,9 @@ player.sendPrefixed("<red>Something went wrong.")
 
 // Adventure Component
 player.sendPrefixed(Component.text("Hello!", NamedTextColor.GREEN))
+
+// The console and command blocks work the same way
+sender.sendPrefixed("<green>Configuration reloaded!")
 ```
 
 ### Methods
@@ -402,15 +443,15 @@ player.sendPrefixed(Component.text("Hello!", NamedTextColor.GREEN))
 | Method / Extension                                 | Description                                                                                  |
 |:---------------------------------------------------|:---------------------------------------------------------------------------------------------|
 | `MessageUtil.init(prefixString)`                   | Loads the prefix (plain text or MiniMessage). Called automatically at startup and on reload. |
-| `MessageUtil.sendPrefixed(player, msg: String)`    | Sends a plain-text or MiniMessage string with the prefix prepended.                          |
-| `MessageUtil.sendPrefixed(player, msg: Component)` | Sends an Adventure `Component` with the prefix prepended.                                    |
-| `Player.sendPrefixed(msg: String)`                 | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
-| `Player.sendPrefixed(msg: Component)`              | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
+| `MessageUtil.sendPrefixed(sender, msg: String)`    | Sends a plain-text or MiniMessage string with the prefix prepended.                          |
+| `MessageUtil.sendPrefixed(sender, msg: Component)` | Sends an Adventure `Component` with the prefix prepended.                                    |
+| `CommandSender.sendPrefixed(msg: String)`          | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
+| `CommandSender.sendPrefixed(msg: Component)`       | Extension shorthand for `MessageUtil.sendPrefixed(this, msg)`.                               |
 
 ### Example (Listener)
 
 ```kotlin
-import com.example.exampleplugin.utils.sendPrefixed
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
@@ -422,6 +463,61 @@ class JoinListener : Listener {
     }
 }
 ```
+
+---
+
+## EconomyUtil
+
+`EconomyUtil` is the single way the rest of the plugin touches money. TriTown normally supplies the server's economy
+itself, but an owner can hand that job to another plugin through `economy.provider.mode`, so everything here goes
+through whichever Vault provider actually won — feature code should not care which one that is. See
+[Economy (Vault)](DEVELOPER_GUIDE.md#economy-vault) in the developer guide.
+
+Do not call `EconomyUtil` from `onEnable` or from registration code: the winning provider is not settled until every
+plugin has enabled.
+
+### Usage
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
+import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
+
+val balance = EconomyUtil.balance(player)
+
+if (EconomyUtil.withdraw(player, 250.0)) {
+    player.sendPrefixed("<green>Paid ${EconomyUtil.format(250.0)}.")
+} else {
+    player.sendPrefixed("<red>You cannot afford that.")
+}
+
+EconomyUtil.deposit(player, 100.0)
+```
+
+### Methods
+
+| Method / Property            | Description                                                                                 |
+|:-----------------------------|:--------------------------------------------------------------------------------------------|
+| `economy`                    | The Vault `Economy` provider, for anything not wrapped below. Throws if none is registered. |
+| `isAvailable`                | Whether an economy provider is registered.                                                  |
+| `isInternal`                 | Whether the economy in use is TriTown's own rather than another plugin's.                   |
+| `balance(player)`            | The player's balance.                                                                       |
+| `has(player, amount)`        | Whether the player has at least `amount`.                                                   |
+| `withdraw(player, amount)`   | Takes `amount`; returns `false` without charging if the player cannot afford it.            |
+| `deposit(player, amount)`    | Gives `amount`; returns `false` if the provider refuses.                                    |
+| `transfer(from, to, amount)` | Moves `amount` between two players.                                                         |
+| `format(amount)`             | Formats `amount` as plain text, the way other plugins print it.                             |
+| `formatRich(amount)`         | Formats `amount` as a `Component`, using the configured MiniMessage pattern.                |
+| `reset()`                    | Forgets the cached provider. Called automatically on disable.                               |
+
+`withdraw`, `deposit` and `transfer` reject negative amounts with an `IllegalArgumentException`. All methods take an
+`OfflinePlayer`, so they also work for offline players.
+
+Prefer `transfer` over a withdrawal followed by a deposit. On TriTown's own economy it is a single atomic step, so a
+payment can never leave money in neither account; on another plugin's economy it falls back to withdraw-then-deposit and
+refunds the sender if the deposit fails.
+
+Use `format` for anything another plugin will print — it must never contain MiniMessage tags — and `formatRich` for
+TriTown's own messages.
 
 ---
 
@@ -441,7 +537,7 @@ immediately so the item is always consistent after the call.
 ### Usage (Entity / Chunk)
 
 ```kotlin
-import com.example.exampleplugin.utils.PDCUtil
+import net.trilleo.mc.plugins.tritown.utils.PDCUtil
 import org.bukkit.NamespacedKey
 import org.bukkit.persistence.PersistentDataType
 
@@ -476,7 +572,7 @@ PDCUtil.keys(chunk)
 ### Usage (ItemStack)
 
 ```kotlin
-import com.example.exampleplugin.utils.PDCUtil
+import net.trilleo.mc.plugins.tritown.utils.PDCUtil
 import org.bukkit.NamespacedKey
 import org.bukkit.persistence.PersistentDataType
 
@@ -517,7 +613,7 @@ the `meta` escape-hatch block, so the
 `meta` block can still override them if needed.
 
 ```kotlin
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.persistence.PersistentDataType
@@ -537,8 +633,8 @@ val item = itemStack(Material.DIAMOND_SWORD) {
 A common use-case is marking items with a unique identifier so you can distinguish plugin items from regular ones:
 
 ```kotlin
-import com.example.exampleplugin.utils.PDCUtil
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.PDCUtil
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -572,7 +668,7 @@ specialisation for boolean rules that flips the current value without requiring 
 ### Usage
 
 ```kotlin
-import com.example.exampleplugin.utils.GameRuleUtil
+import net.trilleo.mc.plugins.tritown.utils.GameRuleUtil
 import org.bukkit.GameRule
 
 // Read a rule
@@ -598,7 +694,7 @@ val newValue: Boolean? = GameRuleUtil.toggle(world, GameRule.DO_DAYLIGHT_CYCLE)
 ### Example (Cycle Day and Weather)
 
 ```kotlin
-import com.example.exampleplugin.utils.GameRuleUtil
+import net.trilleo.mc.plugins.tritown.utils.GameRuleUtil
 import org.bukkit.GameRule
 
 // Pause the day/night cycle and weather during a mini-game
@@ -617,7 +713,7 @@ fun unfreezeWorld(world: org.bukkit.World) {
 ### Example (Toggle)
 
 ```kotlin
-import com.example.exampleplugin.utils.GameRuleUtil
+import net.trilleo.mc.plugins.tritown.utils.GameRuleUtil
 import org.bukkit.GameRule
 
 // Toggle keep-inventory on command
@@ -638,7 +734,7 @@ italic-reset so Minecraft's default purple italic lore styling is neutralized.
 ### Usage
 
 ```kotlin
-import com.example.exampleplugin.utils.LoreUtil
+import net.trilleo.mc.plugins.tritown.utils.LoreUtil
 
 // Basic wrapping (default 40 visible characters per line)
 val lines =
@@ -672,8 +768,8 @@ val lines =
 Pass the result directly to the `lore()` builder method using a `meta` escape hatch, or use the spread operator:
 
 ```kotlin
-import com.example.exampleplugin.utils.LoreUtil
-import com.example.exampleplugin.utils.itemStack
+import net.trilleo.mc.plugins.tritown.utils.LoreUtil
+import net.trilleo.mc.plugins.tritown.utils.itemStack
 
 val item = itemStack(Material.DIAMOND_SWORD) {
     name("<bold><gold>Excalibur</gold></bold>")
@@ -701,3 +797,73 @@ val item = itemStack(Material.DIAMOND_SWORD) {
 - **Empty input**: Returns an empty list.
 
 ---
+
+---
+
+## TownyUtil
+
+`TownyUtil` reads Towny's objects and turns them into text fit for a message, a menu, or the sidebar. It is the only
+place in TriTown that formats Towny data, so the same town name is escaped the same way everywhere.
+
+Nothing here caches. Towny is the source of truth, and every value is re-read when it is needed — see
+[Working with Towny](DEVELOPER_GUIDE.md#working-with-towny).
+
+### Usage
+
+```kotlin
+val town = TownyAPI.getInstance().getResident(player)?.townOrNull ?: return
+
+player.sendPrefixed(
+    player.tr(
+        "town.summary",
+        "town" to TownyUtil.name(town.name),
+        "bank" to TownyUtil.balance(town),
+        "upkeep" to TownyUtil.money(TownyUtil.townUpkeep(town)),
+        "newday" to TownyUtil.duration(player, TownyUtil.secondsUntilNewDay()),
+    )
+)
+```
+
+### Methods
+
+| Method                      | Description                                                                    |
+|:----------------------------|:-------------------------------------------------------------------------------|
+| `text(value)`               | Strips legacy colour codes and escapes MiniMessage tags in player-written text |
+| `name(name)`                | A Towny object name with underscores shown as spaces, escaped                  |
+| `money(amount)`             | Formats an amount with the server currency, or `-` when there is no economy    |
+| `balance(government)`       | Formats a town's or nation's bank balance from Towny's cached value            |
+| `townUpkeep(town)`          | What the town pays at the next new day, with overclaim and neutrality costs    |
+| `nationUpkeep(nation)`      | What the nation pays at the next new day, with its neutrality cost             |
+| `cannotAffordUpkeep(town)`  | Whether the town's bank will not cover its upkeep                              |
+| `secondsUntilNewDay()`      | Seconds until Towny collects taxes and upkeep                                  |
+| `duration(player, seconds)` | Hours and minutes in the player's language (`common.duration`)                 |
+| `onOff(player, value)`      | An On/Off label in the player's language (`common.on` / `common.off`)          |
+
+**Always escape before embedding.** Town names, mayor names and boards are player-written, and `Lang.tr` inserts
+arguments verbatim into a MiniMessage string. `name()` and `text()` are what stand between a town called
+`<red>hello` and a coloured chat message.
+
+**`balance()` reads Towny's cached balance**, not a live one. A real lookup can block on another plugin's economy, and
+this is called once per player per sidebar refresh.
+
+---
+
+## ComponentUtil
+
+`Lang.tr` returns a MiniMessage **string** so that callers can substitute into it, which leaves every caller needing the
+same final parse. `ComponentUtil` is that step, and holds the one `MiniMessage` instance used for both parsing and
+escaping.
+
+### Usage
+
+```kotlin
+val line = ComponentUtil.parse(player.tr("scoreboard.line.balance"))
+val safe = ComponentUtil.escape(player.name)
+```
+
+### Methods
+
+| Method           | Description                                                      |
+|:-----------------|:-----------------------------------------------------------------|
+| `parse(message)` | Parses a MiniMessage string into an Adventure `Component`        |
+| `escape(value)`  | Escapes MiniMessage tags so player-written text renders as typed |

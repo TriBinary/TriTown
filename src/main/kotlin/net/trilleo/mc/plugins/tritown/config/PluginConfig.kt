@@ -1,0 +1,131 @@
+package net.trilleo.mc.plugins.tritown.config
+
+import org.bukkit.configuration.file.FileConfiguration
+import org.bukkit.plugin.java.JavaPlugin
+
+/**
+ * A typed wrapper around the plugin's `config.yml`.
+ *
+ * On construction the default configuration is saved (if the file does not
+ * yet exist) and the current values are loaded into memory. Call [reload]
+ * to re-read the file at runtime without restarting the server.
+ *
+ * @param plugin the owning plugin instance
+ */
+class PluginConfig(private val plugin: JavaPlugin) {
+
+    /** The currently loaded Bukkit [FileConfiguration]. Assigned by [reload], which `init` runs. */
+    private lateinit var config: FileConfiguration
+
+    init {
+        plugin.saveDefaultConfig()
+        // Through [reload], so a config.yml written by an older version gains the
+        // keys added since. Bukkit exposes the bundled file as defaults, but a
+        // section missing from disk reads back empty rather than falling through
+        // to it, so a new block has to be written out before anything reads it.
+        reload()
+    }
+
+    /**
+     * Re-reads `config.yml` from disk, picking up any changes made since
+     * the last load.
+     */
+    fun reload() {
+        plugin.reloadConfig()
+        plugin.config.options().copyDefaults(true)
+        plugin.saveConfig()
+        config = plugin.config
+    }
+
+    // ── Plugin Properties ────────────────────────────────────────────────
+
+    /**
+     * The prefix shown before plugin messages. Taken from the `message-prefix`
+     * key in `config.yml`. Supports plain text and MiniMessage formatting.
+     */
+    val messagePrefix: String
+        get() = getString("message-prefix", "[TriTown]")
+
+    /**
+     * The language every player sees, or `auto` to follow each player's own
+     * Minecraft client. Taken from the `language` key in `config.yml`.
+     */
+    val language: String
+        get() = getString("language", "auto")
+
+    // ── Typed Getters ───────────────────────────────────────────────────
+
+    /**
+     * Returns the [String] value at [path], or [default] when the key is
+     * absent or not a string.
+     */
+    fun getString(path: String, default: String = ""): String =
+        config.getString(path, default) ?: default
+
+    /**
+     * Returns the [Int] value at [path], or [default] when the key is
+     * absent or not an integer.
+     */
+    fun getInt(path: String, default: Int = 0): Int =
+        config.getInt(path, default)
+
+    /**
+     * Returns the [Long] value at [path], or [default] when the key is
+     * absent or not a number.
+     *
+     * Prefer this over [getInt] for money amounts held in minor units and for
+     * durations in milliseconds, both of which overflow an [Int].
+     */
+    fun getLong(path: String, default: Long = 0L): Long =
+        config.getLong(path, default)
+
+    /**
+     * Returns the [Double] value at [path], or [default] when the key is
+     * absent or not a double.
+     */
+    fun getDouble(path: String, default: Double = 0.0): Double =
+        config.getDouble(path, default)
+
+    /**
+     * Returns the [Boolean] value at [path], or [default] when the key is
+     * absent or not a boolean.
+     */
+    fun getBoolean(path: String, default: Boolean = false): Boolean =
+        config.getBoolean(path, default)
+
+    /**
+     * Returns the [List] of [String] values at [path], or an empty list
+     * when the key is absent.
+     */
+    fun getStringList(path: String): List<String> =
+        config.getStringList(path)
+
+    /**
+     * Returns the immediate child keys of the section at [path], or an empty
+     * list when [path] is absent or is not a section.
+     *
+     * Use this to iterate configuration written as a map of named entries, such
+     * as `economy.currencies.<id>`.
+     */
+    fun getKeys(path: String): List<String> =
+        (section(path) ?: defaultSection(path))?.getKeys(false)?.toList() ?: emptyList()
+
+    /**
+     * The section at [path] as written on disk, or `null` when the file omits it.
+     *
+     * Bukkit answers a missing section by creating an empty one rather than
+     * falling through to the bundled defaults, so a section a config.yml predates
+     * would otherwise read back as "present but empty" — indistinguishable from an
+     * owner having deliberately emptied it.
+     */
+    private fun section(path: String) =
+        config.getConfigurationSection(path)?.takeIf { it.getKeys(false).isNotEmpty() }
+
+    private fun defaultSection(path: String) = config.defaults?.getConfigurationSection(path)
+
+    /**
+     * Returns `true` when [path] exists in the loaded configuration.
+     */
+    fun contains(path: String): Boolean =
+        config.contains(path)
+}
