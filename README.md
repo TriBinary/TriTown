@@ -20,7 +20,8 @@ starting balance, balance cap and formatting are all configurable. If you would 
 
 **A sidebar that follows you.** A scoreboard that changes with where you are standing: a new player without a town is
 pointed at joining one, your own claims show your town's level, residents, land, bank, upkeep and any warning, another
-town's claims show whose land it is and what the plot costs, and enemy territory says so. Which lines appear is set per
+town's claims show whose land it is and what the plot costs, and enemy territory says so. Values sit under headings
+that group them, inside a shared header and footer carrying the server name and address. Which lines appear is set per
 board in `config.yml`; the wording lives in the language files, so everyone reads it in their own language. Players turn
 it on and off with `/tt scoreboard`, and it takes turns with Towny's own plot HUD rather than fighting it for the
 screen.
@@ -119,8 +120,10 @@ TriTown's version stays available as `/tritown:balance` and so on.
 | `scoreboard.refresh-interval`          | `2`              | Seconds between redraws of a sidebar nothing has changed on                 |
 | `scoreboard.default-on`                | `true`           | Whether a player who has never used `/tt scoreboard` sees one               |
 | `scoreboard.title-frame-interval`      | `10`             | Ticks between title frames; a single frame disables the animation           |
-| `scoreboard.title`                     | two frames       | Translation keys for the title, cycled in order                             |
-| `scoreboard.boards.<id>`               | five boards      | A board's `priority`, `condition` and `lines` (translation keys)            |
+| `scoreboard.title`                     | four frames      | Translation keys for the title, cycled in order                             |
+| `scoreboard.header`                    | a divider        | Translation keys prepended to every board                                   |
+| `scoreboard.footer`                    | divider, address | Translation keys appended to every board                                    |
+| `scoreboard.boards.<id>`               | six boards       | A board's `priority`, `condition` and `lines` (translation keys)            |
 
 Balances are stored as whole units of the smallest denomination, so `economy.currency.fractional-digits` fixes how
 every balance on disk is read. Changing it once accounts exist stops the plugin with a message naming both values;
@@ -138,9 +141,13 @@ standing. The conditions are `always`, `no-town`, `has-town`, `no-nation`, `has-
 `in-own-town`, `in-own-plot`, `in-other-town`, `in-ally-town`, `in-enemy-town` and `town-has-warning`.
 
 A line names a translation key rather than carrying text, so you arrange the layout here and the wording stays in
-`plugins/TriTown/lang/`. An empty entry (`""`) is a blank spacer, and at most 15 lines fit on screen. Values are
-written into a line as `%town_bank%`, `%plot_owner%`, `%balance%` and so on — `config.yml` lists every available
-marker beside the block.
+`plugins/TriTown/lang/`. An empty entry (`""`) is a blank spacer. Values are written into a line as `%town_bank%`,
+`%plot_owner%`, `%balance%` and so on — `config.yml` lists every available marker beside the block.
+
+Every board is wrapped in the shared `header` and `footer`, so the frame around the sidebar is written once instead of
+being repeated in each board. Minecraft shows at most 15 lines; the header and footer count towards that, leaving 12
+per board by default. A board that declares more than fits loses its own last lines, never the frame, and says so in
+the console.
 
 The sidebar and Towny's `/towny plot perm hud` are mutually exclusive: turning either on puts the other away, and
 TriTown's returns once Towny's is switched off. Everything under `scoreboard` is applied by `/tt reload`.

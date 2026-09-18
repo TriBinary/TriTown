@@ -57,6 +57,11 @@
       and so on; `config.yml` lists every one of them.
     + Lines name a translation, so the layout is yours to arrange while the wording and colours stay in
       `plugins/TriTown/lang/` and every player reads the sidebar in their own language.
+    + The sidebar is framed: the server name animates across the top as a gold gradient, a rule separates it from the
+      content, and a rule and `mc.trilleo.net` close it off. The header and footer are written once in `config.yml`
+      and wrap every board.
+    + Values are grouped under headings — `TOWN`, `HERE`, `YOU` — rather than listed flat, so a board can be read at a
+      glance instead of scanned line by line.
     + `/tt scoreboard` turns it on and off and remembers the choice. `/tt scoreboard board <id>` pins one board for
       checking a layout, and needs `tritown.scoreboard.admin`.
     + The sidebar and Towny's own `/towny plot perm hud` take turns rather than fighting: turning either on puts the
@@ -123,14 +128,20 @@
   `PaperHUD`/`FoliaHUD` through `HUDManager.addHUD`, which is also what makes the sidebar and Towny's own HUDs
   mutually exclusive and cleans up on quit. Towny only refreshes its own two HUDs on a plot change and never says
   when one is switched off, so TriTown handles `PlayerChangePlotEvent` and restores a released sidebar itself.
++ `BoardRenderer` now turns a context and a board into the text of a sidebar, leaving `ScoreboardService` the
+  lifecycle, the HUD and the diffing. The shared header and footer are folded into each board when `config.yml` is
+  read rather than at render time, and a board that overflows the fifteen-line limit loses its own lines instead of
+  the frame.
++ A redraw now re-parses only the lines whose text changed, reusing the components cached from the last one, since
+  MiniMessage parsing dominates the cost of a render. An unchanged sidebar is still never parsed or sent at all.
 + The refresh task ticks every tick and counts, rather than being scheduled at the configured rate: a `PluginTask`'s
   period is fixed at construction and tasks are not re-registered on reload, so `scoreboard.refresh-interval` would
   otherwise be stuck at whatever it was at startup.
 + Added `TownyUtil`, TriTown's first reader of Towny data — escaping, names, bank balances from Towny's cached value,
   upkeep including overclaim and neutrality costs, and the new-day countdown — and `ComponentUtil`, which holds the
   single MiniMessage instance used to parse a translation and to escape player-written text.
-+ `LangFilesTest` now counts the translation keys named by `scoreboard.title` and `scoreboard.boards.*.lines` in
-  `config.yml` as used, and subtracts `config.yml`'s own paths from the keys it scans out of Kotlin, since a settings
++ `LangFilesTest` now counts the translation keys named by `scoreboard.title`, `scoreboard.header`,
+  `scoreboard.footer` and `scoreboard.boards.*.lines` in `config.yml` as used, and subtracts `config.yml`'s own paths from the keys it scans out of Kotlin, since a settings
   block and a translation section can share a name. A misspelled sidebar line now fails the build.
 
 #### Misc

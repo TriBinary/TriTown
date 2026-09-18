@@ -187,29 +187,41 @@ gui:
 # 侧边栏。显示哪些行、按什么顺序显示由 config.yml 中的各个板面决定；措辞与颜色在此设置。
 # 变量写作 %marker%，完整列表见 config.yml。
 scoreboard:
+  # 服务器名称。各帧之间只有渐变相位不同，循环播放时高光会从名称上扫过。
   title:
-    frame-1: "<gradient:#f9d423:#ff8c00><bold>TRILLEO</bold></gradient>"
-    frame-2: "<gradient:#ff8c00:#f9d423><bold>TRILLEO</bold></gradient>"
+    frame-1: "<gradient:#e0912f:#fff0c2:#e0912f:0.0><bold>TriRealms</bold></gradient>"
+    frame-2: "<gradient:#e0912f:#fff0c2:#e0912f:-0.25><bold>TriRealms</bold></gradient>"
+    frame-3: "<gradient:#e0912f:#fff0c2:#e0912f:-0.5><bold>TriRealms</bold></gradient>"
+    frame-4: "<gradient:#e0912f:#fff0c2:#e0912f:-0.75><bold>TriRealms</bold></gradient>"
+
+  # 包裹在每个板面外侧。
+  frame:
+    divider: "<dark_gray><strikethrough>                  "
+    website: "<gradient:#8a8f98:#c7ccd4>mc.trilleo.net</gradient>"
+
+  # 用于给下方各行分组的小标题。
+  section:
+    town: "<gold>» <bold>城镇</bold>"
+    here: "<gold>» <bold>当前位置</bold>"
+    you: "<gold>» <bold>个人</bold>"
 
   line:
-    town-name: "<gray>城镇 <white>%town%"
-    town-level: "<gray>等级 <white>%town_level%<gray>，在线 <white>%town_online%<gray>/<white>%town_residents%"
-    town-residents: "<gray>居民 <white>%town_residents%"
-    town-claims: "<gray>领地 <white>%town_claims%<gray>/<white>%town_claims_max%<gray>（剩余 <green>%town_claims_free%<gray>）"
-    town-bank: "<gray>银行 <white>%town_bank%"
-    town-upkeep: "<gray>维护费 <white>%town_upkeep%"
-    town-warning: "<red>%town_warning%"
-    plot-town: "<gray>所属城镇 <white>%plot_town%"
-    plot-nation: "<gray>国家 <white>%plot_nation%"
-    plot-type: "<gray>地皮 <white>%plot_type%"
-    plot-owner: "<gray>拥有者 <white>%plot_owner%"
-    plot-price: "<gray>出售中 <green>%plot_price%"
-    enemy-warning: "<red><bold>敌对领地</bold>"
-    wilderness: "<dark_green>荒野"
-    coords: "<gray>区块 <white>%plot_coords%"
-    balance: "<gray>余额 <white>%balance%"
-    newday: "<dark_gray>距新的一天 %newday%"
-    townless-hint: "<yellow>使用 <white>/tm</white> 加入城镇"
+    town-title: "  <white>%town%<dark_gray> · <gray>等级 <white>%town_level%"
+    town-residents: "  <gray>居民 <white>%town_online%<dark_gray>/<white>%town_residents%"
+    town-claims: "  <gray>领地 <white>%town_claims%<dark_gray>/<white>%town_claims_max%"
+    town-bank: "  <gray>银行 <white>%town_bank%"
+    town-upkeep: "  <gray>维护费 <white>%town_upkeep%<dark_gray> 剩余 %newday%"
+    town-warning: "  <red>%town_warning%"
+    plot-town: "  <gray>城镇 <white>%plot_town%"
+    plot-nation: "  <gray>国家 <white>%plot_nation%"
+    plot-summary: "  <white>%plot_type%<dark_gray> · <gray>%plot_owner%"
+    plot-price: "  <gray>出售中 <green>%plot_price%"
+    wilderness: "  <dark_green>荒野"
+    coords: "  <gray>区块 <white>%plot_coords%"
+    balance: "  <gray>余额 <white>%balance%"
+    enemy-warning: "<dark_red>» <bold>敌对领地</bold> «"
+    townless-hint: "  <yellow>你还没有城镇"
+    townless-action: "  <gray>使用 <white>/tm<gray> 加入一个"
 
   warning:
     ruined: "已废墟"

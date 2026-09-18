@@ -81,11 +81,12 @@ class LangFilesTest {
     private fun sidebarKeys(): List<String> {
         val scoreboard = config["scoreboard"] as? Map<*, *> ?: return emptyList()
 
-        val titles = scoreboard["title"] as? List<*> ?: emptyList<Any?>()
+        val frame = listOf("title", "header", "footer")
+            .flatMap { key -> scoreboard[key] as? List<*> ?: emptyList<Any?>() }
         val lines = (scoreboard["boards"] as? Map<*, *>)?.values.orEmpty()
             .flatMap { board -> (board as? Map<*, *>)?.get("lines") as? List<*> ?: emptyList<Any?>() }
 
-        return (titles + lines).filterIsInstance<String>().filter { it.isNotBlank() }
+        return (frame + lines).filterIsInstance<String>().filter { it.isNotBlank() }
     }
 
     /** Every path in `config.yml`, sections as well as settings. */

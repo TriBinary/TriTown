@@ -185,33 +185,46 @@ gui:
     source: "<gray>Source: <white>{source}</white>"
     time: "<dark_gray>{time}"
 
-# The sidebar. Which of these lines appear, and in what order, is set per board
-# in config.yml; the wording and colours are set here. Values are written as
+# The sidebar. Which lines appear, and in what order, is set per board in
+# config.yml; the wording and colours are set here. Values are written as
 # %marker% and are listed in config.yml.
 scoreboard:
+  # The server name. The frames differ only in their gradient phase, which makes
+  # the highlight sweep across the name as they cycle.
   title:
-    frame-1: "<gradient:#f9d423:#ff8c00><bold>TRILLEO</bold></gradient>"
-    frame-2: "<gradient:#ff8c00:#f9d423><bold>TRILLEO</bold></gradient>"
+    frame-1: "<gradient:#e0912f:#fff0c2:#e0912f:0.0><bold>TriRealms</bold></gradient>"
+    frame-2: "<gradient:#e0912f:#fff0c2:#e0912f:-0.25><bold>TriRealms</bold></gradient>"
+    frame-3: "<gradient:#e0912f:#fff0c2:#e0912f:-0.5><bold>TriRealms</bold></gradient>"
+    frame-4: "<gradient:#e0912f:#fff0c2:#e0912f:-0.75><bold>TriRealms</bold></gradient>"
+
+  # Wrapped around every board.
+  frame:
+    divider: "<dark_gray><strikethrough>                  "
+    website: "<gradient:#8a8f98:#c7ccd4>mc.trilleo.net</gradient>"
+
+  # Headings that group the lines under them.
+  section:
+    town: "<gold>» <bold>TOWN</bold>"
+    here: "<gold>» <bold>HERE</bold>"
+    you: "<gold>» <bold>YOU</bold>"
 
   line:
-    town-name: "<gray>Town <white>%town%"
-    town-level: "<gray>Level <white>%town_level%<gray>, <white>%town_online%<gray>/<white>%town_residents%<gray> on"
-    town-residents: "<gray>Residents <white>%town_residents%"
-    town-claims: "<gray>Claims <white>%town_claims%<gray>/<white>%town_claims_max%<gray> (<green>%town_claims_free%<gray> free)"
-    town-bank: "<gray>Bank <white>%town_bank%"
-    town-upkeep: "<gray>Upkeep <white>%town_upkeep%"
-    town-warning: "<red>%town_warning%"
-    plot-town: "<gray>Land of <white>%plot_town%"
-    plot-nation: "<gray>Nation <white>%plot_nation%"
-    plot-type: "<gray>Plot <white>%plot_type%"
-    plot-owner: "<gray>Owner <white>%plot_owner%"
-    plot-price: "<gray>For sale <green>%plot_price%"
-    enemy-warning: "<red><bold>ENEMY LAND</bold>"
-    wilderness: "<dark_green>Wilderness"
-    coords: "<gray>Chunk <white>%plot_coords%"
-    balance: "<gray>Balance <white>%balance%"
-    newday: "<dark_gray>New day in %newday%"
-    townless-hint: "<yellow>Join a town with <white>/tm</white>"
+    town-title: "  <white>%town%<dark_gray> · <gray>Lv <white>%town_level%"
+    town-residents: "  <gray>Residents <white>%town_online%<dark_gray>/<white>%town_residents%"
+    town-claims: "  <gray>Claims <white>%town_claims%<dark_gray>/<white>%town_claims_max%"
+    town-bank: "  <gray>Bank <white>%town_bank%"
+    town-upkeep: "  <gray>Upkeep <white>%town_upkeep%<dark_gray> in %newday%"
+    town-warning: "  <red>%town_warning%"
+    plot-town: "  <gray>Town <white>%plot_town%"
+    plot-nation: "  <gray>Nation <white>%plot_nation%"
+    plot-summary: "  <white>%plot_type%<dark_gray> · <gray>%plot_owner%"
+    plot-price: "  <gray>For sale <green>%plot_price%"
+    wilderness: "  <dark_green>Wilderness"
+    coords: "  <gray>Chunk <white>%plot_coords%"
+    balance: "  <gray>Balance <white>%balance%"
+    enemy-warning: "<dark_red>» <bold>ENEMY LAND</bold> «"
+    townless-hint: "  <yellow>You have no town yet"
+    townless-action: "  <gray>Open <white>/tm<gray> to join one"
 
   warning:
     ruined: "Ruined"

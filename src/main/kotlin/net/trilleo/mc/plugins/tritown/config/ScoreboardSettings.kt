@@ -51,16 +51,33 @@ data class ScoreboardSettings(
         fun load(config: PluginConfig, logger: Logger): ScoreboardSettings =
             read(config, logger).also { current = it }
 
-        private fun read(config: PluginConfig, logger: Logger): ScoreboardSettings = ScoreboardSettings(
-            enabled = config.getBoolean("scoreboard.enabled", true),
-            refreshIntervalTicks = config.getLong("scoreboard.refresh-interval", 2L).coerceIn(1L, 3600L) * 20L,
-            defaultOn = config.getBoolean("scoreboard.default-on", true),
-            titleFrameIntervalTicks = config.getLong("scoreboard.title-frame-interval", 10L).coerceIn(1L, 1200L),
-            titleFrames = config.getStringList("scoreboard.title").ifEmpty { listOf("scoreboard.title.frame-1") },
-            boards = readBoards(config, logger),
-        )
+        private fun read(config: PluginConfig, logger: Logger): ScoreboardSettings {
+            val header = config.getStringList("scoreboard.header")
+            val footer = config.getStringList("scoreboard.footer")
 
-        private fun readBoards(config: PluginConfig, logger: Logger): List<BoardDefinition> =
+            return ScoreboardSettings(
+                enabled = config.getBoolean("scoreboard.enabled", true),
+                refreshIntervalTicks = config.getLong("scoreboard.refresh-interval", 2L).coerceIn(1L, 3600L) * 20L,
+                defaultOn = config.getBoolean("scoreboard.default-on", true),
+                titleFrameIntervalTicks = config.getLong("scoreboard.title-frame-interval", 10L).coerceIn(1L, 1200L),
+                titleFrames = config.getStringList("scoreboard.title").ifEmpty { listOf("scoreboard.title.frame-1") },
+                boards = readBoards(config, logger, header, footer),
+            )
+        }
+
+        /**
+         * Reads every board, wrapping each one's own lines in the shared frame.
+         *
+         * The frame is folded in here rather than at render time so that a board
+         * is a finished list of lines by the time anything draws it, and so the
+         * fifteen-line limit is checked against what a player will actually see.
+         */
+        private fun readBoards(
+            config: PluginConfig,
+            logger: Logger,
+            header: List<String>,
+            footer: List<String>,
+        ): List<BoardDefinition> =
             config.getKeys("scoreboard.boards").mapNotNull { id ->
                 val path = "scoreboard.boards.$id"
                 val conditionName = config.getString("$path.condition", BoardCondition.ALWAYS.id)
@@ -74,10 +91,14 @@ data class ScoreboardSettings(
                     return@mapNotNull null
                 }
 
-                val lines = config.getStringList("$path.lines")
-                if (lines.size > MAX_LINES) {
+                val own = config.getStringList("$path.lines")
+                val frame = header.size + footer.size
+                val room = (MAX_LINES - frame).coerceAtLeast(0)
+
+                if (own.size > room) {
                     logger.warning(
-                        "Scoreboard board '$id' declares ${lines.size} lines; only the first $MAX_LINES are shown."
+                        "Scoreboard board '$id' declares ${own.size} lines, but the header and footer take $frame of " +
+                            "the $MAX_LINES available, so only its first $room are shown."
                     )
                 }
 
@@ -85,7 +106,7 @@ data class ScoreboardSettings(
                     id = id,
                     priority = config.getInt("$path.priority", 0),
                     condition = condition,
-                    lines = lines.take(MAX_LINES),
+                    lines = header + own.take(room) + footer,
                 )
             }.sortedByDescending { it.priority }
     }

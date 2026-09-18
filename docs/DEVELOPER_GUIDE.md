@@ -2327,6 +2327,11 @@ A board is a named layout in `config.yml` with a `condition` and a `priority`. E
 board whose `BoardCondition` matches. That is what lets one player see different information at home, on another
 town's land, and out in the wild.
 
+Every board is wrapped in the shared `header` and `footer`, folded in by `ScoreboardSettings.readBoards` at parse
+time rather than at render time, so a `BoardDefinition` is a finished list of lines by the time anything draws it.
+The frame counts against Minecraft's fifteen-line limit, and overflow trims a board's **own** lines rather than the
+frame — losing the server address off the bottom because a board grew would be the wrong trade.
+
 Nothing about the context is cached. Towny stays the source of truth, so a deleted town cannot linger on a sidebar.
 
 To add a condition, add a `BoardCondition` entry with its `config.yml` name and extend the `matches` branch:
@@ -2355,13 +2360,22 @@ Use `TownyUtil.name` / `TownyUtil.text` for anything player-written.
 
 ### Rendering and cost
 
+`BoardRenderer` turns a context and a board into the strings a sidebar shows, and knows nothing about the server;
+`ScoreboardService` owns the lifecycle, the HUD and the diffing. Keeping them apart means what a sidebar *says* can
+be reasoned about without the plumbing around it.
+
 One task ticks every tick and decides internally when to redraw, because a `PluginTask`'s period is fixed at
 construction and tasks are not re-registered on `/tritown reload` — counting ticks is what lets
 `scoreboard.refresh-interval` take effect on a reload.
 
-Renders are **diffed** before they are sent: the rendered strings are compared and an unchanged sidebar is never
-pushed again. Towny events (`ScoreboardTownyListener`) call `refreshSoon`, which collapses a burst into a single
-redraw on the main thread — which is also what makes the asynchronous `PlayerChangePlotEvent` safe to handle.
+Renders are **diffed twice over**, because MiniMessage parsing dominates the cost:
+
+1. If the title and every line match what the player already sees, nothing is parsed or sent at all.
+2. Otherwise only the lines whose text actually changed are parsed; the rest reuse the components cached in `Shown`.
+   A board whose balance ticks over re-parses one line out of fifteen.
+
+Towny events (`ScoreboardTownyListener`) call `refreshSoon`, which collapses a burst into a single redraw on the main
+thread — which is also what makes the asynchronous `PlayerChangePlotEvent` safe to handle.
 
 Everything runs on the main thread: Towny's objects and Towny's renderer both require it, and every value the sidebar
 reads is an in-memory lookup.
@@ -2371,7 +2385,7 @@ reads is an in-memory lookup.
 Board lines name a translation key rather than carrying text, so a server owner controls the layout in `config.yml`
 while wording and colour stay in the language files and each player reads the sidebar in their own language.
 
-`LangFilesTest` knows about this: it treats the strings under `scoreboard.title` and `scoreboard.boards.*.lines` as
-used keys, and subtracts `config.yml`'s own paths from the keys it scans out of Kotlin — necessary because a settings
+`LangFilesTest` knows about this: it treats the strings under `scoreboard.title`, `scoreboard.header`,
+`scoreboard.footer` and `scoreboard.boards.*.lines` as used keys, and subtracts `config.yml`'s own paths from the keys it scans out of Kotlin — necessary because a settings
 block and a translation section can share a name, as `scoreboard` does. A misspelled line therefore fails the build
 instead of rendering the raw key.

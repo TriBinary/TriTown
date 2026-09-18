@@ -5,6 +5,7 @@ import com.palmergames.bukkit.towny.huds.HUDManager
 import com.palmergames.bukkit.towny.huds.providers.FoliaHUD
 import com.palmergames.bukkit.towny.huds.providers.PaperHUD
 import com.palmergames.bukkit.towny.huds.providers.ServerHUD
+import net.kyori.adventure.text.Component
 import net.trilleo.mc.plugins.tritown.config.ScoreboardSettings
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.EconomyPlaceholders
@@ -12,7 +13,6 @@ import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.NationPlaceholders
 import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.PlotPlaceholders
 import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.TownPlaceholders
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
-import net.trilleo.mc.plugins.tritown.utils.Lang
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
@@ -36,12 +36,19 @@ object ScoreboardService {
     /** Where a player's own on/off choice is kept between sessions. */
     private const val TOGGLE_KEY = "scoreboard.enabled"
 
-    private data class Rendered(val title: String, val lines: List<String>)
+    /**
+     * The last sidebar sent to a player, text and parsed components alike.
+     *
+     * The components are kept so that a redraw only re-parses the lines whose
+     * text actually changed — when a balance ticks over, the dozen lines around
+     * it are reused rather than run through MiniMessage again.
+     */
+    private data class Shown(val title: String, val lines: List<String>, val components: List<Component>)
 
     private var plugin: JavaPlugin? = null
     private var hud: ServerHUD? = null
 
-    private val rendered = mutableMapOf<UUID, Rendered>()
+    private val shown = mutableMapOf<UUID, Shown>()
     private val pinned = mutableMapOf<UUID, String>()
 
     private var pendingRefresh = false
@@ -91,7 +98,7 @@ object ScoreboardService {
         }
 
         hud = null
-        rendered.clear()
+        shown.clear()
         pinned.clear()
         PlaceholderEngine.clear()
         plugin = null
@@ -143,20 +150,20 @@ object ScoreboardService {
     /** Takes [player]'s sidebar down, restoring whatever board they had before. */
     fun hide(player: Player) {
         val provider = hud ?: return
-        rendered.remove(player.uniqueId)
+        shown.remove(player.uniqueId)
         if (provider.hasPlayer(player)) provider.toggleOff(player)
     }
 
     /** Locks [player] to the board named [id], or clears the lock when [id] is `null`. */
     fun pin(player: Player, id: String?) {
         if (id == null) pinned.remove(player.uniqueId) else pinned[player.uniqueId] = id
-        rendered.remove(player.uniqueId)
+        shown.remove(player.uniqueId)
         render(player)
     }
 
     /** Forgets [player]'s remembered render and pinned board once they are gone. */
     fun forget(player: Player) {
-        rendered.remove(player.uniqueId)
+        shown.remove(player.uniqueId)
         pinned.remove(player.uniqueId)
     }
 
@@ -201,7 +208,7 @@ object ScoreboardService {
      * the player saw last time would otherwise be diffed away and never drawn.
      */
     private fun raise(player: Player) {
-        rendered.remove(player.uniqueId)
+        shown.remove(player.uniqueId)
         HUDManager.toggleHUD(player, TriTownHud.NAME)
     }
 
@@ -231,19 +238,30 @@ object ScoreboardService {
         val context = ContextResolver.resolve(player)
         val board = pinned[player.uniqueId]?.let(settings::board) ?: settings.boardFor(context) ?: return
 
-        val frames = settings.titleFrames
-        val title = resolve(frames[titleFrame.mod(frames.size)], context)
-        val lines = board.lines.map { key -> if (key.isEmpty()) "" else resolve(key, context) }
+        push(player, provider, BoardRenderer.render(context, board, settings, titleFrame))
+    }
 
-        val previous = rendered.put(player.uniqueId, Rendered(title, lines))
-        if (previous != null && previous.title == title && previous.lines == lines) return
+    /** Sends [next] to [player], parsing and pushing only what differs from what they already see. */
+    private fun push(player: Player, provider: ServerHUD, next: RenderedBoard) {
+        val previous = shown[player.uniqueId]
+        if (previous != null && previous.title == next.title && previous.lines == next.lines) return
 
-        if (previous == null || previous.title != title) {
-            provider.setTitle(player.uniqueId, ComponentUtil.parse(title))
+        val components = ArrayList<Component>(next.lines.size)
+        next.lines.forEachIndexed { index, text ->
+            val reusable = previous != null &&
+                index < previous.components.size &&
+                previous.lines[index] == text
+            components += if (reusable) previous.components[index] else ComponentUtil.parse(text)
         }
 
-        // A fresh list every time: the renderer reverses the one it is handed.
-        provider.setLines(player.uniqueId, lines.mapTo(ArrayList(lines.size), ComponentUtil::parse))
+        if (previous == null || previous.title != next.title) {
+            provider.setTitle(player.uniqueId, ComponentUtil.parse(next.title))
+        }
+
+        // A copy, because the renderer reverses the list it is handed and these
+        // components are kept for the next redraw.
+        provider.setLines(player.uniqueId, ArrayList(components))
+        shown[player.uniqueId] = Shown(next.title, next.lines, components)
     }
 
     private fun renderAll() {
@@ -256,10 +274,6 @@ object ScoreboardService {
                 }
             }
     }
-
-    /** Translates [key] for the viewer, then fills in the markers the translation carries. */
-    private fun resolve(key: String, context: PlayerContext): String =
-        PlaceholderEngine.apply(Lang.tr(context.player, key), context)
 
     private fun registerPlaceholders() {
         PlaceholderEngine.clear()

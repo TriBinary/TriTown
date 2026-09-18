@@ -102,9 +102,13 @@ economy:
 # matches where they are standing — so the same player gets different
 # information at home, on someone else's land, and out in the wild.
 #
+# Every board is wrapped in the shared header and footer below, so the frame is
+# written once rather than repeated in each board. The three of them count
+# towards the fifteen lines Minecraft allows, leaving twelve per board.
+#
 # Lines name a translation key, so the wording and colours live in
 # plugins/TriTown/lang/ and each player reads the sidebar in their own language.
-# An empty entry is a blank spacer, and at most 15 lines are shown.
+# An empty entry is a blank spacer.
 #
 # Values are written into a line as %marker%. Available markers:
 #   Town    %town% %town_level% %town_residents% %town_online% %town_claims%
@@ -129,10 +133,22 @@ scoreboard:
   # Whether a player who has never run /tritown scoreboard sees one.
   default-on: true
   # Ticks between title frames. Leave a single frame to switch the animation off.
-  title-frame-interval: 10
+  title-frame-interval: 8
+  # The server name, as a gold gradient whose highlight sweeps across it.
   title:
     - scoreboard.title.frame-1
     - scoreboard.title.frame-2
+    - scoreboard.title.frame-3
+    - scoreboard.title.frame-4
+
+  # Prepended to every board, under the title.
+  header:
+    - scoreboard.frame.divider
+
+  # Appended to every board.
+  footer:
+    - scoreboard.frame.divider
+    - scoreboard.frame.website
 
   boards:
     # Having no town comes before everything else: a new player needs pointing
@@ -141,9 +157,11 @@ scoreboard:
       priority: 90
       condition: no-town
       lines:
+        - scoreboard.section.you
         - scoreboard.line.balance
         - ""
         - scoreboard.line.townless-hint
+        - scoreboard.line.townless-action
         - ""
         - scoreboard.line.coords
 
@@ -152,54 +170,66 @@ scoreboard:
       condition: in-enemy-town
       lines:
         - scoreboard.line.enemy-warning
-        - scoreboard.line.plot-town
-        - scoreboard.line.plot-owner
         - ""
-        - scoreboard.line.coords
+        - scoreboard.section.here
+        - scoreboard.line.plot-town
+        - scoreboard.line.plot-nation
+        - scoreboard.line.plot-summary
+        - ""
+        - scoreboard.section.you
+        - scoreboard.line.balance
 
     own-town:
       priority: 40
       condition: in-own-town
       lines:
-        - scoreboard.line.town-name
-        - scoreboard.line.town-level
+        - scoreboard.section.town
+        - scoreboard.line.town-title
         - scoreboard.line.town-residents
         - scoreboard.line.town-claims
         - scoreboard.line.town-bank
         - scoreboard.line.town-upkeep
+        # Renders blank while the town is healthy, so it doubles as the spacer.
         - scoreboard.line.town-warning
-        - scoreboard.line.plot-type
-        - scoreboard.line.plot-owner
+        - scoreboard.section.here
+        - scoreboard.line.plot-summary
         - ""
+        - scoreboard.section.you
         - scoreboard.line.balance
-        - scoreboard.line.newday
 
     other-town:
       priority: 30
       condition: in-other-town
       lines:
+        - scoreboard.section.here
         - scoreboard.line.plot-town
         - scoreboard.line.plot-nation
-        - scoreboard.line.plot-type
-        - scoreboard.line.plot-owner
+        - scoreboard.line.plot-summary
         - scoreboard.line.plot-price
         - ""
+        - scoreboard.section.town
+        - scoreboard.line.town-title
+        - scoreboard.line.town-claims
+        - ""
+        - scoreboard.section.you
         - scoreboard.line.balance
-        - scoreboard.line.coords
 
     wilderness:
       priority: 20
       condition: in-wilderness
       lines:
+        - scoreboard.section.here
         - scoreboard.line.wilderness
         - scoreboard.line.coords
         - ""
-        - scoreboard.line.town-name
+        - scoreboard.section.town
+        - scoreboard.line.town-title
         - scoreboard.line.town-claims
         - scoreboard.line.town-bank
+        - scoreboard.line.town-upkeep
         - ""
+        - scoreboard.section.you
         - scoreboard.line.balance
-        - scoreboard.line.newday
 
     # Never reached by the boards above, which already cover every place a
     # player can stand. Kept so that editing one of their conditions cannot
@@ -208,5 +238,6 @@ scoreboard:
       priority: 0
       condition: always
       lines:
+        - scoreboard.section.you
         - scoreboard.line.balance
         - scoreboard.line.coords
