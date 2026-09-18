@@ -1873,6 +1873,99 @@ Change `towny_version` in `gradle.properties` and the Requirements table in `REA
 
 ---
 
+## Economy Core
+
+The economy lives in `net.trilleo.mc.plugins.tritown.economy`, which the package scanner never touches. Commands,
+listeners, GUIs and tasks live in their own scanned packages and delegate inward. Two facts shape the whole design:
+
+* **Towny calls the economy from its own threads.** Towny's `economy.use_async` defaults to `true`, so every type here
+  is written to be thread-safe.
+* **Balances are whole numbers.** Money is held as minor units in a `Long` — cents, for a currency with two fractional
+  digits — so repeated arithmetic cannot drift the way `Double` addition does. A `Double` appears only at the Vault
+  boundary, where the API demands one.
+
+### Money
+
+`Money` is a value class over a `Long` count of minor units.
+
+| Member                                      | Description                                                             |
+|:--------------------------------------------|:-------------------------------------------------------------------------|
+| `Money.ofDouble(value, scale)`              | Converts a `Double`, rounding half away from zero. Throws on NaN, infinity or overflow. |
+| `toDouble(scale)`                           | Converts back at the given scale                                        |
+| `toPlainString(scale)`                      | Renders as a decimal string with no grouping                            |
+| `plusExact` / `minusExact`                  | Arithmetic that throws `ArithmeticException` rather than wrapping        |
+| `abs`, `isZero`, `isPositive`, `isNegative` | Sign helpers                                                            |
+
+Never build a `Money` from a `Double` yourself — go through `Currency.of`, which supplies the right scale.
+
+### Currency
+
+A `Currency` carries its display names, symbol, scale and its two format patterns. `CurrencyRegistry` holds the
+configured set and names one of them primary:
+
+```kotlin
+val currency = CurrencyRegistry.primary
+val amount = currency.of(100.0)                      // Money, at this currency's scale
+val text = EconomyFormat.plain(currency, amount)
+```
+
+Only `CurrencyRegistry.primary` is exposed through Vault — the Vault API has room for exactly one currency — so any
+additional currency is reachable only through TriTown's own commands and services. Towny will not see it.
+
+### EconomyLedger
+
+`EconomyLedger` is the in-memory book of accounts and the only place a balance is ever changed. It has no Bukkit,
+Vault or Towny imports, which is what makes it testable without a running server; working out who an account belongs
+to is the surrounding service's job.
+
+| Method                                     | Description                                                                   |
+|:-------------------------------------------|:--------------------------------------------------------------------------------|
+| `getOrCreate(uuid, name, type)`            | Returns the account, creating it when absent and refreshing its name and type  |
+| `get(uuid)` / `byName(name)` / `has(uuid)` | Lookup; `byName` is case-insensitive                                           |
+| `balance(uuid, currency)`                  | The balance, or zero when the account does not exist                           |
+| `deposit` / `withdraw` / `setBalance`      | Single-account mutations, each returning an `EconomyResult`                    |
+| `transfer(from, to, currency, amount)`     | Two-account mutation applied as one atomic step                                |
+| `rename(account, name)` / `remove(uuid)`   | Name-index maintenance                                                         |
+| `drainDirty()` / `snapshot(uuid) { }`      | Persistence support, used by the flush task                                    |
+| `suggestNames(prefix, limit)`              | Tab completion straight from the in-memory index, with no disk access          |
+
+Every operation returns an `EconomyResult` — `Success(moved, balance, counterpartyBalance)` or `Failure(reason)` —
+rather than throwing. The Vault provider runs on Towny's threads, where an exception would be swallowed or would spam
+the console, so a refused operation is an ordinary return value.
+
+`LedgerLimits` supplies the bounds: a per-currency balance cap in minor units, and whether a withdrawal may take an
+account below zero. A deposit that would break the cap **fails** instead of clamping — clamping destroys money
+silently and leaves the ledger impossible to audit.
+
+#### Locking
+
+The maps are concurrent, and account creation goes through `computeIfAbsent`, so one UUID can never produce two
+accounts. Beyond that:
+
+* Every read-modify-write on a balance holds that account's own monitor.
+* Reading a single balance does not take the lock; the map is concurrent and a `Long` cannot tear.
+* A two-account transfer takes both monitors **in UUID order**. That ordering is what stops two players paying each
+  other at the same instant from deadlocking, and `EconomyLedgerConcurrencyTest` fails by timing out if it is broken.
+* Anything needing an internally consistent view of one account — a storage snapshot, for instance — goes through
+  `snapshot(uuid) { }`, which applies the mapper under the lock.
+
+### Account types
+
+`AccountType` records what an account represents: `PLAYER`, `TOWN`, `NATION`, `NPC`, `SERVER` or `UNKNOWN`. Towny
+addresses town, nation and NPC banks through the same Vault player-account methods real players use, passing a
+synthetic offline player whose name carries a configured prefix, so the type is resolved once from that name when the
+account is created. `UNKNOWN` covers a wallet created before its owner has ever joined, and is promoted to `PLAYER` on
+their first join. Only `PLAYER` accounts appear on the balance leaderboard.
+
+### EconomyFormat
+
+`EconomyFormat.plain` produces the string Vault hands to other plugins, which print it verbatim and must never receive
+MiniMessage tags. `EconomyFormat.rich` produces the component TriTown puts in its own messages. Both substitute
+`%symbol%`, `%amount%` and `%currency%` into the configured pattern, and both are safe to call from any thread —
+`DecimalFormat` is not thread-safe, so formatters are held per thread and rebuilt after `invalidate()`.
+
+---
+
 ## Economy (Vault)
 
 Vault is a hard dependency (`depend` in `plugin.yml`); the Vault API is `compileOnly` (`vault_api_version` in

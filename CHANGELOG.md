@@ -16,6 +16,12 @@
 
 ### Technical Details
 
+#### Economy
+
++ Added the economy core: `Money` (balances held as whole minor units so repeated arithmetic cannot drift), `Currency`
+  and `CurrencyRegistry`, `AccountType`, `MoneyAccount`, `EconomyResult`, `LedgerLimits`, the thread-safe
+  `EconomyLedger`, and `EconomyFormat` for plain and MiniMessage rendering.
+
 #### Misc
 
 + Added `PluginConfig.getLong` and `PluginConfig.getKeys` for long values and for iterating named config sections.
