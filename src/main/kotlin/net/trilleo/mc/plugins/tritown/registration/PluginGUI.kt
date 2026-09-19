@@ -7,6 +7,7 @@ import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.inventory.Inventory
 
 /**
@@ -81,6 +82,19 @@ abstract class PluginGUI(
      * @param event the inventory click event
      */
     open fun onClick(event: InventoryClickEvent) {
+        event.isCancelled = true
+    }
+
+    /**
+     * Called when a player drags a stack across this GUI.
+     *
+     * By default, all drags are cancelled, for the same reason clicks are.
+     * Override when the GUI reads what was dragged, and cancel the event there
+     * too unless the slot is genuinely meant to accept the stack.
+     *
+     * @param event the inventory drag event
+     */
+    open fun onDrag(event: InventoryDragEvent) {
         event.isCancelled = true
     }
 

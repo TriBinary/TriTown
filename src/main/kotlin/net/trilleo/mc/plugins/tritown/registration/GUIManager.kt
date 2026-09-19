@@ -9,6 +9,8 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -93,12 +95,29 @@ object GUIManager : Listener {
     }
 
     @EventHandler
+    fun onInventoryDrag(event: InventoryDragEvent) {
+        val player = event.whoClicked as? Player ?: return
+        val (gui, inventory) = openGUIs[player] ?: return
+        if (event.inventory !== inventory) return
+        gui.onDrag(event)
+    }
+
+    @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
         val player = event.player as? Player ?: return
         val (gui, inventory) = openGUIs[player] ?: return
         if (event.inventory !== inventory) return
         openGUIs.remove(player)
         gui.onClose(event)
+    }
+
+    /**
+     * Quitting does not always close the inventory first, and the map is keyed
+     * by the player object, so the entry would outlive the session.
+     */
+    @EventHandler
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        openGUIs.remove(event.player)
     }
 
     /**

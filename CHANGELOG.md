@@ -2,12 +2,25 @@
 
 ## Unreleased
 
+### Fixes
+
+#### Misc
+
++ Fixed items being draggable into a plugin menu. Clicks were already blocked, but a drag across the menu was not.
+
 ### Technical Details
 
 #### Shops
 
 + Added [FancyNpcs](https://modrinth.com/plugin/fancynpcs) as an optional dependency. TriTown builds and runs without
   it; the parts that need it simply stay off.
+
+#### Misc
+
++ GUIs can now handle a drag through `onDrag`, which cancels the drag by default. The GUI manager also forgets a player
+  who quits with a menu open.
++ `PlayerData` and `ServerData` gained `getJsonObject`, so a nested object that was written can be read back.
+
 
 ## Version 1.0.0
 
