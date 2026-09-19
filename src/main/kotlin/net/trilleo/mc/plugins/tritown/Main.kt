@@ -5,18 +5,19 @@ import net.milkbowl.vault.economy.Economy
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.config.PluginConfig
 import net.trilleo.mc.plugins.tritown.config.ScoreboardSettings
+import net.trilleo.mc.plugins.tritown.config.ShopSettings
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
-import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
-import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
-import net.trilleo.mc.plugins.tritown.economy.EconomyService
-import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
+import net.trilleo.mc.plugins.tritown.economy.*
 import net.trilleo.mc.plugins.tritown.economy.storage.JsonEconomyStorage
+import net.trilleo.mc.plugins.tritown.economy.storage.JsonPulseStorage
 import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
 import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 import net.trilleo.mc.plugins.tritown.registration.*
 import net.trilleo.mc.plugins.tritown.scoreboard.ScoreboardService
+import net.trilleo.mc.plugins.tritown.shops.ShopManager
+import net.trilleo.mc.plugins.tritown.shops.storage.JsonShopStorage
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
 import net.trilleo.mc.plugins.tritown.utils.Lang
 import net.trilleo.mc.plugins.tritown.utils.MessageUtil
@@ -57,6 +58,16 @@ class Main : JavaPlugin() {
             CurrencyRegistry.load(settings.currencies, settings.primaryCurrencyId)
             EconomyFormat.invalidate()
             EconomyService.initialize(logger, createStorage(settings), settings)
+            // Joins the economy here rather than in onEnable because Towny can
+            // already be moving money through the Vault provider by then, and
+            // those movements belong in the figures like any other.
+            if (settings.stats.enabled) {
+                EconomyPulse.start(
+                    store = JsonPulseStorage(dataFolder, logger),
+                    currency = CurrencyRegistry.primary,
+                    retentionDays = settings.stats.retentionDays,
+                )
+            }
         } catch (e: Exception) {
             logger.log(Level.SEVERE, "The economy could not be loaded", e)
             bootFailure = e.message ?: e.javaClass.simpleName
@@ -82,6 +93,13 @@ class Main : JavaPlugin() {
         // anything classifies an account.
         TownyAccountNaming.load()
         EconomyService.start(EconomySettings.snapshot.baltopIncludeTowns)
+
+        // Before the registrars, because the menus and commands they build read
+        // the shops as soon as they are asked to.
+        ShopSettings.load(pluginConfig)
+        if (ShopSettings.snapshot.enabled) {
+            ShopManager.start(JsonShopStorage(dataFolder, logger), logger)
+        }
 
         ItemRegistrar.registerAll(this)
         RecipeRegistrar.registerAll(this)
@@ -117,6 +135,10 @@ class Main : JavaPlugin() {
 
         ScoreboardSettings.load(pluginConfig, logger)
         ScoreboardService.reload()
+
+        // Only the settings: re-reading the shop file would throw away an edit
+        // that has not been flushed, and nothing in that file comes from config.yml.
+        ShopSettings.load(pluginConfig)
     }
 
     override fun onDisable() {
@@ -127,6 +149,8 @@ class Main : JavaPlugin() {
         // Stopped first, so the flush task cannot race the final write.
         TaskRegistrar.unregisterAll()
         RecipeRegistrar.unregisterAll()
+
+        ShopManager.shutdown()
 
         PlayerDataManager.saveAll()
         ServerDataManager.save()

@@ -4,6 +4,7 @@ import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.enums.PagedGUIMode
+import net.trilleo.mc.plugins.tritown.enums.PagedLayout
 import net.trilleo.mc.plugins.tritown.utils.itemStack
 import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Material
@@ -22,9 +23,11 @@ import java.util.*
  * `net.trilleo.mc.plugins.tritown.guis` package (or any subpackage) to
  * have it automatically discovered and registered at startup.
  *
- * The bottom row of the inventory is reserved for navigation controls.
- * Content slots are every slot **except** the last row. For example, a
- * 6-row GUI provides 45 content slots per page (rows 1–5).
+ * The bottom row of the inventory is reserved for navigation controls, and
+ * [layout] decides what the rest of it does. [PagedLayout.FULL] fills every slot
+ * above that row with content — a 6-row GUI gives 45 content slots per page.
+ * [PagedLayout.FRAMED] insets the content by one slot on every side, giving 28
+ * instead and a border around them.
  *
  * The class must have either:
  * - A no-arg constructor, **or**
@@ -89,7 +92,8 @@ abstract class PagedPluginGUI(
     titleKey: String,
     rows: Int = 6,
     fillMode: FillMode = FillMode.NONE,
-    val mode: PagedGUIMode = PagedGUIMode.LIST
+    val mode: PagedGUIMode = PagedGUIMode.LIST,
+    val layout: PagedLayout = PagedLayout.FULL,
 ) : PluginGUI(id, titleKey, rows, fillMode) {
 
     /** Tracks the current page for each player viewing this GUI. */
@@ -98,7 +102,7 @@ abstract class PagedPluginGUI(
     /**
      * Returns all items that should be distributed across pages for the
      * given player. The list may be of any size; items are automatically
-     * split into pages of [contentSlots] each.
+     * split into pages of [pageSize] each.
      *
      * Used when [mode] is [PagedGUIMode.LIST]. Override this method to supply
      * the items to paginate.
@@ -112,21 +116,27 @@ abstract class PagedPluginGUI(
      * Returns a map of items to place at specific pages and slots.
      *
      * The outer map key is the **zero-based page index**; the inner map key is
-     * the **zero-based slot index** within the content area of that page (slots
-     * 0 to [contentSlots]`- 1`).  Pages that are missing from the map are
-     * rendered empty.
+     * the **zero-based position** within the content area of that page (0 to
+     * [pageSize]`- 1`), not an inventory slot — a framed layout maps those
+     * positions onto the slots inside its border. Pages that are missing from
+     * the map are rendered empty.
      *
      * Used when [mode] is [PagedGUIMode.SET]. Override this method to supply
      * manually positioned items.
      *
      * @param player the player the GUI is being opened for
-     * @return a map of `page → (slot → item)` describing the full contents
+     * @return a map of `page → (position → item)` describing the full contents
      */
     open fun getSetItems(player: Player): Map<Int, Map<Int, ItemStack>> = emptyMap()
 
     /**
      * Called when a player clicks a **content slot** (not a navigation
-     * button). Override to add custom click handling.
+     * button or a button in the navigation row). Override to add custom click
+     * handling.
+     *
+     * Use [contentIndex] to turn the clicked slot into a position in the list
+     * returned by [getItems]; the raw slot is an inventory slot and does not
+     * match that list once a border is in the way.
      *
      * Clicks are cancelled by default to prevent item theft.
      *
@@ -135,13 +145,69 @@ abstract class PagedPluginGUI(
      */
     open fun onContentClick(event: InventoryClickEvent, page: Int) {}
 
-    /** The number of usable content slots per page (all rows except the last). */
-    private val contentSlots: Int
-        get() = (rows - 1) * ROW_SIZE
+    /**
+     * Buttons to place in the navigation row, keyed by their offset in that row
+     * (0 to 8).
+     *
+     * Offsets 0, 4 and 8 belong to Previous, the page indicator and Next, and
+     * anything placed there is ignored. Because these sit in a row that never
+     * moves, a button here stays where it is however the content grows — which
+     * is the point of putting an action here rather than among the items.
+     *
+     * @param player the player the GUI is being drawn for
+     */
+    open fun navButtons(player: Player): Map<Int, ItemStack> = emptyMap()
+
+    /**
+     * Called when a player clicks one of this GUI's own [navButtons].
+     *
+     * @param event  the inventory click event
+     * @param offset the offset in the navigation row that was clicked (0 to 8)
+     */
+    open fun onNavClick(event: InventoryClickEvent, offset: Int) {}
+
+    /** The inventory slots that hold content, in reading order. */
+    private val contentSlots: List<Int> by lazy {
+        when (layout) {
+            PagedLayout.FULL -> (0 until (rows - 1) * ROW_SIZE).toList()
+            PagedLayout.FRAMED -> GUIFrame.contentSlots(rows)
+        }
+    }
+
+    private val contentPositions: Map<Int, Int> by lazy {
+        contentSlots.withIndex().associate { (position, slot) -> slot to position }
+    }
+
+    /** How many items fit on one page. */
+    protected val pageSize: Int
+        get() = contentSlots.size.coerceAtLeast(1)
 
     /** The first slot index of the navigation row (the last row). */
     private val navRowStart: Int
-        get() = contentSlots
+        get() = (rows - 1) * ROW_SIZE
+
+    /**
+     * The position in [getItems]'s list that [rawSlot] shows on [page], or
+     * `null` when that slot holds no content.
+     */
+    protected fun contentIndex(page: Int, rawSlot: Int): Int? =
+        contentPositions[rawSlot]?.let { position -> page * pageSize + position }
+
+    /**
+     * Redraws the page [player] is looking at, into the inventory they have open.
+     *
+     * A menu whose contents change under a click — an entry removed, an item
+     * moved — would otherwise have to reopen itself to show the change, which
+     * drops the viewer back onto the first page of whatever they were part-way
+     * through. The page is clamped, so the last item leaving a page steps back
+     * rather than showing an empty one.
+     */
+    protected fun refresh(player: Player, inventory: Inventory) {
+        val total = totalPages(player)
+        val page = (playerPages[player.uniqueId] ?: 0).coerceIn(0, total - 1)
+        playerPages[player.uniqueId] = page
+        renderPage(player, inventory, page)
+    }
 
     // ----- PluginGUI overrides ------------------------------------------------
 
@@ -159,15 +225,16 @@ abstract class PagedPluginGUI(
         // Ignore clicks outside the GUI inventory
         if (slot < 0 || slot >= rows * ROW_SIZE) return
 
-        when (slot) {
-            navRowStart + PREVIOUS_OFFSET -> {
+        val navOffset = slot - navRowStart
+        when {
+            navOffset == PREVIOUS_OFFSET -> {
                 if (page > 0) {
                     openPage(player, event.inventory, page - 1)
                     player.playSound(Sound.sound(Key.key("minecraft:ui.button.click"), Sound.Source.UI, 1f, 1f))
                 }
             }
 
-            navRowStart + NEXT_OFFSET -> {
+            navOffset == NEXT_OFFSET -> {
                 val totalPages = totalPages(player)
                 if (page < totalPages - 1) {
                     openPage(player, event.inventory, page + 1)
@@ -175,9 +242,9 @@ abstract class PagedPluginGUI(
                 }
             }
 
-            else -> {
-                if (slot < contentSlots) onContentClick(event, page)
-            }
+            navOffset == PAGE_INDICATOR_OFFSET -> return
+            navOffset in 0 until ROW_SIZE -> onNavClick(event, navOffset)
+            slot in contentPositions -> onContentClick(event, page)
         }
     }
 
@@ -195,7 +262,7 @@ abstract class PagedPluginGUI(
     private fun totalPages(player: Player): Int = when (mode) {
         PagedGUIMode.LIST -> {
             val itemCount = getItems(player).size
-            if (itemCount == 0) 1 else (itemCount + contentSlots - 1) / contentSlots
+            if (itemCount == 0) 1 else (itemCount + pageSize - 1) / pageSize
         }
 
         PagedGUIMode.SET -> {
@@ -215,38 +282,54 @@ abstract class PagedPluginGUI(
         inventory.clear()
 
         fillInventory(this, inventory)
+        if (layout == PagedLayout.FRAMED) GUIFrame.draw(inventory, contentSlots)
 
         val totalPages = totalPages(player)
 
         when (mode) {
             PagedGUIMode.LIST -> {
                 val items = getItems(player)
-                val start = page * contentSlots
-                val end = minOf(start + contentSlots, items.size)
-                for (i in start until end) {
-                    inventory.setItem(i - start, items[i])
+                val start = page * pageSize
+                val end = minOf(start + pageSize, items.size)
+                for (index in start until end) {
+                    inventory.setItem(contentSlots[index - start], items[index])
                 }
             }
 
             PagedGUIMode.SET -> {
                 val pageItems = getSetItems(player)[page] ?: emptyMap()
-                for ((slot, item) in pageItems) {
-                    if (slot in 0 until contentSlots) {
-                        inventory.setItem(slot, item)
-                    }
+                for ((position, item) in pageItems) {
+                    contentSlots.getOrNull(position)?.let { inventory.setItem(it, item) }
                 }
             }
         }
 
-        // Navigation row – fill all slots with gray stained glass panes first
-        for (offset in 0 until ROW_SIZE) {
-            inventory.setItem(navRowStart + offset, itemStack(Material.GRAY_STAINED_GLASS_PANE) {
+        renderNavRow(player, inventory, page, totalPages)
+    }
+
+    /** Draws the navigation row: filler, then this GUI's own buttons, then the page controls. */
+    private fun renderNavRow(player: Player, inventory: Inventory, page: Int, totalPages: Int) {
+        // A framed menu carries its border all the way round, so the row below the
+        // content matches the rest of it rather than changing colour.
+        val filler = if (layout == PagedLayout.FRAMED) {
+            GUIFrame.pane()
+        } else {
+            itemStack(Material.GRAY_STAINED_GLASS_PANE) {
                 name(" ")
                 hideTooltip(true)
-            })
+            }
         }
 
-        // Place navigation items on top of the filler
+        for (offset in 0 until ROW_SIZE) {
+            inventory.setItem(navRowStart + offset, filler.clone())
+        }
+
+        for ((offset, button) in navButtons(player)) {
+            if (offset in 0 until ROW_SIZE && offset !in RESERVED_OFFSETS) {
+                inventory.setItem(navRowStart + offset, button)
+            }
+        }
+
         if (page > 0) {
             inventory.setItem(
                 navRowStart + PREVIOUS_OFFSET, createNavItem(
@@ -286,6 +369,9 @@ abstract class PagedPluginGUI(
         private const val PREVIOUS_OFFSET = 0
         private const val PAGE_INDICATOR_OFFSET = 4
         private const val NEXT_OFFSET = 8
+
+        /** Navigation-row offsets the page controls own, which [navButtons] may not use. */
+        private val RESERVED_OFFSETS = setOf(PREVIOUS_OFFSET, PAGE_INDICATOR_OFFSET, NEXT_OFFSET)
     }
 
     /**

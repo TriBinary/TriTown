@@ -2,6 +2,115 @@
 
 ## Unreleased
 
+## Version 1.1.0
+
+### New Features
+
+#### Shops
+
++ Added admin shops: shops the server itself runs, set up entirely in game and opened by clicking an NPC.
+    + `/tritown shop create <id>` makes one and drops you straight into the editor. Add an item by clicking it in your
+      own inventory or dragging it over the menu — your item stays where it is, and everything about it is kept, so a
+      renamed, enchanted or otherwise custom item is sold exactly as you made it.
+    + The order entries are in is the order players see. Right-click one in the editor to pick it up and click where it
+      belongs — on any page — or send it straight to the front or the back. A whole shop can also be sorted by item
+      name or by price in one go.
+    + An entry can be sold, bought back, or both. Left-click buys one, shift-left-click buys as many as you can afford
+      and carry, right-click sells one, and shift-right-click sells everything you are carrying.
+    + A price can be money, items, or both at once, and so can a payout — so a shop can sell for currency, barter, or
+      ask for a fee alongside the materials.
+    + How many items one purchase hands over is set per entry, and is not capped at a stack: a bundle of 128 bread is
+      handed over as two stacks.
+    + An entry can have a stock that refills on a timer, a per-player limit that resets daily, weekly or never, or
+      neither. Both are shown on the item, counting down as players buy.
+    + Entries and whole shops can be locked behind a permission node or a standing in Towny — being in a town or a
+      nation, or being a mayor or a king. A locked entry either greys out with the reason or is hidden entirely.
+    + Town and nation members can be given a discount, set under `shops.discounts`. Discounts do not stack; the best
+      one applies, and the menu shows the saving.
+    + A purchase above `shops.confirm-above` asks for confirmation first, so a mis-click cannot empty an account.
+    + Every purchase and sale is recorded in the transaction log and shows up in `/eco history` as a shop movement,
+      naming the shop it happened at.
+    + `/tritown shop stats <id>` shows what a shop has traded and how much currency it has taken in and paid out, per
+      entry and in total.
++ Shops open from a [FancyNpcs](https://modrinth.com/plugin/fancynpcs) NPC. Bind one with
+  `/tritown shop bind <id> <npc>` and clicking it opens the shop. The binding follows the NPC rather than its name, so
+  renaming it in FancyNpcs does not break anything. FancyNpcs is optional — without it everything else still works, and
+  `/tritown shop open <id> [player]` still opens a shop from the console or for testing.
+
+#### Admin Panel
+
++ Added `/tritown admin`, an administration panel that opens as a menu. It is the way in to what an owner needs to read
+  about the server, starting with the economy; more sections will follow.
++ The economy panel puts the whole economy on one screen:
+    + **Money supply** — how much currency exists, how it splits between player wallets, town and nation banks and the
+      server's own accounts, how far it has moved over the window, and how much that is per wallet. The supply is
+      measured off the accounts themselves rather than added up from movements, so it is exact.
+    + **Faucets and sinks** — how much currency was created and how much was removed, each broken down by what caused
+      it: new players, shops, Towny, administrators or another plugin. The net says which way the economy is drifting,
+      per day and as a share of the supply, with how long it would take at that rate to double or run dry.
+    + **Wealth distribution** — the median, mean and largest wallet, the share held by the richest tenth, and an
+      inequality figure with a word for what it means.
+    + **Circulation** — how much money players moved between themselves, over how many payments, and how quickly the
+      supply turns over.
+    + **A chart** — the window drawn as seven columns, each as tall as its net change, so a payday, a sink nobody uses
+      or a runaway faucet shows up as a shape rather than a number.
+    + **Accounts, the richest accounts, the shops and the ledger's own settings**, so nothing needs a command to check.
++ Every figure can be read over the last day, the last week, the last month or everything on record. Click the clock to
+  change the window and the whole screen follows it.
++ A full breakdown lists every source of money and every kind of account with what it created, removed and netted, for
+  the same window.
++ The shop sales figures now have a home in the panel: one screen lists every shop with what it has taken in and paid
+  out, and clicking one opens the figures that shop already had. `/tritown shop stats <id>` still opens a single shop
+  directly, and shift-clicking a shop here opens its editor.
++ Each section has its own permission — `tritown.admin` to open the panel, `tritown.admin.economy` and
+  `tritown.admin.shops` for the sections — so a moderator can be given the reading without the editing.
+
+### Fixes
+
+#### Misc
+
++ Fixed items being draggable into a plugin menu. Clicks were already blocked, but a drag across the menu was not.
+
+### Technical Details
+
+#### Economy
+
++ The economy now keeps figures of its own, hour by hour: what was created and destroyed, what for, who held it, and a
+  measurement of the ledger taken on every flush. They live in `plugins/TriTown/economy/statistics.json` and are
+  written on the same interval as balances, so a crash costs at most one interval of them and never a balance.
++ `economy.stats.enabled` turns the figures off entirely, and `economy.stats.retention-days` says how far back they
+  reach — 30 days by default, or 0 to keep them forever.
++ Recording a movement costs no disk and no lock: the counters are plain adders, which matters because Towny moves
+  money from its own threads.
++ Transaction statistics are kept even when `economy.history.enabled` is off, since they cost nothing per transaction.
+
+#### Shops
+
++ Added [FancyNpcs](https://modrinth.com/plugin/fancynpcs) as an optional dependency. TriTown builds and runs without
+  it; the parts that need it simply stay off.
++ Shops are stored in `plugins/TriTown/shops/shops.json`, written atomically with a backup copy in the same way
+  balances are. A shop you edit is saved immediately; stock levels and sales figures are written every
+  `shops.save-interval` seconds.
+
+#### Misc
+
++ GUIs can now handle a drag through `onDrag`, which cancels the drag by default. The GUI manager also forgets a player
+  who quits with a menu open.
++ Paged GUIs gained `PagedLayout.FRAMED`, which insets the content and draws a border around it, and `navButtons`,
+  which puts a menu's own actions in the fixed navigation row instead of after the last item where they move as the
+  list grows. `contentIndex` turns a clicked slot into a position in the item list, which a framed layout needs.
++ `PlayerData` and `ServerData` gained `getJsonObject`, so a nested object that was written can be read back.
++ Added `ChatPrompt`, which asks a player a question in chat and hands the answer back on the server thread. Menus use
+  it for anything that has to be typed, such as a price or a permission node.
++ `GUIManager.openLater` opens a menu on the following tick, which is what a menu reached by clicking inside another
+  one needs so the server and the client do not disagree about what is on screen.
+
+#### Economy
+
++ `EconomyUtil.withdraw` and `EconomyUtil.deposit` can now name the source and reason of a movement, so a feature no
+  longer has to reach past them for its transactions to be recorded as anything but an anonymous Vault call.
+
+
 ## Version 1.0.0
 
 ### New Features

@@ -9,6 +9,8 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -31,11 +33,14 @@ object GUIManager : Listener {
     private val guis = mutableMapOf<String, PluginGUI>()
     private val openGUIs = mutableMapOf<Player, Pair<PluginGUI, Inventory>>()
 
+    private lateinit var plugin: JavaPlugin
+
     /**
      * Scans the GUIs package, instantiates every [PluginGUI] found,
      * stores them by id, and registers this manager as an event listener.
      */
     fun registerAll(plugin: JavaPlugin) {
+        this.plugin = plugin
         val guiClasses = PackageScanner.findClasses(
             plugin, GUIS_PACKAGE, PluginGUI::class.java
         )
@@ -74,6 +79,21 @@ object GUIManager : Listener {
     }
 
     /**
+     * Opens a registered GUI on the following tick.
+     *
+     * A click is still being delivered while its handler runs, and opening an
+     * inventory from inside that delivery leaves the server and the client
+     * disagreeing about what is on screen. Any menu reached by clicking inside
+     * another one is opened this way.
+     *
+     * @param player the player to open the GUI for
+     * @param id     the unique identifier of the GUI to open
+     */
+    fun openLater(player: Player, id: String) {
+        Bukkit.getScheduler().runTask(plugin, Runnable { open(player, id) })
+    }
+
+    /**
      * Returns the [PluginGUI] registered under the given [id],
      * or `null` if no GUI with that id exists.
      */
@@ -93,12 +113,29 @@ object GUIManager : Listener {
     }
 
     @EventHandler
+    fun onInventoryDrag(event: InventoryDragEvent) {
+        val player = event.whoClicked as? Player ?: return
+        val (gui, inventory) = openGUIs[player] ?: return
+        if (event.inventory !== inventory) return
+        gui.onDrag(event)
+    }
+
+    @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
         val player = event.player as? Player ?: return
         val (gui, inventory) = openGUIs[player] ?: return
         if (event.inventory !== inventory) return
         openGUIs.remove(player)
         gui.onClose(event)
+    }
+
+    /**
+     * Quitting does not always close the inventory first, and the map is keyed
+     * by the player object, so the entry would outlive the session.
+     */
+    @EventHandler
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        openGUIs.remove(event.player)
     }
 
     /**

@@ -17,6 +17,7 @@ overview.
 | Platform       | Paper API 26.2 (MC 26.2)                         |
 | Towny          | 0.103.2.7 (`towny_version` in gradle.properties) |
 | Vault API      | 1.7.1 (`vault_api_version` in gradle.properties) |
+| FancyNpcs API  | 2.9.2 (`fancynpcs_version`, API artifact only)   |
 | Java toolchain | JDK 25                                           |
 
 ## After Every Change: Keep the Changelog and Docs in Sync
@@ -57,9 +58,9 @@ Before finishing any task that changes the plugin, do all of the following:
 ```
 
 The local test server lives in `run/` (gitignored). `copyPlugin` puts the matching Towny jar in `run/plugins/`, but the
-Paper 26.2 jar (`run/paper-*.jar`) and Vault must be downloaded by hand, and `eula.txt` accepted, before `startServer`
-works. No economy plugin is needed — TriTown supplies the economy itself. The server console reads commands from the
-terminal running Gradle.
+Paper 26.2 jar (`run/paper-*.jar`), Vault, and FancyNpcs (Maven carries its API only) must be downloaded by hand, and
+`eula.txt` accepted, before `startServer` works. No economy plugin is needed — TriTown supplies the economy itself.
+The server console reads commands from the terminal running Gradle.
 
 ## Repository Layout
 
@@ -67,20 +68,22 @@ terminal running Gradle.
 src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
 ├── commands/                # Sub-commands (auto-registered)
-│   ├── info/
-│   └── moderation/
+│   ├── admin/  economy/  info/
+│   └── moderation/  scoreboard/  shop/
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
-├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, storage (not scanned)
-├── enums/                   # AccountType, DisplayLocation, FillMode, PagedGUIMode, ProviderMode, TransactionType
-├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI)
+├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
+│                            # storage (not scanned)
+├── enums/                   # AccountType, FlowCategory, StatsWindow, TransactionType, FillMode, …
+├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI); admin/ is the panel
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── recipes/                 # Recipes (auto-registered, implement PluginRecipe)
 ├── registration/            # Auto-registration engine (do not modify lightly)
+├── shops/                   # Admin shops: model, trading, storage, FancyNpcs bridge (not scanned)
 ├── tasks/                   # Scheduled tasks (auto-registered, extend PluginTask)
-└── utils/                   # Lang, EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, CountdownUtil, TeamUtil,
-                             # TagUtil, PDCUtil, GameRuleUtil
+└── utils/                   # Lang, EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, ChatPrompt, CountdownUtil,
+                             # TeamUtil, TagUtil, PDCUtil, GameRuleUtil
 src/main/resources/
 ├── config.yml  plugin.yml
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
@@ -90,8 +93,8 @@ src/main/resources/
 
 The plugin uses `PackageScanner` to discover components at startup — you **never** edit `plugin.yml` or wire things
 manually. Just extend the right base class and place the file in the correct package. Packages outside the table below
-are never scanned, which is why the economy core lives in `economy/`: it has to be alive in `onLoad`, long before the
-registrars run.
+are never scanned, which is why the economy core lives in `economy/` and the shop core in `shops/`: both have to be
+alive before the registrars build the commands and menus that read them.
 
 | Component   | Base Class                     | Package                 |
 |:------------|:-------------------------------|:------------------------|
@@ -172,6 +175,25 @@ complete stack and no separate economy plugin is needed. See
 - **Charge before acting** — call `EconomyUtil.withdraw` and only perform the action when it returns `true`; refund with
   `deposit` if the action then fails. Never check `has` and withdraw separately. Use `EconomyUtil.transfer` for a
   payment between two accounts, which is atomic on TriTown's own economy.
+- **Wire every new way money moves into the statistics.** The admin panel's figures are only as true as the
+  attribution behind them, and a movement nothing claims is filed as "Other plugins" — so a new faucet or sink that
+  skips this quietly makes the economy unreadable. For **every** feature that moves money:
+    1. **Move it through `EconomyUtil`** (or `EconomyService` inside the economy itself), never by writing a balance:
+       that path is the only one `EconomyService.record` — and therefore `EconomyPulse` — ever sees.
+    2. **Attribute it.** Use the four-argument `EconomyUtil.withdraw`/`deposit` with an `EconomyContext.SOURCE_*` and a
+       `TransactionReason` key, or wrap the work in `EconomyContext.with`. Add the `money.reason.*` key to both
+       language files.
+    3. **Check `FlowCategory.of` covers that reason.** If the feature is a faucet or a sink in its own right — a job
+       payout, a daily reward, a repair fee, a lottery — give it a `FlowCategory`, spell out its `money.flow.*` key in
+       both language files, and map the reason to it. A real faucet must never land in `OTHER`.
+    4. **Decide whether the panel should name it.** The full breakdown picks a new category up on its own; a card of
+       its own in `EconomyPanelGUI` is for a source worth watching separately.
+  See [Economy Statistics](docs/DEVELOPER_GUIDE.md#economy-statistics).
+- **Never total raw reason strings** — a reason carries arguments (`money.reason.admin-set?admin=Bob`), so summing by
+  reason grows a row per player. `FlowCategory` is the grouping, and `FlowCategory.of` is the only place the mapping
+  lives.
+- **The supply is measured, never accumulated** — `EconomyPulse.sample` walks the ledger on the flush task. Never keep
+  a running total of how much currency exists; it would drift the first time anything moved money unrecorded.
 - **A failure carries a key, not a sentence** — `EconomyResult.Failure` holds a `money.error.*` translation key, and the
   code that shows it picks the language. Those values are plain text, because Vault hands them straight to other
   plugins, which print them verbatim; TriTown's own commands colour them with `common.error`.
@@ -189,6 +211,41 @@ complete stack and no separate economy plugin is needed. See
   reach TriTown as ordinary deposits and withdrawals. A `BankTransactionEvent` handler that wrote a record would
   double-count every town deposit.
 - **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
+
+## Working with the Admin Panel
+
+The panel in `guis/admin` is where an owner reads the server; `/tritown admin` opens it. See
+[Admin Panel](docs/DEVELOPER_GUIDE.md#admin-panel).
+
+- **A section is a card and a menu.** Adding one means adding a card to `AdminPanelGUI` and a menu of its own; nothing
+  else in the panel changes. Give it its own permission under `tritown.admin.*` and do not draw a card the viewer
+  cannot open.
+- **The panel reads, it does not write.** Anything that changes the server belongs in the command or menu that owns it,
+  not here.
+- **Format through `PanelRender`** — money, percentages, rates, timestamps and the cards themselves, so the same figure
+  reads the same wherever it appears. Amounts stay in minor units until they reach it.
+- **The window belongs to the viewer**, in `PanelState`, so every menu of the panel agrees on what is being looked at.
+
+## Working with Shops
+
+**Shops are the server's own, not a player's.** See [Shops](docs/DEVELOPER_GUIDE.md#shops).
+
+- **Go through `ShopManager`** — it is the only thing that reads or writes a shop. `save()` for a change to a
+  definition, which must never be lost; `markDirty()` for stock and statistics, which `ShopSaveTask` flushes.
+- **Trade only through `ShopTrade`** — its ordering is what keeps a trade safe: everything that can refuse is asked
+  before anything is taken, and anything taken is remembered so it can be put back. Never charge and hand over in two
+  places.
+- **Serialize items with `ItemCodec`** — Paper's byte form is the only round-trip that keeps every data component, so a
+  custom item survives. Never describe an item field by field.
+- **Read Towny through `ShopAccess`** — it is the one place shops touch Towny, and it re-reads on every check.
+- **Keep FancyNpcs isolated** — only `listeners/shop/ShopNpcListener` may name a FancyNpcs type in a signature, and
+  only `shops/npc/FancyNpcsAdapter` may touch the API. `ShopNpcBridge` exposes plain types so a server without the
+  plugin still loads everything else. Adding a FancyNpcs type to its signatures would take the shop command with it.
+- **Attribute money with the four-argument `EconomyUtil.withdraw`/`deposit`** so a trade is recorded as a shop movement
+  rather than an anonymous Vault call.
+- **Shop and entry names are administrator-written MiniMessage stored in the shop file**, not translation keys. Escape
+  anything player-written before embedding it; a shop's own name is deliberately not escaped, because an administrator
+  wrote it.
 
 ## Versioning & Releases
 

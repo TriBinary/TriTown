@@ -96,6 +96,49 @@ economy:
     roll-size-mb: 16
     time-format: "yyyy-MM-dd HH:mm"
 
+  stats:
+    # Keep the figures the admin panel reads: how much currency is created and
+    # destroyed each hour, what for, and how the supply is spread across players.
+    # They live in <plugin folder>/economy/statistics.json and are written on the
+    # same interval as balances. Turning this off empties /tritown admin.
+    # Both settings here are read at startup, so changing them needs a restart.
+    enabled: true
+    # How many days of hourly figures to keep. 0 keeps them forever; a year of
+    # them is well under a megabyte, so the cost is time to read at startup
+    # rather than space.
+    retention-days: 30
+
+# ── Shops ───────────────────────────────────────────────────────────────────
+# Shops the server itself runs. Everything about a shop — what it sells, what it
+# costs, who may use it — is set up in game with /tritown shop, not here; these
+# are the rules that apply to all of them.
+#
+# The goods a shop sells are created and the money paid for them leaves the
+# economy, so a shop is a sink, a faucet, or both, depending on how it is priced.
+shops:
+  # Turn shops off entirely. Existing shops are left on disk untouched.
+  enabled: true
+  # Seconds between writing stock levels and sales figures to disk. A crash
+  # loses at most this long of them. Changes to a shop itself are always written
+  # immediately and are never at risk.
+  save-interval: 60
+  # A purchase costing more than this asks the player to confirm first.
+  # Set to 0 to never ask.
+  confirm-above: 1000.0
+  # What the editor suggests an entry should pay back, as a fraction of its buy
+  # price, when sell-back is switched on for it. Only a starting point — the
+  # price can be changed to anything afterwards.
+  sell-rate: 0.5
+
+  # Money taken off a purchase for players who have earned it, as a fraction:
+  # 0.1 is ten percent off. Discounts do not stack, so a player who matches more
+  # than one gets the largest.
+  discounts:
+    has-town: 0.0
+    has-nation: 0.0
+    is-mayor: 0.0
+    is-king: 0.0
+
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 # The scoreboard shown at the right of the screen. Each board names a condition
 # and a priority, and a player sees the highest-priority board whose condition

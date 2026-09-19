@@ -2,7 +2,7 @@
 
 This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, work
 with **translations** and the **configuration** system using TriTown's registration system, and how to build on
-**Towny**, the **Vault economy**, and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
+**Towny**, the **Vault economy**, the **admin panel** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
 follow the same pattern: extend a base class (or implement an interface), place the file in the correct package, and the
 plugin handles the rest automatically at startup. The configuration system provides typed access to `config.yml` values.
 
@@ -329,7 +329,30 @@ a count, and translate the key yourself there.
 | `setup`   | Yes      | Populate the inventory with items before it opens            |
 | `title`   | No       | Build the title yourself when `titleKey` alone is not enough |
 | `onClick` | No       | Handle click events (clicks are cancelled by default)        |
+| `onDrag`  | No       | Handle drag events (drags are cancelled by default)          |
 | `onClose` | No       | Handle cleanup when the GUI is closed                        |
+
+`onClick` and `onDrag` both cancel by default, so a GUI cannot be used to take items out of it. Override either one only
+when the menu reads what was clicked or dragged, and cancel the event there too unless the slot genuinely accepts it.
+
+A GUI that wants a click in the player's *own* inventory — to copy an item out of it, say — has to take it before the
+base class does, because `PagedPluginGUI.onClick` ignores anything outside its own inventory:
+
+```kotlin
+override fun onClick(event: InventoryClickEvent) {
+    val player = event.whoClicked as? Player
+    if (player != null && event.clickedInventory === player.inventory) {
+        event.isCancelled = true
+        event.currentItem?.let { copyIntoMenu(it) }
+        return
+    }
+    super.onClick(event)
+}
+```
+
+Never open another inventory from inside a click handler: the click is still being delivered, and the server and client
+end up disagreeing about what is on screen. Use `GUIManager.openLater(player, id)`, which opens it on the following
+tick.
 
 ### Opening a GUI
 
@@ -340,6 +363,9 @@ import net.trilleo.mc.plugins.tritown.registration.GUIManager
 
 // Returns true if the GUI was found and opened, false otherwise
 GUIManager.open(player, "settings")
+
+// From inside a click handler, so the client is not left disagreeing about what is on screen
+GUIManager.openLater(player, "settings")
 ```
 
 ### Example
@@ -429,6 +455,46 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 | `rows`     | `Int`          | `6`                 | Number of rows (2–6, each row = 9 slots)                                           |
 | `fillMode` | `FillMode`     | `FillMode.NONE`     | Controls background filler; re-applied on every page render, not just initial open |
 | `mode`     | `PagedGUIMode` | `PagedGUIMode.LIST` | Controls how items are supplied — see [Modes](#modes) below                        |
+| `layout`   | `PagedLayout`  | `PagedLayout.FULL`  | Whether the content area fills the menu or sits inside a border                    |
+
+### Layouts
+
+| Layout               | Content slots (6 rows) | Description                                                                |
+|:---------------------|:-----------------------|:----------------------------------------------------------------------------|
+| `PagedLayout.FULL`   | 45                     | Every slot above the navigation row is content                             |
+| `PagedLayout.FRAMED` | 28                     | Content is inset by one slot on every side, with a black glass border round it |
+
+A framed menu carries the border into its navigation row too, so the whole edge is one colour rather than changing
+where the controls start.
+
+**Do not index `getItems` by the raw slot.** Under a framed layout a slot is not a position in that list, because the
+border sits between them. Use `contentIndex(page, rawSlot)`, which returns the position or `null` when the slot holds
+no content:
+
+```kotlin
+override fun onContentClick(event: InventoryClickEvent, page: Int) {
+    event.isCancelled = true
+    val index = contentIndex(page, event.rawSlot) ?: return
+    val entry = entries.getOrNull(index) ?: return
+    …
+}
+```
+
+`pageSize` is how many items one page holds, should a subclass need it.
+
+**Redraw in place with `refresh(player, inventory)`** when a click changes what the menu shows — an entry removed, an
+item moved. Reopening the menu to show the change puts the viewer back on the first page of whatever they were part-way
+through, which is exactly wrong for a menu being edited page by page. `refresh` clamps the page too, so the last item
+leaving a page steps back rather than showing an empty one:
+
+```kotlin
+override fun onContentClick(event: InventoryClickEvent, page: Int) {
+    event.isCancelled = true
+    val index = contentIndex(page, event.rawSlot) ?: return
+    entries.removeAt(index)
+    refresh(event.whoClicked as Player, event.inventory)
+}
+```
 
 ### Modes
 
@@ -437,15 +503,19 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 | Mode                | Override      | Description                                                                                      |
 |:--------------------|:--------------|:-------------------------------------------------------------------------------------------------|
 | `PagedGUIMode.LIST` | `getItems`    | Items are provided as a flat list and distributed automatically across pages (one item per slot) |
-| `PagedGUIMode.SET`  | `getSetItems` | Items are placed manually by page and slot, giving full control over each item's exact position  |
+| `PagedGUIMode.SET`  | `getSetItems` | Items are placed manually by page and position, giving full control over each item's placement  |
 
 ### Methods to Override
 
 | Method           | Mode   | Required | Description                                                      |
 |:-----------------|:-------|:---------|:-----------------------------------------------------------------|
 | `getItems`       | `LIST` | Yes      | Return the full list of items to paginate for a player           |
-| `getSetItems`    | `SET`  | Yes      | Return a map of `page → (slot → item)` for manual placement      |
+| `getSetItems`    | `SET`  | Yes      | Return a map of `page → (position → item)` for manual placement  |
 | `onContentClick` | Both   | No       | Handle clicks on content slots (clicks are cancelled by default) |
+| `navButtons`     | Both   | No       | Buttons to place in the navigation row, keyed by offset           |
+| `onNavClick`     | Both   | No       | Handle clicks on those buttons                                    |
+
+A `SET` position is an index into the content area, not an inventory slot, for the same reason `contentIndex` exists.
 
 You do **not** need to override `setup`, `onClick`, or `onClose` — `PagedPluginGUI` handles them internally for
 pagination. If you need custom close logic, override `onClose` and call `super.onClose(event)` to ensure page state is
@@ -460,6 +530,22 @@ The last row of the inventory contains:
 | 0                  | Arrow | **Previous Page** — hidden on the first page |
 | 4                  | Paper | **Page indicator** — displays "Page X/Y"     |
 | 8                  | Arrow | **Next Page** — hidden on the last page      |
+
+Offsets 1, 2, 3, 5, 6 and 7 are free, and `navButtons` puts a GUI's own actions there:
+
+```kotlin
+override fun navButtons(player: Player): Map<Int, ItemStack> = mapOf(
+    2 to itemStack(Material.COMPARATOR) { name(player.tr("gui.rewards.settings")) },
+)
+
+override fun onNavClick(event: InventoryClickEvent, offset: Int) {
+    if (offset == 2) openSettings(event.whoClicked as? Player ?: return)
+}
+```
+
+**Put an action here rather than at the end of the content.** A button appended to the item list moves every time the
+list grows, so the thing an administrator clicks most sits somewhere new after every edit. The navigation row never
+moves. Anything placed at a reserved offset is ignored.
 
 ### Example (LIST mode)
 
@@ -1764,9 +1850,13 @@ data.set("kills", kills + 1)
 | `getDouble`    | `getDouble(key, default = 0.0)`    | Returns a `Double` value                                                    |
 | `getBoolean`   | `getBoolean(key, default = false)` | Returns a `Boolean` value                                                   |
 | `getJsonArray` | `getJsonArray(key)`                | Returns a `JsonArray` value, or an empty `JsonArray` when absent            |
+| `getJsonObject`| `getJsonObject(key)`               | Returns a `JsonObject` value, or an empty `JsonObject` when absent          |
 | `set`          | `set(key, value)`                  | Stores a `String`, `Int`, `Double`, `Boolean`, `JsonArray`, or `JsonObject` |
 | `remove`       | `remove(key)`                      | Removes the entry at `key`                                                  |
 | `has`          | `has(key)`                         | Returns `true` when `key` exists                                            |
+
+`getJsonObject` hands back the stored object rather than a copy, so writing to it writes through; call `set` afterwards
+anyway, because a key that was absent comes back as a fresh object that nothing is holding.
 
 ### Custom Subclass
 
@@ -1860,9 +1950,13 @@ data.set("eventCount", events + 1)
 | `getDouble`    | `getDouble(key, default = 0.0)`    | Returns a `Double` value                                                    |
 | `getBoolean`   | `getBoolean(key, default = false)` | Returns a `Boolean` value                                                   |
 | `getJsonArray` | `getJsonArray(key)`                | Returns a `JsonArray` value, or an empty `JsonArray` when absent            |
+| `getJsonObject`| `getJsonObject(key)`               | Returns a `JsonObject` value, or an empty `JsonObject` when absent          |
 | `set`          | `set(key, value)`                  | Stores a `String`, `Int`, `Double`, `Boolean`, `JsonArray`, or `JsonObject` |
 | `remove`       | `remove(key)`                      | Removes the entry at `key`                                                  |
 | `has`          | `has(key)`                         | Returns `true` when `key` exists                                            |
+
+`getJsonObject` hands back the stored object rather than a copy, so writing to it writes through; call `set` afterwards
+anyway, because a key that was absent comes back as a fresh object that nothing is holding.
 
 ### Custom Subclass
 
@@ -2180,6 +2274,154 @@ at most one flush interval of changes. An SQL backend writing through on each tr
 
 ---
 
+## Economy Statistics
+
+`EconomyPulse` is what the [admin panel](#admin-panel) reads. It answers two questions that need two different
+mechanisms, which is why it keeps two things rather than one:
+
+| Kept         | How                                                     | Answers                                          |
+|:-------------|:--------------------------------------------------------|:-------------------------------------------------|
+| **Buckets**  | Accumulated per hour as transactions happen             | What created and destroyed currency, and what for |
+| **Samples**  | The whole ledger measured on the flush task             | How much exists and who holds it, exactly         |
+
+The supply is **measured, never accumulated**. Adding movements up would drift the first time anything moved money
+without TriTown recording it; walking the accounts cannot.
+
+### What counts as what
+
+* A **deposit** is money entering the economy — it is created.
+* A **withdrawal** is money leaving it — it is destroyed.
+* A **transfer** moves money between two accounts and changes nothing, so it is counted separately as *circulation*,
+  and only the `TRANSFER_OUT` side is counted or every payment would show up at twice its size.
+* A **set** carries how far a balance moved but not which way, so it is kept apart as an *adjustment* rather than
+  guessed at.
+
+Towny moves a bank deposit through Vault as a withdrawal from the player and a deposit into the town, not as a
+transfer, so it lands on **both** gross sides and cancels in the net. The net — overall and per category — is the
+number worth reading, and the panel says so on the card.
+
+### Categories
+
+`FlowCategory` groups a movement by what it was for. It exists because a transaction's `reason` carries arguments
+(`money.reason.admin-set?admin=Bob`), so totalling by reason would produce a row per administrator. A category is
+bounded, stable and translatable through `money.flow.*`, and `FlowCategory.of(source, reason)` is the only place the
+mapping lives.
+
+### Wiring a new feature in
+
+**Every feature that moves money has to reach these figures.** A movement nothing claims is filed as
+`FlowCategory.EXTERNAL` — "Other plugins" — so a new faucet or sink that skips this makes the panel quietly wrong
+about where the server's currency comes from.
+
+Say a daily reward is being added. Four steps, and only the first two are about the reward itself:
+
+**1. Move the money through `EconomyUtil`, naming where it came from and why.** Writing a balance any other way is
+invisible to `EconomyService.record`, and therefore to everything here.
+
+```kotlin
+EconomyUtil.deposit(player, amount, EconomyContext.SOURCE_COMMAND, TransactionReason.DAILY_REWARD)
+```
+
+**2. Give the reason a key**, in `TransactionReason`, with the wording in both language files. The key is what is
+written to the transaction log, so it stays readable whatever language the server is later set to.
+
+```kotlin
+const val DAILY_REWARD = "money.reason.daily-reward"
+```
+
+**3. Give it a category**, unless an existing one already describes it. A faucet or sink of its own — a payout, a
+reward, a repair fee, a lottery — earns one; a variation on something already grouped does not.
+
+```kotlin
+// enums/FlowCategory.kt
+DAILY_REWARD,                                        // the constant
+
+DAILY_REWARD -> "money.flow.daily-reward"            // in `key`, spelled out for the language test
+
+key == TransactionReason.DAILY_REWARD -> DAILY_REWARD  // in `of`, before the source fallbacks
+```
+
+Add `money.flow.daily-reward` to both language files. A real faucet must never be left landing in `OTHER`.
+
+**4. Decide whether the panel should name it.** The full breakdown (`EconomyFlowGUI`) picks a new category up on its
+own and needs nothing; a card of its own in `EconomyPanelGUI` is for a source big enough that an owner wants it on the
+first screen. Give a new category a `descriptionOf` line either way, so the breakdown can say what it is.
+
+Nothing in `EconomyPulse` changes for any of this — that is the point of feeding it from `EconomyService.record`.
+
+### Recording
+
+`EconomyService.record` files every transaction, and hands it to `EconomyPulse` before the history log — so the
+figures are kept even when `economy.history.enabled` is off. Recording must stay cheap and lock-free: it runs on
+whichever thread moved the money, including Towny's. The counters are `LongAdder`s in concurrent maps, and nothing
+here touches the disk.
+
+Only the primary currency is counted. A movement in any other currency is ignored rather than added to a total whose
+minor units mean something else.
+
+### Sampling and storage
+
+`EconomyFlushTask` measures the ledger before each flush, next to the leaderboard rebuild, because both walk every
+account and sorting belongs off the server thread. `EconomyService.start` and `shutdown` take one measurement each, so
+the panel has something to show before the first flush and the supply after a restart is the one the server stopped
+with.
+
+Figures live in `plugins/TriTown/economy/statistics.json`, written by `JsonPulseStorage` through a temporary file in
+the same way balances are. There is deliberately **no backup copy**: statistics are worth keeping but nobody's money
+depends on them, and a file that cannot be read simply starts the history again. A file written in another currency is
+dropped rather than adopted.
+
+`economy.stats.enabled` turns the whole thing off; `economy.stats.retention-days` prunes buckets and samples older
+than it.
+
+### Reading
+
+```kotlin
+val flow = EconomyPulse.window(hours = 24, slices = 7)   // 0 hours means everything still kept
+flow.created                    // minor units that entered the economy
+flow.netOf(FlowCategory.SHOP)   // what the shops did to the supply
+flow.slices                     // one column per slice, for a chart
+
+val supply = EconomyPulse.latest()          // the last measurement, or null before the first one
+val before = EconomyPulse.sampleAt(flow.from)   // the measurement the window opened on
+```
+
+Amounts are **minor units** throughout, exactly as the ledger holds them; they become text only at the menu, through
+`PanelRender`.
+
+---
+
+## Admin Panel
+
+The panel lives in `guis/admin` and is opened by `/tritown admin` (`commands/admin/AdminCommand`). It is a reading
+surface: apart from writing the economy to disk on request, nothing in it changes the server.
+
+| Menu               | Id               | Shows                                                              |
+|:-------------------|:-----------------|:-------------------------------------------------------------------|
+| `AdminPanelGUI`    | `admin-panel`    | The sections, each with enough of itself to say whether to open it  |
+| `EconomyPanelGUI`  | `admin-economy`  | Supply, accounts, distribution, faucets, sinks, net, and the chart  |
+| `EconomyFlowGUI`   | `admin-flow`     | Every category and every kind of account, in full                   |
+| `AdminShopsGUI`    | `admin-shops`    | Every shop's takings, opening into that shop's own figures          |
+
+Adding a section means adding a card to `AdminPanelGUI` and a menu of its own — nothing else in the panel changes.
+
+**The window belongs to the viewer, not to a menu.** `PanelState` holds which of `StatsWindow.DAY`, `WEEK`, `MONTH`
+or `ALL` each administrator is looking at, so switching it in the overview and then opening the breakdown does not
+quietly go back to the last day. It is dropped when they quit (`listeners/admin/PanelStateListener`) rather than when
+a menu closes, because opening the next menu closes the last one.
+
+**`PanelRender` is the only place a figure becomes text** — money, percentages, rates, timestamps, category and
+account-type names, and the cards themselves — so the same number reads the same wherever it appears.
+
+**The chart is stack sizes.** Each of the seven columns is a stained-glass pane whose stack size is its net change
+next to the largest one, green where the supply grew and red where it shrank. It reads as a chart at a glance without
+a single custom texture, and the exact figures are in the lore.
+
+Permissions: `tritown.admin` opens the panel, `tritown.admin.economy` and `tritown.admin.shops` open the sections. A
+card the viewer may not open is not drawn at all.
+
+---
+
 ## Economy (Vault)
 
 Vault is a hard dependency (`depend` in `plugin.yml`); the Vault API is `compileOnly` (`vault_api_version` in
@@ -2293,6 +2535,171 @@ string ("New town", "Upkeep") is not exposed on the event. See the note under th
 get it later.
 
 ---
+
+## Shops
+
+Admin shops: shops the server itself runs, defined in game and opened by clicking an NPC. The goods are created and the
+money paid for them leaves the economy, so there is no shop account behind a shop holding either.
+
+Everything lives under `shops/`, which is **not a scanned package** — for the same reason `economy/` is not. The
+manager has to be alive before the registrars build the menus and commands that read it.
+
+### The model
+
+| Type             | What it is                                                                                  |
+|:-----------------|:---------------------------------------------------------------------------------------------|
+| `ShopDefinition` | One shop: `id`, `displayName`, a `ShopGate`, its entries, and the FancyNpcs ids bound to it  |
+| `ShopEntry`      | One line of goods: the `ItemStack`, a buy `ShopCost`, a sell `ShopCost`, gate, limit, stock  |
+| `ShopCost`       | A price or a payout: an amount of money, a list of `ItemStack`s, or both                     |
+| `ShopGate`       | A permission node and a `TownyRequirement`, plus whether a locked entry hides                |
+| `ShopLimit`      | How much one player may buy per `LimitPeriod` window                                         |
+| `ShopStock`      | A shared supply that refills to full on a timer                                              |
+| `ShopStats`      | Bundles traded and currency moved, per entry                                                 |
+
+`id` is stable and is what NPC bindings and purchase counters are keyed by; `displayName` is administrator-written
+MiniMessage and can be changed freely. Entry ids are UUIDs, so reordering or renaming never disturbs a counter.
+
+`bundle` is how many items one purchase moves, and it is deliberately **not** the template's stack size: a bundle may
+exceed what a stack holds, and an `ItemStack` is not a safe place to keep a count of 128. `bundleSize`,
+`displayStack()` and `goodsStacks(bundles)` are the three ways to ask about it — the last splits into stacks the game
+allows, which is what is both measured for room and handed over, while the first two are for drawing.
+
+### Preserving an item
+
+`ItemCodec` wraps Paper's `ItemStack.serializeAsBytes()` / `deserializeBytes()` and Base64s the result. That is the only
+round-trip that keeps every data component, so a renamed, enchanted, custom-model or plugin-invented item comes back
+exactly as it went in, and Paper upgrades the embedded game version when Minecraft moves on.
+
+`ItemCodec.decode` returns `null` rather than throwing. One unreadable entry must not take a whole shop with it.
+
+### Storage
+
+`plugins/TriTown/shops/shops.json`, written by `JsonShopStorage` through a temporary file with the previous copy kept
+as `.bak` — the same approach as `JsonEconomyStorage`. A file that will not parse falls back to the backup rather than
+starting empty, because an empty start would be written back over the real data at the next save.
+
+The storage layer works on `StoredShop` / `StoredEntry` / `StoredCost`, which hold Base64 strings rather than
+`ItemStack`s. That keeps it free of Bukkit and therefore testable without a server; `ShopManager` converts between
+the stored and live shapes.
+
+Saving has two speeds, and the difference matters:
+
+| Call                   | When                                            | Cost                                    |
+|:-----------------------|:-------------------------------------------------|:-----------------------------------------|
+| `ShopManager.save()`   | A definition changed — an edit that must not be lost | Writes the whole file now           |
+| `ShopManager.markDirty()` | Stock or statistics changed on a purchase    | Nothing; `ShopSaveTask` flushes it later |
+
+### Trading
+
+`ShopTrade.buy` and `ShopTrade.sell` are the only places a trade happens, and both run on the server thread because
+they touch an inventory. The ordering is what makes them safe: **everything that can refuse is asked before anything is
+taken, and anything taken is remembered so it can be put back.**
+
+A buy, in order:
+
+1. Re-check the gate, the per-player limit and the stock, restocking lazily first.
+2. Quote the price, applying the best discount the player's standing in Towny earns.
+3. Check there is room for the goods.
+4. Take the item side of the price, keeping what was removed.
+5. Take the stock.
+6. `EconomyUtil.withdraw(player, money, EconomyContext.SOURCE_SHOP, reason)` — on refusal, put the stock and the items
+   back and stop.
+7. Hand over the goods, record the purchase against the player's limit, and update the statistics.
+
+A sell is the mirror image. Never check `has` and withdraw separately — `EconomyUtil.withdraw` does both in one step.
+
+The pricing, limit and stock arithmetic is deliberately free of Bukkit (`ShopPricing`, `ShopLimit`, `ShopStock`) so it
+can be unit-tested, in the same way `EconomyLedger` is.
+
+### Attribution
+
+A shop movement must not appear in `/eco history` as an anonymous Vault call, so it goes through the attributed
+overloads of `EconomyUtil`:
+
+```kotlin
+val reason = TransactionReason.of(TransactionReason.SHOP_BUY, "shop" to shop.displayName)
+EconomyUtil.withdraw(player, quote.money, EconomyContext.SOURCE_SHOP, reason)
+```
+
+`EconomyContext` is a thread-local, so the attribution reaches the record through the Vault provider on the same thread
+without feature code ever naming `EconomyService`. Another plugin's economy keeps no such record and ignores it.
+
+### Access
+
+`ShopAccess` is the only place Towny is read, and it is read fresh on every check — a player who joins a town sees the
+town's prices without relogging. `standing(player)` is called once per menu render rather than once per entry, because
+every entry asks the same questions.
+
+Gate permissions are written by whoever set the shop up, so they cannot be registered at startup the way a command's
+nodes are. They are checked as they stand and defined in the server's permissions plugin.
+
+### Per-player limits
+
+Counters live in the buyer's own `PlayerData` under `shop-limits`, keyed `"<shopId>/<entryId>"`, each holding a count
+and the window it belongs to. A count from a window that has turned over is ignored rather than cleared, so nothing has
+to sweep counters at midnight. `PlayerDataManager` only serves online players, which is the only case a purchase needs.
+
+### FancyNpcs
+
+FancyNpcs is a soft dependency, and the isolation that makes that work is worth understanding before changing it:
+
+- **`listeners/shop/ShopNpcListener`** is the only class naming a FancyNpcs type in a signature. `PackageScanner`
+  catches `NoClassDefFoundError` and skips a class it cannot load, so without FancyNpcs this listener simply never
+  registers.
+- **`shops/npc/FancyNpcsAdapter`** is the only other class touching the API. It is `internal` and is reached solely
+  through `ShopNpcBridge`, so the JVM never resolves it on a server without the plugin.
+- **`shops/npc/ShopNpcBridge`** exposes `List<String>` and `String?` and nothing else. Anything that would put a
+  FancyNpcs type in its signatures would take `ShopCommand` down with it.
+
+Bindings store `NpcData.getId()`, not the name, so renaming an NPC changes nothing. An NPC opens one shop: binding it
+again moves it rather than leaving it ambiguous.
+
+### The menus
+
+Every shop menu is in `guis/shop/`, and they all follow the singleton rules the GUI section sets out: which shop is open
+is held per viewer in a `ConcurrentHashMap<UUID, …>` and cleared in `onClose`, and a paged menu builds its items once
+rather than in `getItems`.
+
+| Menu               | What it does                                                          |
+|:-------------------|:------------------------------------------------------------------------|
+| `ShopGUI`          | The player's view; buys and sells, and redraws only the entry traded   |
+| `ShopConfirmGUI`   | A second look above `shops.confirm-above`; re-quotes on accept         |
+| `ShopListGUI`      | Every shop, for an administrator                                       |
+| `ShopEditorGUI`    | One shop's entries; adds one from the administrator's own inventory    |
+| `ShopEntryGUI`     | One entry's prices, limit, stock and gate                              |
+| `ShopCostGUI`      | The item side of a price or a payout                                   |
+| `ShopSortGUI`      | Puts a whole shop in one order, on an administrator's say-so           |
+| `ShopSettingsGUI`  | A shop's name, gate and bound NPCs                                     |
+| `ShopStatsGUI`     | What a shop has traded                                                 |
+
+Every one of them is framed: the paged menus through `PagedLayout.FRAMED`, and `ShopCostGUI`, which lays out its own
+grid, through `GUIFrame` directly. The editor's actions — add, settings, figures, back — live in the navigation row via
+`navButtons`, so they do not shuffle along as entries are added.
+
+`ShopRender` holds what they all draw with — item names, price lines, requirement names — and `ShopRender.navigate`,
+which opens the next menu on the following tick.
+
+**Items are never taken to add them.** Clicking a stack in the administrator's own inventory copies it and cancels the
+event; a drag reads `event.oldCursor` and cancels too. A live slot would lose the item to a crash or a mistimed close,
+and an administrator setting up a shop is usually holding the only copy of what they are adding.
+
+**Nor to reorder them.** The order of `ShopDefinition.entries` is the order players see, and the editor rearranges it
+with a mark rather than a cursor: a right click writes the entry's id into the editor's `moving` map, the next click on
+a slot says where it goes, and the entry always lands immediately before whatever was clicked. A stack held on the
+cursor would not survive turning the page, and the same live-slot objection applies as for adding. While an entry is
+marked the navigation row carries the move's own controls — the held entry, which puts it back down, and the two ends of
+the shop — in the slots the editor's usual actions occupy, and clicks in the administrator's own inventory do nothing
+so that a move cannot end in an accidental new entry. Every move redraws the page in place through
+`PagedPluginGUI.refresh`, so a shop can be rearranged across pages without being thrown back to the first one.
+
+**`ShopSorting` is the only thing that sorts a shop**, and `ShopSortGUI` asks before it runs: an order is chosen, then
+applied, because sorting overwrites an arrangement made by hand and nothing records how it was reached. An entry with
+no buy price sorts last whichever way the prices run, and item names are compared in the server's own words rather than
+each viewer's, because one shop has one order and it cannot depend on who is looking at it.
+
+Anything free-form — a price, a permission node, a shop's name — is asked for in chat through `ChatPrompt`, because
+a chest menu has nowhere to type and a price of 12500 is not somewhere to click.
+
 
 ## Sidebar
 

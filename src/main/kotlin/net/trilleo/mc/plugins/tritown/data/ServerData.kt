@@ -62,6 +62,15 @@ open class ServerData {
     fun getJsonArray(key: String): JsonArray =
         if (json.has(key) && json.get(key).isJsonArray) json.getAsJsonArray(key) else JsonArray()
 
+    /**
+     * Returns the [JsonObject] stored at [key], or an empty [JsonObject] when absent.
+     *
+     * The returned object is the stored one, not a copy, so writing to it writes
+     * through — call [set] afterwards only when the key was absent.
+     */
+    fun getJsonObject(key: String): JsonObject =
+        if (json.has(key) && json.get(key).isJsonObject) json.getAsJsonObject(key) else JsonObject()
+
     // ── Typed Setters ───────────────────────────────────────────────────
 
     /** Stores a [String] value at [key]. */

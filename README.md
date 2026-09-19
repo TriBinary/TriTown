@@ -25,6 +25,20 @@ group them, inside a shared header and footer carrying the server name and addre
 in `config.yml`; the wording lives in the language files, so everyone reads it in their own language. Players turn it on
 and off with `/tt scoreboard`, and it takes turns with Towny's own plot HUD rather than fighting it for the screen.
 
+**Shops the server runs.** Admin shops, set up entirely in game: click an item in your own inventory to put it on the
+shelf and it is sold exactly as you made it, custom name, enchantments and all. An entry can be sold, bought back, or
+both, and priced in currency, items, or a mix of the two. Give it a stock that refills on a timer, a limit on how much
+each player may buy per day or per week, a permission node, or a requirement to be in a town or a nation — and give
+town or nation members a discount while you are at it. Players reach a shop by clicking a
+[FancyNpcs](https://modrinth.com/plugin/fancynpcs) NPC, and every sale is recorded in the transaction log and totalled
+in a sales view.
+
+**An admin panel.** `/tt admin` opens a menu that reads the server back to you. The economy section shows how much
+currency exists and who holds it, what created it and what removed it — new players, shops, Towny, administrators or
+another plugin — with the net drift per day, how unevenly wealth is spread, how fast money circulates, and a chart of
+the window drawn as columns. Read any of it over the last day, week or month, or over everything on record. Every
+shop's takings are in there too, next to the economy they act on.
+
 **English and Simplified Chinese.** Every message, menu and item TriTown shows is translated. By default each player
 sees whichever of the two their Minecraft client is set to, and everyone else sees English. Set `language` in
 `config.yml` to `en_US` or `zh_CN` to pick one for the whole server, or edit the files in `plugins/TriTown/lang/` to
@@ -41,10 +55,12 @@ built on.
 | Java           | 25+                                 |
 | Towny          | 0.103.2.7+                          |
 | Vault          | 1.7+                                |
+| FancyNpcs      | 2.9+ — optional, for shop NPCs       |
 | Economy plugin | Not required — TriTown provides one |
 
 TriTown is an addon: Towny and Vault must both be installed, or TriTown will not load. An economy plugin is optional —
 install one only if you want it to supply the economy instead of TriTown, and set `economy.provider.mode` accordingly.
+FancyNpcs is optional too: without it shops still work, they just cannot be opened by clicking an NPC.
 
 ## Building
 
@@ -58,6 +74,8 @@ first start:
 
 - download a Paper 26.2 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
 - put Vault into `run/plugins/`;
+- put [FancyNpcs](https://modrinth.com/plugin/fancynpcs) into `run/plugins/` as well, to test shop NPCs — only its API
+  is published to Maven, so the plugin itself is not fetched by the build;
 - accept the EULA in `run/eula.txt` after the first launch.
 
 Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/TriTown/releases).
@@ -73,11 +91,21 @@ Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/
 | `/baltop [page]`         | List the richest accounts             |
 | `/eco <action> …`        | Administer balances (OP only)         |
 | `/tt scoreboard`         | Show or hide the sidebar              |
+| `/tt shop <action> …`    | Set up the server's shops (OP only)   |
+| `/tt admin [section]`    | Open the admin panel (OP only)        |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
 write changed accounts to disk immediately. Each action has its own permission, `tritown.economy.admin.<action>`;
 viewing someone else's history additionally needs `tritown.economy.admin.history.others`.
+
+`/tt shop` takes `list` for every shop, `create <id> [name]` to start one, `delete <id> confirm` to remove one,
+`edit <id>` to change what it offers, `open <id> [player]` to open it for somebody, `bind <id> <npc>` and
+`unbind <npc>` to put an NPC behind the counter, and `stats <id>` for what it has traded. Each action has its own
+permission, `tritown.shop.admin.<action>`. Players have no shop command of their own — they click an NPC.
+
+`/tt admin` opens the panel itself, and `economy` or `shops` opens that section directly. Opening the panel needs
+`tritown.admin`; the sections need `tritown.admin.economy` and `tritown.admin.shops` on top of it.
 
 Commands are sub-commands of `/tritown` (alias `/tt`) unless noted. The economy commands are registered as top-level
 commands as well, which `economy.commands.top-level-aliases` turns off — they are then only reachable as
@@ -115,6 +143,13 @@ version stays available as `/tritown:balance` and so on.
 | `economy.history.retention-days`          | `30`               | How long rolled log files are kept; `0` keeps them forever                      |
 | `economy.history.roll-size-mb`            | `16`               | Size at which the transaction log is rolled aside                               |
 | `economy.history.time-format`             | `yyyy-MM-dd HH:mm` | How timestamps are shown in the history view                                    |
+| `economy.stats.enabled`                   | `true`             | Keep the hourly figures the admin panel reads                                   |
+| `economy.stats.retention-days`            | `30`               | How far back those figures reach; `0` keeps them forever                        |
+| `shops.enabled`                           | `true`             | Turn shops off entirely                                                         |
+| `shops.save-interval`                     | `60`               | Seconds between writing stock and sales figures; edits are saved immediately    |
+| `shops.confirm-above`                     | `1000.0`           | Purchase total that asks for confirmation first; `0` never asks                 |
+| `shops.sell-rate`                         | `0.5`              | What the editor suggests as a payout, as a fraction of the buy price            |
+| `shops.discounts.<standing>`              | `0.0`              | Money off for `has-town`, `has-nation`, `is-mayor` or `is-king`                 |
 | `scoreboard.enabled`                      | `true`             | Turn the sidebar off entirely                                                   |
 | `scoreboard.refresh-interval`             | `2`                | Seconds between redraws of a sidebar nothing has changed on                     |
 | `scoreboard.default-on`                   | `true`             | Whether a player who has never used `/tt scoreboard` sees one                   |
@@ -131,6 +166,44 @@ balance on disk is read. Changing it once accounts exist stops the plugin with a
 `economy.provider.*` and `economy.commands.top-level-aliases` only take effect on a restart — TriTown has to register
 its economy with Vault, and its commands with the server, before either can be changed again. Everything else in the
 table is applied by `/tt reload`.
+
+### Shops
+
+A shop is created with `/tt shop create <id>`, which opens its editor. Everything else is done in the menus:
+
+- **Adding what it sells.** Click an item in your own inventory, or drag it over the menu. Nothing leaves your
+  inventory — the item is copied, with every property it has, so a renamed and enchanted sword goes on the shelf as
+  that exact sword. The stack size you click becomes the bundle: click a stack of 16 bread and one purchase is 16
+  loaves. The bundle can be changed afterwards, and is not limited to a stack — 128 bread is handed over as two.
+- **Arranging it.** Entries are shown to players in the order they are in the editor. Right-click one to pick it up,
+  then click where it should go — including on another page — and it drops in front of whatever you clicked; two
+  buttons send it to the front or the back of the shop instead. A whole shop can be put in order at once by name or by
+  price, which replaces the arrangement you made by hand and asks before it does.
+- **Pricing it.** An entry has a buy side and a sell side, and each may be switched on or off on its own. Either side
+  can ask for money, for items, or for both at once. Money is typed in chat when you click the price; items are added
+  by clicking them in your inventory, and the stack size is the quantity.
+- **Limiting it.** *Stock* is shared by everybody and refills to full on a timer. A *limit* is per player and resets
+  daily, weekly, or never. Both are optional, and an entry with neither is unlimited, which is what an admin shop
+  usually wants.
+- **Locking it.** A shop, and each entry inside it, can require a permission node or a standing in Towny — being in a
+  town, being without one, being in a nation, being a mayor or being a king. A locked entry shows the reason by
+  default, or can be hidden entirely.
+
+`shops.discounts` takes money off for players who have earned it. Discounts do not stack: a mayor whose nation also has
+a rate pays the better of the two, and the menu shows the old price struck through beside the new one. An individual
+entry can opt out.
+
+Players never type a shop command. Bind an NPC with `/tt shop bind <id> <npc>` and clicking it opens the shop. The
+binding is stored against the NPC itself rather than its name, so renaming it in FancyNpcs changes nothing, and an NPC
+opens one shop at a time — binding it again moves it.
+
+The goods a shop sells are created and the money paid for them leaves the economy, so a shop is a sink, a faucet, or
+both depending on how you price it. `/tt shop stats <id>` shows which, per entry and in total. Every trade is recorded
+in the transaction log and appears in `/eco history` as a shop movement naming the shop.
+
+Shops live in `plugins/TriTown/shops/shops.json`, written atomically with a `.bak` copy beside it. A shop you edit is
+written straight away; stock levels and sales figures are written every `shops.save-interval` seconds, so a crash costs
+at most that long of counters and never a shop.
 
 ### The sidebar
 
@@ -220,7 +293,8 @@ Full development guides are in the `docs/` directory:
 - [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) — How to add commands, listeners, GUIs, tasks, items, and recipes,
   translate every string, use the configuration and data storage, and build on Towny and the Vault economy.
 - [UTILITY_GUIDE.md](docs/UTILITY_GUIDE.md) — Reference for the utility helpers (`itemStack` DSL, `Lang`,
-  `EconomyUtil`, `MessageUtil`, `CountdownUtil`, `TeamUtil`, `TagUtil`, `PDCUtil`, `GameRuleUtil`, `LoreUtil`).
+  `EconomyUtil`, `MessageUtil`, `ChatPrompt`, `CountdownUtil`, `TeamUtil`, `TagUtil`, `PDCUtil`, `GameRuleUtil`,
+  `LoreUtil`).
 - [COMMIT_STRUCTURE.md](docs/COMMIT_STRUCTURE.md) — Commit message conventions.
 - [RELEASING.md](docs/RELEASING.md) — Writing the changelog and publishing a release.
 

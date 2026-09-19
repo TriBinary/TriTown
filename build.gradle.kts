@@ -23,6 +23,9 @@ repositories {
     maven {
         url = uri("https://jitpack.io")
     }
+    maven {
+        url = uri("https://repo.fancyinnovations.com/releases")
+    }
 }
 
 val serverPlugins: Configuration by configurations.creating {
@@ -30,9 +33,14 @@ val serverPlugins: Configuration by configurations.creating {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:26.3.build.+")
     compileOnly("com.palmergames.bukkit.towny:towny:${providers.gradleProperty("towny_version").get()}")
     compileOnly("com.github.MilkBowl:VaultAPI:${providers.gradleProperty("vault_api_version").get()}") {
+        isTransitive = false
+    }
+    // API only, and optional at runtime: NPCs open shops when FancyNpcs is installed, and the feature stays off when
+    // it is not. The plugin jar itself is not on Maven and has to be installed by hand.
+    compileOnly("de.oliver:FancyNpcs:${providers.gradleProperty("fancynpcs_version").get()}") {
         isTransitive = false
     }
     serverPlugins("com.palmergames.bukkit.towny:towny:${providers.gradleProperty("towny_version").get()}")
@@ -74,6 +82,7 @@ tasks.jar {
 }
 
 // Copies Towny into the test server, replacing any other Towny version left behind by a version bump.
+// FancyNpcs is not copied: only its API is published to Maven, and the plugin itself comes from Modrinth.
 tasks.register<Copy>("copyServerPlugins") {
     val pluginsDir = layout.projectDirectory.dir("run/plugins")
     doFirst { delete(fileTree(pluginsDir) { include("towny-*.jar") }) }
@@ -92,7 +101,7 @@ tasks.register<JavaExec>("startServer") {
     workingDir(layout.projectDirectory.dir("run"))
     classpath(fileTree(layout.projectDirectory.dir("run")) { include("paper-*.jar") })
     doFirst {
-        check(!classpath.isEmpty) { "No paper-*.jar in run/. Download Paper 26.2 from https://papermc.io/downloads/paper into run/." }
+        check(!classpath.isEmpty) { "No paper-*.jar in run/. Download Paper 26.3 from https://papermc.io/downloads/paper into run/." }
     }
     args("--nogui")
     standardInput = System.`in`
