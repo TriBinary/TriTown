@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.guis.shop
 
 import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.enums.PagedLayout
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
 import net.trilleo.mc.plugins.tritown.shops.ShopDefinition
@@ -31,6 +32,7 @@ class ShopStatsGUI : PagedPluginGUI(
     titleKey = "gui.shop-stats.title",
     rows = 6,
     fillMode = FillMode.NONE,
+    layout = PagedLayout.FRAMED,
 ) {
 
     private val viewing = ConcurrentHashMap<UUID, String>()
@@ -52,7 +54,7 @@ class ShopStatsGUI : PagedPluginGUI(
         val player = event.whoClicked as? Player ?: return
         val shop = shopOf(player) ?: return
 
-        val index = page * CONTENT_SLOTS + event.rawSlot
+        val index = contentIndex(page, event.rawSlot) ?: return
         if (index != 0 || event.click != ClickType.SHIFT_LEFT) return
 
         shop.entries.forEach { it.stats.reset() }
@@ -102,8 +104,6 @@ class ShopStatsGUI : PagedPluginGUI(
 
     companion object {
         const val ID = "shop-stats"
-
-        private const val CONTENT_SLOTS = 45
 
         /** Opens a shop's figures through the registered instance. */
         fun show(player: Player, shop: ShopDefinition): Boolean {

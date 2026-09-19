@@ -174,6 +174,8 @@ object ShopManager {
         return ShopEntry(
             id = entry.id.ifBlank { UUID.randomUUID().toString() },
             item = item,
+            // A shop written before the bundle was its own field kept it as the item's stack size.
+            bundle = if (entry.bundle > 0) entry.bundle else item.amount,
             buy = toCost(entry.buy),
             sell = toCost(entry.sell),
             gate = ShopGate(entry.permission, requirement(entry.towny), entry.hideWhenLocked),
@@ -196,6 +198,7 @@ object ShopManager {
             StoredEntry(
                 id = entry.id,
                 item = ItemCodec.encode(entry.item),
+                bundle = entry.bundleSize,
                 buy = toStoredCost(entry.buy),
                 sell = toStoredCost(entry.sell),
                 permission = entry.gate.permission,

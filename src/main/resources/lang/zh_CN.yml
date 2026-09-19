@@ -276,6 +276,7 @@ gui:
 
   shop-editor:
     title: "<dark_gray>商店编辑器"
+    bundle: "<gray>每次出售 <white>{amount}</white> 个"
     buy: "<gray>售价："
     sell: "<gray>回收价："
     not-buyable: "<dark_gray>不出售"
@@ -286,10 +287,16 @@ gui:
     add-lore: "<gray>单击你背包里的物品，或将其拖到这里。你的物品不会被拿走。"
     settings: "<gold>商店设置"
     settings-lore: "<gray><white>{id}</white> 的名称、准入和 NPC。"
+    stats: "<gold>经营数据"
+    stats-lore: "<gray>这家商店的交易情况。"
+    back: "<yellow>商店列表"
+    back-lore: "<gray>返回商店列表。"
 
   shop-entry:
     title: "<dark_gray>商品设置"
     bundle: "<gray>每次购买获得 <white>{amount}</white>"
+    bundle-size: "<gold>每次购买数量"
+    bundle-lore: "<dark_gray>可以超过一组，将分成多组交付。"
     state: "<gray>当前：<white>{state}</white>"
     amount: "<gray>当前：<white>{amount}</white>"
     buyable: "<gold>允许玩家购买"
@@ -318,6 +325,7 @@ gui:
     right-click-clear: "<yellow>右键 <gray>清除"
     prompt-price: "<gray>请在聊天栏输入新的价格。"
     prompt-permission: "<gray>请在聊天栏输入权限节点。"
+    prompt-bundle: "<gray>请输入每次购买应获得的数量。"
     prompt-limit: "<gray>请输入每个玩家最多能买多少。<white>0</white> 表示不限。"
     prompt-stock: "<gray>请输入库存和补货秒数，例如 <white>64 3600</white>。<white>0</white> 表示不限库存。"
     back: "<yellow>返回"

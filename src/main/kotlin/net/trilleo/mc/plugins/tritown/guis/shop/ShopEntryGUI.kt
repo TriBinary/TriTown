@@ -58,6 +58,7 @@ class ShopEntryGUI : PluginGUI(
         val (_, entry) = resolve(player) ?: return
 
         inventory.setItem(SLOT_GOODS, goods(player, entry))
+        inventory.setItem(SLOT_BUNDLE, bundle(player, entry))
 
         inventory.setItem(SLOT_BUY_TOGGLE, toggle(player, entry.isBuyable, "gui.shop-entry.buyable"))
         inventory.setItem(SLOT_BUY_MONEY, money(player, entry.buy, "gui.shop-entry.buy-price"))
@@ -92,6 +93,7 @@ class ShopEntryGUI : PluginGUI(
             SLOT_SELL_MONEY -> return askMoney(player, shop, entry, buying = false, clear = clear)
             SLOT_BUY_ITEMS -> return ShopRender.navigate { ShopCostGUI.show(player, shop, entry, buying = true) }
             SLOT_SELL_ITEMS -> return ShopRender.navigate { ShopCostGUI.show(player, shop, entry, buying = false) }
+            SLOT_BUNDLE -> return editBundle(player, shop, entry)
             SLOT_LIMIT -> return editLimit(player, shop, entry, event.click)
             SLOT_STOCK -> return editStock(player, shop, entry, clear)
             SLOT_PERMISSION -> return askPermission(player, shop, entry, clear)
@@ -152,6 +154,25 @@ class ShopEntryGUI : PluginGUI(
         prompt(player, shop, entry, player.tr("gui.shop-entry.prompt-permission")) { input ->
             entry.gate = entry.gate.copy(permission = input.ifBlank { null })
             ShopManager.save()
+        }
+    }
+
+    /**
+     * Asks how many items one purchase should hand over.
+     *
+     * Not capped at a stack: a bundle of 128 bread is handed over as two stacks,
+     * and refusing it would only make an administrator create two entries for
+     * what is one thing being sold.
+     */
+    private fun editBundle(player: Player, shop: ShopDefinition, entry: ShopEntry) {
+        prompt(player, shop, entry, player.tr("gui.shop-entry.prompt-bundle")) { input ->
+            val amount = input.toIntOrNull()
+            if (amount == null || amount < 1) {
+                player.sendPrefixed(player.tr("common.error", "message" to player.tr("common.invalid-amount")))
+            } else {
+                entry.bundle = amount
+                ShopManager.save()
+            }
         }
     }
 
@@ -246,6 +267,19 @@ class ShopEntryGUI : PluginGUI(
         entry.displayStack(),
         listOf(player.tr("gui.shop-entry.bundle", "amount" to entry.bundleSize)),
     )
+
+    private fun bundle(player: Player, entry: ShopEntry): ItemStack = itemStack(Material.PAPER) {
+        name(player.tr("gui.shop-entry.bundle-size"))
+        meta {
+            lore(
+                LoreUtil.wrapLore(
+                    player.tr("gui.shop-entry.amount", "amount" to entry.bundleSize) +
+                            "<newline>" + player.tr("gui.shop-entry.bundle-lore") +
+                            "<newline>" + player.tr("gui.shop-entry.click-set")
+                )
+            )
+        }
+    }
 
     private fun toggle(player: Player, on: Boolean, nameKey: String): ItemStack =
         itemStack(if (on) Material.LIME_DYE else Material.GRAY_DYE) {
@@ -398,6 +432,7 @@ class ShopEntryGUI : PluginGUI(
         private const val MONEY_SCALE = 2
 
         private const val SLOT_GOODS = 4
+        private const val SLOT_BUNDLE = 13
         private const val SLOT_BUY_TOGGLE = 19
         private const val SLOT_BUY_MONEY = 20
         private const val SLOT_BUY_ITEMS = 21

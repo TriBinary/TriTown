@@ -5,6 +5,7 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.trilleo.mc.plugins.tritown.config.ShopSettings
 import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.enums.PagedLayout
 import net.trilleo.mc.plugins.tritown.enums.TownyRequirement
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
@@ -45,6 +46,7 @@ class ShopGUI : PagedPluginGUI(
     titleKey = "gui.shop.title",
     rows = 6,
     fillMode = FillMode.NONE,
+    layout = PagedLayout.FRAMED,
 ) {
 
     /**
@@ -79,7 +81,7 @@ class ShopGUI : PagedPluginGUI(
         val view = views[player.uniqueId] ?: return
         val shop = ShopManager.get(view.shopId) ?: return
 
-        val index = page * CONTENT_SLOTS + event.rawSlot
+        val index = contentIndex(page, event.rawSlot) ?: return
         val entry = view.entryIds.getOrNull(index)?.let(shop::entry) ?: return
 
         val result = when (event.click) {
@@ -261,9 +263,6 @@ class ShopGUI : PagedPluginGUI(
 
     companion object {
         const val ID = "shop"
-
-        /** Content slots on one page: everything but the navigation row. */
-        private const val CONTENT_SLOTS = 45
 
         /** Opens [shop] for [viewer] through the registered instance. */
         fun show(viewer: Player, shop: ShopDefinition): Boolean {

@@ -14,6 +14,8 @@
       and carry, right-click sells one, and shift-right-click sells everything you are carrying.
     + A price can be money, items, or both at once, and so can a payout — so a shop can sell for currency, barter, or
       ask for a fee alongside the materials.
+    + How many items one purchase hands over is set per entry, and is not capped at a stack: a bundle of 128 bread is
+      handed over as two stacks.
     + An entry can have a stock that refills on a timer, a per-player limit that resets daily, weekly or never, or
       neither. Both are shown on the item, counting down as players buy.
     + Entries and whole shops can be locked behind a permission node or a standing in Towny — being in a town or a
@@ -50,6 +52,9 @@
 
 + GUIs can now handle a drag through `onDrag`, which cancels the drag by default. The GUI manager also forgets a player
   who quits with a menu open.
++ Paged GUIs gained `PagedLayout.FRAMED`, which insets the content and draws a border around it, and `navButtons`,
+  which puts a menu's own actions in the fixed navigation row instead of after the last item where they move as the
+  list grows. `contentIndex` turns a clicked slot into a position in the item list, which a framed layout needs.
 + `PlayerData` and `ServerData` gained `getJsonObject`, so a nested object that was written can be read back.
 + Added `ChatPrompt`, which asks a player a question in chat and hands the answer back on the server thread. Menus use
   it for anything that has to be typed, such as a price or a permission node.

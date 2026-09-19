@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.guis.shop
 
 import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.enums.PagedLayout
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
 import net.trilleo.mc.plugins.tritown.shops.ShopCost
@@ -29,12 +30,16 @@ import java.util.concurrent.ConcurrentHashMap
  * all, and stays where it was. An editor that took the item would lose it to a
  * crash or a mistimed close, and an administrator setting up a shop is usually
  * holding the only copy of whatever they are adding.
+ *
+ * The actions live in the navigation row rather than after the last entry, so
+ * they stay under the same finger however many entries the shop grows.
  */
 class ShopEditorGUI : PagedPluginGUI(
     id = ID,
     titleKey = "gui.shop-editor.title",
     rows = 6,
     fillMode = FillMode.NONE,
+    layout = PagedLayout.FRAMED,
 ) {
 
     private val editing = ConcurrentHashMap<UUID, String>()
@@ -47,7 +52,28 @@ class ShopEditorGUI : PagedPluginGUI(
 
     override fun getItems(player: Player): List<ItemStack> {
         val shop = shopOf(player) ?: return emptyList()
-        return shop.entries.map { entry -> icon(player, entry) } + settingsButton(player, shop) + hint(player)
+        return shop.entries.map { entry -> icon(player, entry) }
+    }
+
+    override fun navButtons(player: Player): Map<Int, ItemStack> {
+        val shop = shopOf(player) ?: return emptyMap()
+        return mapOf(
+            SLOT_ADD to button(player, Material.PAPER, "gui.shop-editor.add", "gui.shop-editor.add-lore"),
+            SLOT_SETTINGS to settingsButton(player, shop),
+            SLOT_STATS to button(player, Material.WRITABLE_BOOK, "gui.shop-editor.stats", "gui.shop-editor.stats-lore"),
+            SLOT_LIST to button(player, Material.ARROW, "gui.shop-editor.back", "gui.shop-editor.back-lore"),
+        )
+    }
+
+    override fun onNavClick(event: InventoryClickEvent, offset: Int) {
+        val player = event.whoClicked as? Player ?: return
+        val shop = shopOf(player) ?: return
+
+        when (offset) {
+            SLOT_SETTINGS -> ShopRender.navigate { ShopSettingsGUI.show(player, shop) }
+            SLOT_STATS -> ShopRender.navigate { ShopStatsGUI.show(player, shop) }
+            SLOT_LIST -> ShopRender.navigate { ShopListGUI.show(player) }
+        }
     }
 
     /**
@@ -73,12 +99,9 @@ class ShopEditorGUI : PagedPluginGUI(
         val player = event.whoClicked as? Player ?: return
         val shop = shopOf(player) ?: return
 
-        val index = page * CONTENT_SLOTS + event.rawSlot
-        when (index) {
-            shop.entries.size -> ShopRender.navigate { ShopSettingsGUI.show(player, shop) }
-            in shop.entries.indices -> click(event.click, player, shop, shop.entries[index])
-            else -> return
-        }
+        val index = contentIndex(page, event.rawSlot) ?: return
+        val entry = shop.entries.getOrNull(index) ?: return
+        click(event.click, player, shop, entry)
     }
 
     override fun onDrag(event: InventoryDragEvent) {
@@ -106,11 +129,20 @@ class ShopEditorGUI : PagedPluginGUI(
         ShopRender.navigate { ShopEntryGUI.show(player, shop, entry) }
     }
 
-    /** Adds [stack] as a new entry, priced at nothing until the administrator sets a price. */
+    /**
+     * Adds [stack] as a new entry, priced at nothing until the administrator sets a price.
+     *
+     * The stack size clicked becomes the bundle, so putting a stack of 16 bread
+     * on the shelf sells sixteen loaves at a time without any further setting up.
+     */
     private fun add(player: Player, shop: ShopDefinition, stack: ItemStack) {
         if (stack.type.isAir) return
 
-        val entry = ShopEntry(item = stack.clone(), buy = ShopCost.FREE)
+        val entry = ShopEntry(
+            item = stack.clone().apply { amount = 1 },
+            bundle = stack.amount.coerceAtLeast(1),
+            buy = ShopCost.FREE,
+        )
         shop.entries += entry
         ShopManager.save()
 
@@ -120,6 +152,7 @@ class ShopEditorGUI : PagedPluginGUI(
 
     private fun icon(player: Player, entry: ShopEntry): ItemStack {
         val lore = buildList {
+            add(player.tr("gui.shop-editor.bundle", "amount" to entry.bundleSize))
             if (entry.isBuyable) addAll(buyLines(player, entry)) else add(player.tr("gui.shop-editor.not-buyable"))
             if (entry.isSellable) addAll(sellLines(player, entry)) else add(player.tr("gui.shop-editor.not-sellable"))
             add(player.tr("gui.shop-editor.click-entry"))
@@ -140,17 +173,22 @@ class ShopEditorGUI : PagedPluginGUI(
         meta { lore(LoreUtil.wrapLore(player.tr("gui.shop-editor.settings-lore", "id" to shop.id))) }
     }
 
-    private fun hint(player: Player): ItemStack = itemStack(Material.PAPER) {
-        name(player.tr("gui.shop-editor.add"))
-        meta { lore(LoreUtil.wrapLore(player.tr("gui.shop-editor.add-lore"))) }
-    }
+    private fun button(player: Player, material: Material, nameKey: String, loreKey: String): ItemStack =
+        itemStack(material) {
+            name(player.tr(nameKey))
+            meta { lore(LoreUtil.wrapLore(player.tr(loreKey))) }
+        }
 
     private fun shopOf(player: Player): ShopDefinition? = editing[player.uniqueId]?.let(ShopManager::get)
 
     companion object {
         const val ID = "shop-editor"
 
-        private const val CONTENT_SLOTS = 45
+        // Offsets in the navigation row; 0, 4 and 8 belong to the page controls.
+        private const val SLOT_ADD = 1
+        private const val SLOT_SETTINGS = 2
+        private const val SLOT_STATS = 3
+        private const val SLOT_LIST = 5
 
         /** Opens the editor for [shop] through the registered instance. */
         fun show(player: Player, shop: ShopDefinition): Boolean {

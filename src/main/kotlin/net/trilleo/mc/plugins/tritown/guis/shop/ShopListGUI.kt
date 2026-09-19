@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.guis.shop
 
 import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.enums.PagedLayout
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PagedPluginGUI
 import net.trilleo.mc.plugins.tritown.shops.ShopDefinition
@@ -25,6 +26,7 @@ class ShopListGUI : PagedPluginGUI(
     titleKey = "gui.shop-list.title",
     rows = 6,
     fillMode = FillMode.NONE,
+    layout = PagedLayout.FRAMED,
 ) {
 
     override fun getItems(player: Player): List<ItemStack> {
@@ -45,7 +47,8 @@ class ShopListGUI : PagedPluginGUI(
         event.isCancelled = true
 
         val player = event.whoClicked as? Player ?: return
-        val shop = ShopManager.all().getOrNull(page * CONTENT_SLOTS + event.rawSlot) ?: return
+        val index = contentIndex(page, event.rawSlot) ?: return
+        val shop = ShopManager.all().getOrNull(index) ?: return
 
         ShopRender.navigate {
             if (event.click == ClickType.SHIFT_LEFT) ShopGUI.show(player, shop) else ShopEditorGUI.show(player, shop)
@@ -69,8 +72,6 @@ class ShopListGUI : PagedPluginGUI(
 
     companion object {
         const val ID = "shop-list"
-
-        private const val CONTENT_SLOTS = 45
 
         /** Opens the list for [player] through the registered instance. */
         fun show(player: Player): Boolean = GUIManager.open(player, ID)

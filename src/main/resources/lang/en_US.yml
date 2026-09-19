@@ -275,6 +275,7 @@ gui:
 
   shop-editor:
     title: "<dark_gray>Shop editor"
+    bundle: "<gray>Sells <white>{amount}</white> at a time"
     buy: "<gray>Sold for:"
     sell: "<gray>Bought back for:"
     not-buyable: "<dark_gray>Not for sale"
@@ -285,10 +286,16 @@ gui:
     add-lore: "<gray>Click an item in your own inventory, or drag it here. Your item stays where it is."
     settings: "<gold>Shop settings"
     settings-lore: "<gray>Name, access and NPCs for <white>{id}</white>."
+    stats: "<gold>Sales figures"
+    stats-lore: "<gray>What this shop has traded."
+    back: "<yellow>All shops"
+    back-lore: "<gray>Back to the list of shops."
 
   shop-entry:
     title: "<dark_gray>Entry"
     bundle: "<gray>One purchase gives <white>{amount}</white>"
+    bundle-size: "<gold>Amount per purchase"
+    bundle-lore: "<dark_gray>May be more than one stack; it is handed over as several."
     state: "<gray>Now: <white>{state}</white>"
     amount: "<gray>Now: <white>{amount}</white>"
     buyable: "<gold>Players may buy this"
@@ -317,6 +324,7 @@ gui:
     right-click-clear: "<yellow>Right-click <gray>to clear it"
     prompt-price: "<gray>Type the new price in chat."
     prompt-permission: "<gray>Type the permission node in chat."
+    prompt-bundle: "<gray>Type how many items one purchase should give."
     prompt-limit: "<gray>Type how many one player may buy. <white>0</white> removes the limit."
     prompt-stock: "<gray>Type the stock and the refill time in seconds, like <white>64 3600</white>. <white>0</white> removes the stock."
     back: "<yellow>Back"

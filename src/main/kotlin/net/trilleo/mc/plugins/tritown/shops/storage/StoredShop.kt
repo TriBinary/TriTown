@@ -25,6 +25,7 @@ data class StoredShop(
 data class StoredEntry(
     val id: String = "",
     val item: String = "",
+    val bundle: Int = 0,
     val buy: StoredCost? = null,
     val sell: StoredCost? = null,
     val permission: String? = null,

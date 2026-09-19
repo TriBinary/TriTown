@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.guis.shop
 
 import net.trilleo.mc.plugins.tritown.enums.FillMode
+import net.trilleo.mc.plugins.tritown.registration.GUIFrame
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PluginGUI
 import net.trilleo.mc.plugins.tritown.shops.ShopCost
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ShopCostGUI : PluginGUI(
     id = ID,
     titleKey = "gui.shop-cost.title",
-    rows = 6,
+    rows = ROWS,
     fillMode = FillMode.NONE,
 ) {
 
@@ -50,8 +51,10 @@ class ShopCostGUI : PluginGUI(
         val (_, entry, buying) = resolve(player) ?: return
 
         inventory.clear()
+        GUIFrame.draw(inventory, CONTENT_SLOTS)
+
         cost(entry, buying).items.forEachIndexed { index, item ->
-            if (index < CONTENT_SLOTS) inventory.setItem(index, describe(player, item))
+            CONTENT_SLOTS.getOrNull(index)?.let { inventory.setItem(it, describe(player, item)) }
         }
 
         inventory.setItem(
@@ -76,19 +79,20 @@ class ShopCostGUI : PluginGUI(
             return
         }
 
-        when (val slot = event.rawSlot) {
-            SLOT_BACK -> ShopRender.navigate { ShopEntryGUI.show(player, shop, entry) }
-
-            in 0 until CONTENT_SLOTS -> {
-                val items = cost(entry, buying).items
-                if (slot >= items.size) return
-                apply(entry, buying, items.filterIndexed { index, _ -> index != slot })
-                ShopManager.save()
-                setup(player, event.inventory)
-            }
-
-            else -> return
+        if (event.rawSlot == SLOT_BACK) {
+            ShopRender.navigate { ShopEntryGUI.show(player, shop, entry) }
+            return
         }
+
+        val position = CONTENT_SLOTS.indexOf(event.rawSlot)
+        if (position < 0) return
+
+        val items = cost(entry, buying).items
+        if (position >= items.size) return
+
+        apply(entry, buying, items.filterIndexed { index, _ -> index != position })
+        ShopManager.save()
+        setup(player, event.inventory)
     }
 
     override fun onDrag(event: InventoryDragEvent) {
@@ -108,7 +112,7 @@ class ShopCostGUI : PluginGUI(
         if (stack.type.isAir) return
 
         val items = cost(entry, buying).items
-        if (items.size >= CONTENT_SLOTS) return
+        if (items.size >= CONTENT_SLOTS.size) return
 
         apply(entry, buying, items + stack.clone())
         ShopManager.save()
@@ -144,8 +148,10 @@ class ShopCostGUI : PluginGUI(
     companion object {
         const val ID = "shop-cost"
 
-        /** Everything but the last row, which carries the way back out. */
-        private const val CONTENT_SLOTS = 45
+        /** The slots inside the border; the last row carries the way back out. */
+        private val CONTENT_SLOTS = GUIFrame.contentSlots(ROWS)
+
+        private const val ROWS = 6
         private const val SLOT_BACK = 45
         private const val SLOT_HINT = 49
 

@@ -452,6 +452,32 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 | `rows`     | `Int`          | `6`                 | Number of rows (2–6, each row = 9 slots)                                           |
 | `fillMode` | `FillMode`     | `FillMode.NONE`     | Controls background filler; re-applied on every page render, not just initial open |
 | `mode`     | `PagedGUIMode` | `PagedGUIMode.LIST` | Controls how items are supplied — see [Modes](#modes) below                        |
+| `layout`   | `PagedLayout`  | `PagedLayout.FULL`  | Whether the content area fills the menu or sits inside a border                    |
+
+### Layouts
+
+| Layout               | Content slots (6 rows) | Description                                                                |
+|:---------------------|:-----------------------|:----------------------------------------------------------------------------|
+| `PagedLayout.FULL`   | 45                     | Every slot above the navigation row is content                             |
+| `PagedLayout.FRAMED` | 28                     | Content is inset by one slot on every side, with a black glass border round it |
+
+A framed menu carries the border into its navigation row too, so the whole edge is one colour rather than changing
+where the controls start.
+
+**Do not index `getItems` by the raw slot.** Under a framed layout a slot is not a position in that list, because the
+border sits between them. Use `contentIndex(page, rawSlot)`, which returns the position or `null` when the slot holds
+no content:
+
+```kotlin
+override fun onContentClick(event: InventoryClickEvent, page: Int) {
+    event.isCancelled = true
+    val index = contentIndex(page, event.rawSlot) ?: return
+    val entry = entries.getOrNull(index) ?: return
+    …
+}
+```
+
+`pageSize` is how many items one page holds, should a subclass need it.
 
 ### Modes
 
@@ -460,15 +486,19 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 | Mode                | Override      | Description                                                                                      |
 |:--------------------|:--------------|:-------------------------------------------------------------------------------------------------|
 | `PagedGUIMode.LIST` | `getItems`    | Items are provided as a flat list and distributed automatically across pages (one item per slot) |
-| `PagedGUIMode.SET`  | `getSetItems` | Items are placed manually by page and slot, giving full control over each item's exact position  |
+| `PagedGUIMode.SET`  | `getSetItems` | Items are placed manually by page and position, giving full control over each item's placement  |
 
 ### Methods to Override
 
 | Method           | Mode   | Required | Description                                                      |
 |:-----------------|:-------|:---------|:-----------------------------------------------------------------|
 | `getItems`       | `LIST` | Yes      | Return the full list of items to paginate for a player           |
-| `getSetItems`    | `SET`  | Yes      | Return a map of `page → (slot → item)` for manual placement      |
+| `getSetItems`    | `SET`  | Yes      | Return a map of `page → (position → item)` for manual placement  |
 | `onContentClick` | Both   | No       | Handle clicks on content slots (clicks are cancelled by default) |
+| `navButtons`     | Both   | No       | Buttons to place in the navigation row, keyed by offset           |
+| `onNavClick`     | Both   | No       | Handle clicks on those buttons                                    |
+
+A `SET` position is an index into the content area, not an inventory slot, for the same reason `contentIndex` exists.
 
 You do **not** need to override `setup`, `onClick`, or `onClose` — `PagedPluginGUI` handles them internally for
 pagination. If you need custom close logic, override `onClose` and call `super.onClose(event)` to ensure page state is
@@ -483,6 +513,22 @@ The last row of the inventory contains:
 | 0                  | Arrow | **Previous Page** — hidden on the first page |
 | 4                  | Paper | **Page indicator** — displays "Page X/Y"     |
 | 8                  | Arrow | **Next Page** — hidden on the last page      |
+
+Offsets 1, 2, 3, 5, 6 and 7 are free, and `navButtons` puts a GUI's own actions there:
+
+```kotlin
+override fun navButtons(player: Player): Map<Int, ItemStack> = mapOf(
+    2 to itemStack(Material.COMPARATOR) { name(player.tr("gui.rewards.settings")) },
+)
+
+override fun onNavClick(event: InventoryClickEvent, offset: Int) {
+    if (offset == 2) openSettings(event.whoClicked as? Player ?: return)
+}
+```
+
+**Put an action here rather than at the end of the content.** A button appended to the item list moves every time the
+list grows, so the thing an administrator clicks most sits somewhere new after every edit. The navigation row never
+moves. Anything placed at a reserved offset is ignored.
 
 ### Example (LIST mode)
 
@@ -2348,9 +2394,10 @@ manager has to be alive before the registrars build the menus and commands that 
 `id` is stable and is what NPC bindings and purchase counters are keyed by; `displayName` is administrator-written
 MiniMessage and can be changed freely. Entry ids are UUIDs, so reordering or renaming never disturbs a counter.
 
-An entry's own stack size is the **bundle**: an entry holding 16 bread sells sixteen loaves per click. `bundleSize`,
+`bundle` is how many items one purchase moves, and it is deliberately **not** the template's stack size: a bundle may
+exceed what a stack holds, and an `ItemStack` is not a safe place to keep a count of 128. `bundleSize`,
 `displayStack()` and `goodsStacks(bundles)` are the three ways to ask about it — the last splits into stacks the game
-allows, which is what is both measured for room and handed over.
+allows, which is what is both measured for room and handed over, while the first two are for drawing.
 
 ### Preserving an item
 
@@ -2458,6 +2505,10 @@ rather than in `getItems`.
 | `ShopCostGUI`      | The item side of a price or a payout                                   |
 | `ShopSettingsGUI`  | A shop's name, gate and bound NPCs                                     |
 | `ShopStatsGUI`     | What a shop has traded                                                 |
+
+Every one of them is framed: the paged menus through `PagedLayout.FRAMED`, and `ShopCostGUI`, which lays out its own
+grid, through `GUIFrame` directly. The editor's actions — add, settings, figures, back — live in the navigation row via
+`navButtons`, so they do not shuffle along as entries are added.
 
 `ShopRender` holds what they all draw with — item names, price lines, requirement names — and `ShopRender.navigate`,
 which opens the next menu on the following tick.

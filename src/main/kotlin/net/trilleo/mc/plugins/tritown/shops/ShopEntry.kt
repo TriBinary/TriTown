@@ -7,16 +7,20 @@ import java.util.UUID
 /**
  * One line of goods in a shop.
  *
- * The [item] is stored verbatim, custom data and all, and its own stack size is
- * the bundle: an entry holding 16 bread sells sixteen loaves per click. Buying
- * and selling are independent, so an entry can do either, both, or — with both
- * left null — act as a display piece.
+ * The [item] is stored verbatim, custom data and all, and [bundle] is how many
+ * of it one purchase moves: an entry of bread with a bundle of 16 sells sixteen
+ * loaves per click. The two are kept apart so a bundle can exceed what a stack
+ * holds — 128 bread is a valid bundle, handed over as two stacks. Buying and
+ * selling are independent, so an entry can do either, both, or — with both left
+ * null — act as a display piece.
  *
- * @param id stable across reordering and renaming, because purchase counters are keyed by it
+ * @param id     stable across reordering and renaming, because purchase counters are keyed by it
+ * @param bundle how many items one purchase moves; at least 1, with no upper bound
  */
 data class ShopEntry(
     val id: String = UUID.randomUUID().toString(),
     var item: ItemStack,
+    var bundle: Int = 1,
     var buy: ShopCost? = null,
     var sell: ShopCost? = null,
     var gate: ShopGate = ShopGate.OPEN,
@@ -27,8 +31,8 @@ data class ShopEntry(
     var stats: ShopStats = ShopStats(),
 ) {
 
-    /** How many items one bundle is. */
-    val bundleSize: Int get() = item.amount.coerceAtLeast(1)
+    /** How many items one bundle is, never less than one. */
+    val bundleSize: Int get() = bundle.coerceAtLeast(1)
 
     /** Whether a player can buy this. */
     val isBuyable: Boolean get() = buy != null
@@ -36,7 +40,12 @@ data class ShopEntry(
     /** Whether the shop buys this back. */
     val isSellable: Boolean get() = sell != null
 
-    /** One bundle as a single stack, for a menu slot rather than for handing over. */
+    /**
+     * One bundle as a single stack, for a menu slot rather than for handing over.
+     *
+     * Capped at what a slot can show, because a bundle larger than a stack still
+     * has to be drawn in one square; the real count is written into the lore.
+     */
     fun displayStack(): ItemStack = item.clone().apply { amount = bundleSize.coerceAtMost(item.maxStackSize) }
 
     /**
