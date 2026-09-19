@@ -3,19 +3,21 @@ package net.trilleo.mc.plugins.tritown.tasks.economy
 import net.trilleo.mc.plugins.tritown.config.EconomySettings
 import net.trilleo.mc.plugins.tritown.economy.BaltopCache
 import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
+import net.trilleo.mc.plugins.tritown.economy.EconomyPulse
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.registration.PluginTask
 
 /**
- * Writes changed accounts to disk on an interval and rebuilds the balance
- * leaderboard, both off the main thread.
+ * Writes changed accounts to disk on an interval, measures the economy and
+ * rebuilds the balance leaderboard, all off the main thread.
  *
  * The interval bounds how much a hard crash can cost, since `onDisable` does
  * not run when a server is killed. Balances are still written immediately for
  * anything that should not wait, such as an administrator changing one.
  *
- * The leaderboard is rebuilt here because this task is already walking every
- * account, which keeps sorting off the main thread entirely.
+ * The measurement and the leaderboard are done here because this task is
+ * already walking every account, which keeps both the sorting and the
+ * statistics off the main thread entirely.
  */
 class EconomyFlushTask : PluginTask(
     delay = flushIntervalTicks(),
@@ -24,6 +26,10 @@ class EconomyFlushTask : PluginTask(
 ) {
     override fun run() {
         if (!EconomyService.isReady) return
+
+        // Measured before the flush, so the sample this round takes is written
+        // in the same pass rather than waiting for the next one.
+        if (CurrencyRegistry.isLoaded) EconomyPulse.sample(EconomyService.ledger, CurrencyRegistry.primary)
 
         EconomyService.flush()
 

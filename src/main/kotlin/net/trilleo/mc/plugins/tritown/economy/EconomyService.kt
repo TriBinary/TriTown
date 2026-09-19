@@ -99,8 +99,10 @@ object EconomyService {
         if (storage == null) return
         isReady = true
         Bukkit.getOnlinePlayers().forEach { ensurePlayerAccount(it) }
-        // Built once here so the leaderboard works before the first flush.
+        // Both built once here so the leaderboard and the admin panel have
+        // something to show before the first flush.
         BaltopCache.rebuild(ledger, CurrencyRegistry.primary, includeGovernmentsInBaltop)
+        EconomyPulse.sample(ledger, CurrencyRegistry.primary)
     }
 
     /** Re-applies the settings that can change without a restart. */
@@ -113,7 +115,11 @@ object EconomyService {
     fun shutdown() {
         if (storage == null) return
         isReady = false
+        // One last measurement, so the supply the panel shows after a restart is
+        // the supply the server stopped with rather than an hour-old one.
+        if (CurrencyRegistry.isLoaded) EconomyPulse.sample(ledger, CurrencyRegistry.primary)
         flush()
+        EconomyPulse.shutdown()
         runCatching { storage?.close() }
         storage = null
         transactions?.clear()
@@ -305,9 +311,12 @@ object EconomyService {
     fun history(uuid: UUID): List<TransactionRecord> = transactions?.recent(uuid) ?: emptyList()
 
     /**
-     * Files a transaction against [account], if history is switched on.
+     * Files a transaction against [account], for the history view and for the
+     * economy-wide statistics.
      *
-     * Recording never blocks: the record goes on a queue the flush task drains.
+     * Recording never blocks: the history goes on a queue the flush task drains,
+     * and the statistics are plain adders. The statistics are kept even when the
+     * history is switched off, since they cost no disk per transaction.
      */
     fun record(
         account: UUID,
@@ -318,21 +327,37 @@ object EconomyService {
         balanceAfter: Money,
         meta: Map<String, String> = emptyMap(),
     ) {
-        val log = transactions ?: return
+        val holder = ledger.get(account)?.type ?: AccountType.UNKNOWN
+
         // Money reaching a town, nation or NPC account through Vault has come
         // from Towny; saying so is more useful than the generic default. Towny
         // does not expose its own reason for the movement, so that is all that
         // can honestly be claimed here.
-        if (EconomyContext.current() == EconomyContext.DEFAULT && isTownyOwned(account)) {
+        if (EconomyContext.current() == EconomyContext.DEFAULT && isTownyOwned(holder)) {
             EconomyContext.with(EconomyContext.SOURCE_TOWNY, TransactionReason.TOWNY) {
-                log.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+                file(account, counterparty, currency, type, amount, balanceAfter, holder, meta)
             }
             return
         }
-        log.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+        file(account, counterparty, currency, type, amount, balanceAfter, holder, meta)
     }
 
-    private fun isTownyOwned(uuid: UUID): Boolean = when (ledger.get(uuid)?.type) {
+    private fun file(
+        account: UUID,
+        counterparty: UUID?,
+        currency: Currency,
+        type: TransactionType,
+        amount: Money,
+        balanceAfter: Money,
+        holder: AccountType,
+        meta: Map<String, String>,
+    ) {
+        val context = EconomyContext.current()
+        EconomyPulse.record(type, currency, amount, holder, context.source, context.reason)
+        transactions?.record(account, counterparty, currency, type, amount, balanceAfter, meta)
+    }
+
+    private fun isTownyOwned(type: AccountType): Boolean = when (type) {
         AccountType.TOWN, AccountType.NATION, AccountType.NPC, AccountType.SERVER -> true
         else -> false
     }
@@ -371,6 +396,7 @@ object EconomyService {
                 .onFailure { logger.log(Level.WARNING, "Failed to write the economy transaction log", it) }
         }
 
+        EconomyPulse.flush()
         pruneHistory(store)
     }
 

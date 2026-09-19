@@ -177,6 +177,16 @@ money:
     shop-buy: "在 {shop} 购买"
     shop-sell: "在 {shop} 出售"
 
+  # 资金的来源与去向，管理面板按此归类统计。
+  flow:
+    starting-balance: "新玩家"
+    shop: "商店"
+    towny: "Towny"
+    admin: "管理操作"
+    payment: "玩家转账"
+    external: "其他插件"
+    other: "未归类"
+
   # 交易的发起方。TriTown 不认识的来源会按记录原样显示。
   source:
     vault: "其他插件"

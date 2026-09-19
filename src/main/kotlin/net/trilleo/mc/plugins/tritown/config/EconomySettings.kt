@@ -31,6 +31,7 @@ data class EconomySettings(
     val allowRescale: Boolean,
     val deleteAccountsOnDelete: Boolean,
     val history: HistorySettings,
+    val stats: StatsSettings,
 ) {
 
     /**
@@ -46,6 +47,16 @@ data class EconomySettings(
         val retentionDays: Int,
         val rollSizeBytes: Long,
         val timeFormat: String,
+    )
+
+    /**
+     * How much of the economy's own history the admin panel keeps.
+     *
+     * @param retentionDays how far back the hourly figures reach; 0 keeps them forever
+     */
+    data class StatsSettings(
+        val enabled: Boolean,
+        val retentionDays: Int,
     )
 
     /** The bounds the ledger should enforce, with the balance cap converted per currency. */
@@ -122,6 +133,10 @@ data class EconomySettings(
                     rollSizeBytes = config.getLong("economy.history.roll-size-mb", 16L)
                         .coerceAtLeast(0L) * 1024L * 1024L,
                     timeFormat = config.getString("economy.history.time-format", "yyyy-MM-dd HH:mm"),
+                ),
+                stats = StatsSettings(
+                    enabled = config.getBoolean("economy.stats.enabled", true),
+                    retentionDays = config.getInt("economy.stats.retention-days", 30).coerceIn(0, 365),
                 ),
             )
         }

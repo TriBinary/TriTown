@@ -10,9 +10,11 @@ import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
 import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
+import net.trilleo.mc.plugins.tritown.economy.EconomyPulse
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
 import net.trilleo.mc.plugins.tritown.economy.storage.JsonEconomyStorage
+import net.trilleo.mc.plugins.tritown.economy.storage.JsonPulseStorage
 import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
 import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
@@ -60,6 +62,16 @@ class Main : JavaPlugin() {
             CurrencyRegistry.load(settings.currencies, settings.primaryCurrencyId)
             EconomyFormat.invalidate()
             EconomyService.initialize(logger, createStorage(settings), settings)
+            // Joins the economy here rather than in onEnable because Towny can
+            // already be moving money through the Vault provider by then, and
+            // those movements belong in the figures like any other.
+            if (settings.stats.enabled) {
+                EconomyPulse.start(
+                    store = JsonPulseStorage(dataFolder, logger),
+                    currency = CurrencyRegistry.primary,
+                    retentionDays = settings.stats.retentionDays,
+                )
+            }
         } catch (e: Exception) {
             logger.log(Level.SEVERE, "The economy could not be loaded", e)
             bootFailure = e.message ?: e.javaClass.simpleName

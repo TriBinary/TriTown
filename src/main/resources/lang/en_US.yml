@@ -178,6 +178,16 @@ money:
     shop-buy: "Bought at {shop}"
     shop-sell: "Sold at {shop}"
 
+  # Where money comes from and where it goes, as the admin panel groups it.
+  flow:
+    starting-balance: "New players"
+    shop: "Shops"
+    towny: "Towny"
+    admin: "Administration"
+    payment: "Player payments"
+    external: "Other plugins"
+    other: "Uncategorised"
+
   # What asked for the transaction. A source TriTown does not know is shown as it was recorded.
   source:
     vault: "Another plugin"

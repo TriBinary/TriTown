@@ -40,6 +40,17 @@
 
 ### Technical Details
 
+#### Economy
+
++ The economy now keeps figures of its own, hour by hour: what was created and destroyed, what for, who held it, and a
+  measurement of the ledger taken on every flush. They live in `plugins/TriTown/economy/statistics.json` and are
+  written on the same interval as balances, so a crash costs at most one interval of them and never a balance.
++ `economy.stats.enabled` turns the figures off entirely, and `economy.stats.retention-days` says how far back they
+  reach — 30 days by default, or 0 to keep them forever.
++ Recording a movement costs no disk and no lock: the counters are plain adders, which matters because Towny moves
+  money from its own threads.
++ Transaction statistics are kept even when `economy.history.enabled` is off, since they cost nothing per transaction.
+
 #### Shops
 
 + Added [FancyNpcs](https://modrinth.com/plugin/fancynpcs) as an optional dependency. TriTown builds and runs without

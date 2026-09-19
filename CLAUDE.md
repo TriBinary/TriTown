@@ -72,8 +72,9 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 │   └── moderation/
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
-├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, storage (not scanned)
-├── enums/                   # AccountType, DisplayLocation, FillMode, PagedGUIMode, ProviderMode, TransactionType
+├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
+│                            # storage (not scanned)
+├── enums/                   # AccountType, FlowCategory, TransactionType, FillMode, PagedGUIMode, …
 ├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI)
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
@@ -191,6 +192,10 @@ complete stack and no separate economy plugin is needed. See
   reach TriTown as ordinary deposits and withdrawals. A `BankTransactionEvent` handler that wrote a record would
   double-count every town deposit.
 - **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
+- **Server-wide figures go through `EconomyPulse`** — it is fed from `EconomyService.record`, so a new way of moving
+  money is counted without touching it. Group a movement with `FlowCategory`, never by totalling raw reason strings,
+  and remember the supply is measured off the ledger rather than accumulated. See
+  [Economy Statistics](docs/DEVELOPER_GUIDE.md#economy-statistics).
 
 ## Working with Shops
 

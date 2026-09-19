@@ -133,6 +133,8 @@ version stays available as `/tritown:balance` and so on.
 | `economy.history.retention-days`          | `30`               | How long rolled log files are kept; `0` keeps them forever                      |
 | `economy.history.roll-size-mb`            | `16`               | Size at which the transaction log is rolled aside                               |
 | `economy.history.time-format`             | `yyyy-MM-dd HH:mm` | How timestamps are shown in the history view                                    |
+| `economy.stats.enabled`                   | `true`             | Keep the hourly figures the admin panel reads                                   |
+| `economy.stats.retention-days`            | `30`               | How far back those figures reach; `0` keeps them forever                        |
 | `shops.enabled`                           | `true`             | Turn shops off entirely                                                         |
 | `shops.save-interval`                     | `60`               | Seconds between writing stock and sales figures; edits are saved immediately    |
 | `shops.confirm-above`                     | `1000.0`           | Purchase total that asks for confirmation first; `0` never asks                 |

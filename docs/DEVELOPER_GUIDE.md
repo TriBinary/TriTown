@@ -2257,6 +2257,81 @@ at most one flush interval of changes. An SQL backend writing through on each tr
 
 ---
 
+## Economy Statistics
+
+`EconomyPulse` is what the [admin panel](#admin-panel) reads. It answers two questions that need two different
+mechanisms, which is why it keeps two things rather than one:
+
+| Kept         | How                                                     | Answers                                          |
+|:-------------|:--------------------------------------------------------|:-------------------------------------------------|
+| **Buckets**  | Accumulated per hour as transactions happen             | What created and destroyed currency, and what for |
+| **Samples**  | The whole ledger measured on the flush task             | How much exists and who holds it, exactly         |
+
+The supply is **measured, never accumulated**. Adding movements up would drift the first time anything moved money
+without TriTown recording it; walking the accounts cannot.
+
+### What counts as what
+
+* A **deposit** is money entering the economy — it is created.
+* A **withdrawal** is money leaving it — it is destroyed.
+* A **transfer** moves money between two accounts and changes nothing, so it is counted separately as *circulation*,
+  and only the `TRANSFER_OUT` side is counted or every payment would show up at twice its size.
+* A **set** carries how far a balance moved but not which way, so it is kept apart as an *adjustment* rather than
+  guessed at.
+
+Towny moves a bank deposit through Vault as a withdrawal from the player and a deposit into the town, not as a
+transfer, so it lands on **both** gross sides and cancels in the net. The net — overall and per category — is the
+number worth reading, and the panel says so on the card.
+
+### Categories
+
+`FlowCategory` groups a movement by what it was for. It exists because a transaction's `reason` carries arguments
+(`money.reason.admin-set?admin=Bob`), so totalling by reason would produce a row per administrator. A category is
+bounded, stable and translatable through `money.flow.*`, and `FlowCategory.of(source, reason)` is the only place the
+mapping lives.
+
+### Recording
+
+`EconomyService.record` files every transaction, and hands it to `EconomyPulse` before the history log — so the
+figures are kept even when `economy.history.enabled` is off. Recording must stay cheap and lock-free: it runs on
+whichever thread moved the money, including Towny's. The counters are `LongAdder`s in concurrent maps, and nothing
+here touches the disk.
+
+Only the primary currency is counted. A movement in any other currency is ignored rather than added to a total whose
+minor units mean something else.
+
+### Sampling and storage
+
+`EconomyFlushTask` measures the ledger before each flush, next to the leaderboard rebuild, because both walk every
+account and sorting belongs off the server thread. `EconomyService.start` and `shutdown` take one measurement each, so
+the panel has something to show before the first flush and the supply after a restart is the one the server stopped
+with.
+
+Figures live in `plugins/TriTown/economy/statistics.json`, written by `JsonPulseStorage` through a temporary file in
+the same way balances are. There is deliberately **no backup copy**: statistics are worth keeping but nobody's money
+depends on them, and a file that cannot be read simply starts the history again. A file written in another currency is
+dropped rather than adopted.
+
+`economy.stats.enabled` turns the whole thing off; `economy.stats.retention-days` prunes buckets and samples older
+than it.
+
+### Reading
+
+```kotlin
+val flow = EconomyPulse.window(hours = 24, slices = 7)   // 0 hours means everything still kept
+flow.created                    // minor units that entered the economy
+flow.netOf(FlowCategory.SHOP)   // what the shops did to the supply
+flow.slices                     // one column per slice, for a chart
+
+val supply = EconomyPulse.latest()          // the last measurement, or null before the first one
+val before = EconomyPulse.sampleAt(flow.from)   // the measurement the window opened on
+```
+
+Amounts are **minor units** throughout, exactly as the ledger holds them; they become text only at the menu, through
+`PanelRender`.
+
+---
+
 ## Economy (Vault)
 
 Vault is a hard dependency (`depend` in `plugin.yml`); the Vault API is `compileOnly` (`vault_api_version` in
