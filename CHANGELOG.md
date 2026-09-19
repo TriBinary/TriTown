@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### New Features
+
+#### Shops
+
++ Added admin shops: shops the server itself runs, set up entirely in game and opened by clicking an NPC.
+    + `/tritown shop create <id>` makes one and drops you straight into the editor. Add an item by clicking it in your
+      own inventory or dragging it over the menu — your item stays where it is, and everything about it is kept, so a
+      renamed, enchanted or otherwise custom item is sold exactly as you made it.
+    + An entry can be sold, bought back, or both. Left-click buys one, shift-left-click buys as many as you can afford
+      and carry, right-click sells one, and shift-right-click sells everything you are carrying.
+    + A price can be money, items, or both at once, and so can a payout — so a shop can sell for currency, barter, or
+      ask for a fee alongside the materials.
+    + An entry can have a stock that refills on a timer, a per-player limit that resets daily, weekly or never, or
+      neither. Both are shown on the item, counting down as players buy.
+    + Entries and whole shops can be locked behind a permission node or a standing in Towny — being in a town or a
+      nation, or being a mayor or a king. A locked entry either greys out with the reason or is hidden entirely.
+    + Town and nation members can be given a discount, set under `shops.discounts`. Discounts do not stack; the best
+      one applies, and the menu shows the saving.
+    + A purchase above `shops.confirm-above` asks for confirmation first, so a mis-click cannot empty an account.
+    + Every purchase and sale is recorded in the transaction log and shows up in `/eco history` as a shop movement,
+      naming the shop it happened at.
+    + `/tritown shop stats <id>` shows what a shop has traded and how much currency it has taken in and paid out, per
+      entry and in total.
++ Shops open from a [FancyNpcs](https://modrinth.com/plugin/fancynpcs) NPC. Bind one with
+  `/tritown shop bind <id> <npc>` and clicking it opens the shop. The binding follows the NPC rather than its name, so
+  renaming it in FancyNpcs does not break anything. FancyNpcs is optional — without it everything else still works, and
+  `/tritown shop open <id> [player]` still opens a shop from the console or for testing.
+
 ### Fixes
 
 #### Misc
@@ -14,12 +42,17 @@
 
 + Added [FancyNpcs](https://modrinth.com/plugin/fancynpcs) as an optional dependency. TriTown builds and runs without
   it; the parts that need it simply stay off.
++ Shops are stored in `plugins/TriTown/shops/shops.json`, written atomically with a backup copy in the same way
+  balances are. A shop you edit is saved immediately; stock levels and sales figures are written every
+  `shops.save-interval` seconds.
 
 #### Misc
 
 + GUIs can now handle a drag through `onDrag`, which cancels the drag by default. The GUI manager also forgets a player
   who quits with a menu open.
 + `PlayerData` and `ServerData` gained `getJsonObject`, so a nested object that was written can be read back.
++ Added `ChatPrompt`, which asks a player a question in chat and hands the answer back on the server thread. Menus use
+  it for anything that has to be typed, such as a price or a permission node.
 
 #### Economy
 

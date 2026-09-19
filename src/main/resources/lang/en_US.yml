@@ -16,6 +16,7 @@ command:
     economy: "Economy"
     info: "Info"
     moderation: "Moderation"
+    shop: "Shops"
 
   help:
     header: "TriTown Commands"
@@ -102,6 +103,35 @@ command:
     unpinned: "Sidebar back to matching where you stand."
     unknown-board: "<red>No board named <white>{board}</white>."
 
+  shop:
+    description: "Administer the server's shops"
+    disabled: "<red>Shops are switched off on this server."
+    unavailable: "<red>Shops could not be loaded. Check the server log."
+    no-permission-action: "<red>You don't have permission to use <white>/tritown shop {action}</white>."
+    players-only: "<red>Only a player can open a menu."
+    unknown: "<red>There is no shop with the id <white>{id}</white>."
+    created: "Created the shop <white>{id}</white>."
+    create-failed: "<red><white>{id}</white> is taken or is not a usable id. Use lowercase letters, digits, dashes and underscores."
+    delete-confirm: "<red>Deleting a shop cannot be undone. Run <white>/tritown shop delete {id} confirm</white> to go ahead."
+    deleted: "Deleted the shop <white>{id}</white>."
+    opened: "Opened <white>{id}</white> for <white>{player}</white>."
+    bound: "<white>{npc}</white> now opens the shop <white>{id}</white>."
+    unbound: "<white>{npc}</white> no longer opens the shop <white>{id}</white>."
+    npc-unknown: "<red>There is no NPC named <white>{npc}</white>."
+    npc-not-bound: "<red><white>{npc}</white> does not open a shop."
+    npcs-unavailable: "<red>{plugin} is not installed, so NPCs cannot be bound."
+    usage:
+      header: "<gold><bold>Shop administration</bold></gold>"
+      list: "<white>/tritown shop list</white> <gray>- every shop on the server"
+      create: "<white>/tritown shop create <id> [name]</white> <gray>- start a new shop"
+      delete: "<white>/tritown shop delete <id> confirm</white> <gray>- remove a shop for good"
+      edit: "<white>/tritown shop edit <id></white> <gray>- change what a shop offers"
+      open: "<white>/tritown shop open <id> [player]</white> <gray>- open a shop for somebody"
+      bind: "<white>/tritown shop bind <id> <npc></white> <gray>- put an NPC behind the counter"
+      unbind: "<white>/tritown shop unbind <npc></white> <gray>- take an NPC off its shop"
+      stats: "<white>/tritown shop stats <id></white> <gray>- what a shop has traded"
+
+
 common:
   unknown: "unknown"
   invalid-amount: "<red>That is not a valid amount."
@@ -115,6 +145,9 @@ common:
   # Shown by a sidebar marker whose value does not exist, such as the town of a
   # player who has none.
   none: "-"
+
+  prompt-cancel: "<dark_gray>Type <white>cancel</white> to leave it as it is."
+  prompt-cancelled: "<gray>Left unchanged."
 
 money:
   # Plain text only: these also travel to other plugins as Vault's error message, which they print verbatim.
@@ -142,12 +175,15 @@ money:
     town-deleted: "{name} was deleted"
     admin-set: "Set by {admin}"
     admin-reset: "Reset by {admin}"
+    shop-buy: "Bought at {shop}"
+    shop-sell: "Sold at {shop}"
 
   # What asked for the transaction. A source TriTown does not know is shown as it was recorded.
   source:
     vault: "Another plugin"
     command: "TriTown command"
     towny: "Towny"
+    shop: "Shop"
 
   account-type:
     player: "player"
@@ -184,6 +220,170 @@ gui:
     reason: "<gray>Reason: <white>{reason}</white>"
     source: "<gray>Source: <white>{source}</white>"
     time: "<dark_gray>{time}"
+
+  shop:
+    title: "{name}"
+    unknown: "<dark_gray>Shop"
+    empty: "<red>Nothing for sale"
+    empty-lore: "<gray>This shop has no entries yet."
+    buy: "<gray>Buy: <gold>{price}</gold>"
+    buy-discounted: "<gray>Buy: <gold>{price}</gold> <dark_gray><st>{full}</st>"
+    sell: "<gray>Sell: <green>{price}</green>"
+    cost-item: "<gray>- <white>{amount}x</white> {item}"
+    stock: "<gray>In stock: <white>{amount}</white><dark_gray>/{max}"
+    limit: "<gray>Left for you: <white>{amount}</white> <dark_gray>({period})"
+    click-buy: "<yellow>Left-click <gray>to buy one"
+    click-buy-max: "<yellow>Shift-left-click <gray>to buy as many as you can"
+    click-sell: "<yellow>Right-click <gray>to sell one"
+    click-sell-max: "<yellow>Shift-right-click <gray>to sell all you carry"
+    locked-permission: "<red>You cannot buy this."
+    locked-has-town: "<red>Only residents of a town may buy this."
+    locked-no-town: "<red>Only players without a town may buy this."
+    locked-has-nation: "<red>Only residents of a nation may buy this."
+    locked-is-mayor: "<red>Only a mayor may buy this."
+    locked-is-king: "<red>Only a king may buy this."
+    requirement-none: "Anyone"
+    requirement-has-town: "In a town"
+    requirement-no-town: "Without a town"
+    requirement-has-nation: "In a nation"
+    requirement-is-mayor: "Mayor"
+    requirement-is-king: "King"
+    period-none: "ever"
+    period-daily: "per day"
+    period-weekly: "per week"
+    match-exact: "Exactly this item"
+    match-material: "Any item of this kind"
+
+  shop-confirm:
+    title: "<dark_gray>Confirm purchase"
+    amount: "<gray>You will receive <white>{amount}</white>"
+    price: "<gray>You will pay <gold>{price}</gold>"
+    accept: "<green><bold>Buy</bold>"
+    accept-lore: "<gray>Go ahead with the purchase."
+    cancel: "<red><bold>Cancel</bold>"
+    cancel-lore: "<gray>Back to the shop, nothing paid."
+
+  shop-list:
+    title: "<dark_gray>Shops"
+    empty: "<red>No shops yet"
+    empty-lore: "<gray>Create one with <white>/tritown shop create <id></white>."
+    id: "<gray>Id: <white>{id}</white>"
+    entries: "<gray>Entries: <white>{amount}</white>"
+    npcs: "<gray>NPCs: <white>{amount}</white>"
+    click-edit: "<yellow>Click <gray>to edit"
+    click-preview: "<yellow>Shift-click <gray>to see it as a player does"
+
+  shop-editor:
+    title: "<dark_gray>Shop editor"
+    buy: "<gray>Sold for:"
+    sell: "<gray>Bought back for:"
+    not-buyable: "<dark_gray>Not for sale"
+    not-sellable: "<dark_gray>Not bought back"
+    click-entry: "<yellow>Click <gray>to edit this entry"
+    shift-click-entry: "<yellow>Shift-click <gray>to remove it"
+    add: "<green>Add an entry"
+    add-lore: "<gray>Click an item in your own inventory, or drag it here. Your item stays where it is."
+    settings: "<gold>Shop settings"
+    settings-lore: "<gray>Name, access and NPCs for <white>{id}</white>."
+
+  shop-entry:
+    title: "<dark_gray>Entry"
+    bundle: "<gray>One purchase gives <white>{amount}</white>"
+    state: "<gray>Now: <white>{state}</white>"
+    amount: "<gray>Now: <white>{amount}</white>"
+    buyable: "<gold>Players may buy this"
+    sellable: "<gold>The shop buys this back"
+    buy-price: "<gold>Price in money"
+    sell-price: "<gold>Payout in money"
+    buy-items: "<gold>Price in items"
+    sell-items: "<gold>Payout in items"
+    item-count: "<gray>Items: <white>{amount}</white>"
+    limit: "<gold>Limit per player"
+    limit-value: "{amount} {period}"
+    stock: "<gold>Stock"
+    stock-unlimited: "Unlimited"
+    stock-value: "{amount}/{max}, refills every {seconds}s"
+    permission: "<gold>Permission needed"
+    towny: "<gold>Standing needed"
+    hidden: "<gold>Hide when locked"
+    discountable: "<gold>Discounts apply"
+    match: "<gold>What counts as this item"
+    match-lore: "<dark_gray>Used when buying the item back from a player."
+    click-toggle: "<yellow>Click <gray>to switch it over"
+    click-cycle: "<yellow>Click <gray>for the next, <yellow>right-click <gray>for the previous"
+    click-set: "<yellow>Click <gray>to type a new value"
+    click-open: "<yellow>Click <gray>to open"
+    middle-click-period: "<yellow>Middle-click <gray>to change how often it resets"
+    right-click-clear: "<yellow>Right-click <gray>to clear it"
+    prompt-price: "<gray>Type the new price in chat."
+    prompt-permission: "<gray>Type the permission node in chat."
+    prompt-limit: "<gray>Type how many one player may buy. <white>0</white> removes the limit."
+    prompt-stock: "<gray>Type the stock and the refill time in seconds, like <white>64 3600</white>. <white>0</white> removes the stock."
+    back: "<yellow>Back"
+    back-lore: "<gray>Return to the shop editor."
+
+  shop-cost:
+    title: "<dark_gray>Items"
+    click-remove: "<yellow>Click <gray>to remove this"
+    add: "<green>Add an item"
+    add-lore: "<gray>Click an item in your own inventory, or drag it here. The stack size becomes the quantity."
+    back: "<yellow>Back"
+    back-lore: "<gray>Return to the entry."
+
+  shop-settings:
+    title: "<dark_gray>Shop settings"
+    id: "<gray>Id: <white>{id}</white>"
+    value: "<gray>Now: <white>{value}</white>"
+    permission: "<gold>Permission needed"
+    towny: "<gold>Standing needed"
+    npcs: "<gold>Shopkeepers"
+    npc-count: "<gray>Bound NPCs: <white>{amount}</white>"
+    npc-lore: "<gray>Bind one with <white>/tritown shop bind {id} <npc></white>."
+    stats: "<gold>Sales figures"
+    stats-lore: "<gray>What this shop has traded."
+    click-rename: "<yellow>Click <gray>to rename the shop"
+    click-set: "<yellow>Click <gray>to type a new value"
+    click-cycle: "<yellow>Click <gray>for the next, <yellow>right-click <gray>for the previous"
+    right-click-clear: "<yellow>Right-click <gray>to clear it"
+    prompt-name: "<gray>Type the shop's new name in chat. MiniMessage is allowed."
+    prompt-permission: "<gray>Type the permission node in chat."
+    back: "<yellow>Back"
+    back-lore: "<gray>Return to the shop editor."
+
+  shop-stats:
+    title: "<dark_gray>Sales figures"
+    bought: "<gray>Bought by players: <white>{amount}</white>"
+    sold: "<gray>Sold to the shop: <white>{amount}</white>"
+    money-in: "<gray>Taken in: <gold>{amount}</gold>"
+    money-out: "<gray>Paid out: <green>{amount}</green>"
+    net: "<gray>Net: <white>{amount}</white>"
+    reset: "<yellow>Shift-click <gray>to set every figure back to zero"
+
+# Messages a shop sends to a player, outside the menus themselves.
+shop:
+  traded: "Traded <white>{amount}x</white> {item} for <gold>{price}</gold>."
+  traded-items: "Traded <white>{amount}x</white> {item}."
+  stats-reset: "Cleared the sales figures for <white>{shop}</white>."
+
+  error:
+    unavailable: "<red>Shops are not available right now."
+    locked: "<red>This shop is not open to you."
+    bad-amount: "<red>That is not an amount this shop can trade."
+    not-for-sale: "<red>That is not for sale."
+    not-bought: "<red>This shop does not buy that."
+    cannot-afford: "<red>You cannot afford that. It costs <white>{price}</white>."
+    missing-items: "<red>You do not have everything this costs."
+    missing-goods: "<red>You are not carrying enough of that."
+    no-space: "<red>You have no room for that."
+    out-of-stock: "<red>Only <white>{amount}</white> left in stock."
+    limit-reached: "<red>You may only buy <white>{amount}</white> more of this."
+    economy-unavailable: "<red>The economy is not available, so this cannot be paid for."
+    payout-refused: "<red>The payment could not be made, so nothing was sold."
+
+  editor:
+    entry-added: "Added {item} to the shop. Set a price next."
+    entry-removed: "Removed that entry."
+
 
 # The sidebar. Which lines appear, and in what order, is set per board in
 # config.yml; the wording and colours are set here. Values are written as
