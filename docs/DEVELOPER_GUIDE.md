@@ -2293,6 +2293,48 @@ number worth reading, and the panel says so on the card.
 bounded, stable and translatable through `money.flow.*`, and `FlowCategory.of(source, reason)` is the only place the
 mapping lives.
 
+### Wiring a new feature in
+
+**Every feature that moves money has to reach these figures.** A movement nothing claims is filed as
+`FlowCategory.EXTERNAL` — "Other plugins" — so a new faucet or sink that skips this makes the panel quietly wrong
+about where the server's currency comes from.
+
+Say a daily reward is being added. Four steps, and only the first two are about the reward itself:
+
+**1. Move the money through `EconomyUtil`, naming where it came from and why.** Writing a balance any other way is
+invisible to `EconomyService.record`, and therefore to everything here.
+
+```kotlin
+EconomyUtil.deposit(player, amount, EconomyContext.SOURCE_COMMAND, TransactionReason.DAILY_REWARD)
+```
+
+**2. Give the reason a key**, in `TransactionReason`, with the wording in both language files. The key is what is
+written to the transaction log, so it stays readable whatever language the server is later set to.
+
+```kotlin
+const val DAILY_REWARD = "money.reason.daily-reward"
+```
+
+**3. Give it a category**, unless an existing one already describes it. A faucet or sink of its own — a payout, a
+reward, a repair fee, a lottery — earns one; a variation on something already grouped does not.
+
+```kotlin
+// enums/FlowCategory.kt
+DAILY_REWARD,                                        // the constant
+
+DAILY_REWARD -> "money.flow.daily-reward"            // in `key`, spelled out for the language test
+
+key == TransactionReason.DAILY_REWARD -> DAILY_REWARD  // in `of`, before the source fallbacks
+```
+
+Add `money.flow.daily-reward` to both language files. A real faucet must never be left landing in `OTHER`.
+
+**4. Decide whether the panel should name it.** The full breakdown (`EconomyFlowGUI`) picks a new category up on its
+own and needs nothing; a card of its own in `EconomyPanelGUI` is for a source big enough that an owner wants it on the
+first screen. Give a new category a `descriptionOf` line either way, so the breakdown can say what it is.
+
+Nothing in `EconomyPulse` changes for any of this — that is the point of feeding it from `EconomyService.record`.
+
 ### Recording
 
 `EconomyService.record` files every transaction, and hands it to `EconomyPulse` before the history log — so the

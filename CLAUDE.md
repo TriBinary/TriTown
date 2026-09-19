@@ -175,6 +175,25 @@ complete stack and no separate economy plugin is needed. See
 - **Charge before acting** — call `EconomyUtil.withdraw` and only perform the action when it returns `true`; refund with
   `deposit` if the action then fails. Never check `has` and withdraw separately. Use `EconomyUtil.transfer` for a
   payment between two accounts, which is atomic on TriTown's own economy.
+- **Wire every new way money moves into the statistics.** The admin panel's figures are only as true as the
+  attribution behind them, and a movement nothing claims is filed as "Other plugins" — so a new faucet or sink that
+  skips this quietly makes the economy unreadable. For **every** feature that moves money:
+    1. **Move it through `EconomyUtil`** (or `EconomyService` inside the economy itself), never by writing a balance:
+       that path is the only one `EconomyService.record` — and therefore `EconomyPulse` — ever sees.
+    2. **Attribute it.** Use the four-argument `EconomyUtil.withdraw`/`deposit` with an `EconomyContext.SOURCE_*` and a
+       `TransactionReason` key, or wrap the work in `EconomyContext.with`. Add the `money.reason.*` key to both
+       language files.
+    3. **Check `FlowCategory.of` covers that reason.** If the feature is a faucet or a sink in its own right — a job
+       payout, a daily reward, a repair fee, a lottery — give it a `FlowCategory`, spell out its `money.flow.*` key in
+       both language files, and map the reason to it. A real faucet must never land in `OTHER`.
+    4. **Decide whether the panel should name it.** The full breakdown picks a new category up on its own; a card of
+       its own in `EconomyPanelGUI` is for a source worth watching separately.
+  See [Economy Statistics](docs/DEVELOPER_GUIDE.md#economy-statistics).
+- **Never total raw reason strings** — a reason carries arguments (`money.reason.admin-set?admin=Bob`), so summing by
+  reason grows a row per player. `FlowCategory` is the grouping, and `FlowCategory.of` is the only place the mapping
+  lives.
+- **The supply is measured, never accumulated** — `EconomyPulse.sample` walks the ledger on the flush task. Never keep
+  a running total of how much currency exists; it would drift the first time anything moved money unrecorded.
 - **A failure carries a key, not a sentence** — `EconomyResult.Failure` holds a `money.error.*` translation key, and the
   code that shows it picks the language. Those values are plain text, because Vault hands them straight to other
   plugins, which print them verbatim; TriTown's own commands colour them with `common.error`.
@@ -192,10 +211,6 @@ complete stack and no separate economy plugin is needed. See
   reach TriTown as ordinary deposits and withdrawals. A `BankTransactionEvent` handler that wrote a record would
   double-count every town deposit.
 - **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
-- **Server-wide figures go through `EconomyPulse`** — it is fed from `EconomyService.record`, so a new way of moving
-  money is counted without touching it. Group a movement with `FlowCategory`, never by totalling raw reason strings,
-  and remember the supply is measured off the ledger rather than accumulated. See
-  [Economy Statistics](docs/DEVELOPER_GUIDE.md#economy-statistics).
 
 ## Working with the Admin Panel
 
