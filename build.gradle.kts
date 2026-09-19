@@ -33,7 +33,7 @@ val serverPlugins: Configuration by configurations.creating {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:26.3.build.+")
     compileOnly("com.palmergames.bukkit.towny:towny:${providers.gradleProperty("towny_version").get()}")
     compileOnly("com.github.MilkBowl:VaultAPI:${providers.gradleProperty("vault_api_version").get()}") {
         isTransitive = false
@@ -101,7 +101,7 @@ tasks.register<JavaExec>("startServer") {
     workingDir(layout.projectDirectory.dir("run"))
     classpath(fileTree(layout.projectDirectory.dir("run")) { include("paper-*.jar") })
     doFirst {
-        check(!classpath.isEmpty) { "No paper-*.jar in run/. Download Paper 26.2 from https://papermc.io/downloads/paper into run/." }
+        check(!classpath.isEmpty) { "No paper-*.jar in run/. Download Paper 26.3 from https://papermc.io/downloads/paper into run/." }
     }
     args("--nogui")
     standardInput = System.`in`
