@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Technical Details
+
+#### Shops
+
++ Added [FancyNpcs](https://modrinth.com/plugin/fancynpcs) as an optional dependency. TriTown builds and runs without
+  it; the parts that need it simply stay off.
+
 ## Version 1.0.0
 
 ### New Features

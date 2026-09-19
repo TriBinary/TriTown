@@ -7,6 +7,8 @@ description: Custom Towny features for the Trilleo server
 depend:
   - Towny
   - Vault
+softdepend:
+  - FancyNpcs
 
 commands:
   tritown:
