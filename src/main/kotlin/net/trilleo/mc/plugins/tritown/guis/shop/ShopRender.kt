@@ -2,10 +2,10 @@ package net.trilleo.mc.plugins.tritown.guis.shop
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import net.trilleo.mc.plugins.tritown.Main
 import net.trilleo.mc.plugins.tritown.enums.LimitPeriod
 import net.trilleo.mc.plugins.tritown.enums.MatchMode
 import net.trilleo.mc.plugins.tritown.enums.TownyRequirement
-import net.trilleo.mc.plugins.tritown.Main
 import net.trilleo.mc.plugins.tritown.shops.ShopCost
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil

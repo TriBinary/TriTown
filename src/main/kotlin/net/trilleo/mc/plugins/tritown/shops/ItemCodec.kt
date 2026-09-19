@@ -1,7 +1,7 @@
 package net.trilleo.mc.plugins.tritown.shops
 
 import org.bukkit.inventory.ItemStack
-import java.util.Base64
+import java.util.*
 
 /**
  * Turns an [ItemStack] into a string a shop file can hold, and back again.

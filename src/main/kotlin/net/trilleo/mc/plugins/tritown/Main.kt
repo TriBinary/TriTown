@@ -8,11 +8,7 @@ import net.trilleo.mc.plugins.tritown.config.ScoreboardSettings
 import net.trilleo.mc.plugins.tritown.config.ShopSettings
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
-import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
-import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
-import net.trilleo.mc.plugins.tritown.economy.EconomyPulse
-import net.trilleo.mc.plugins.tritown.economy.EconomyService
-import net.trilleo.mc.plugins.tritown.economy.TownyAccountNaming
+import net.trilleo.mc.plugins.tritown.economy.*
 import net.trilleo.mc.plugins.tritown.economy.storage.JsonEconomyStorage
 import net.trilleo.mc.plugins.tritown.economy.storage.JsonPulseStorage
 import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy

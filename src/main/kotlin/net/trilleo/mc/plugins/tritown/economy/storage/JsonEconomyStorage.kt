@@ -14,22 +14,6 @@ import java.nio.file.*
 import java.util.UUID
 import java.util.logging.Logger
 import kotlin.collections.ArrayDeque
-import kotlin.collections.ArrayList
-import kotlin.collections.Collection
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.emptyList
-import kotlin.collections.emptyMap
-import kotlin.collections.forEach
-import kotlin.collections.getOrPut
-import kotlin.collections.map
-import kotlin.collections.mapValues
-import kotlin.collections.set
-import kotlin.collections.toList
 
 /**
  * Stores every account in one JSON file under `<dataFolder>/economy/`.

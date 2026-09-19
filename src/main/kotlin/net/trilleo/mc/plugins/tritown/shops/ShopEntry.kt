@@ -2,7 +2,7 @@ package net.trilleo.mc.plugins.tritown.shops
 
 import net.trilleo.mc.plugins.tritown.enums.MatchMode
 import org.bukkit.inventory.ItemStack
-import java.util.UUID
+import java.util.*
 
 /**
  * One line of goods in a shop.

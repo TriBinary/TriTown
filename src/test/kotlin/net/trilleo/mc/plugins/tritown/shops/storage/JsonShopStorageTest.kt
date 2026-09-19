@@ -4,11 +4,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 /**
  * The shop file is the only copy of work that took an administrator an

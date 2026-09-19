@@ -437,8 +437,8 @@ gui:
     source: "<gray>来源：<white>{source}</white>"
     time: "<dark_gray>{time}"
 
-# 侧边栏。显示哪些行、按什么顺序显示由 config.yml 中的各个板面决定；措辞与颜色在此设置。
-# 变量写作 %marker%，完整列表见 config.yml。
+  # 侧边栏。显示哪些行、按什么顺序显示由 config.yml 中的各个板面决定；措辞与颜色在此设置。
+  # 变量写作 %marker%，完整列表见 config.yml。
   shop:
     title: "{name}"
     unknown: "<dark_gray>商店"

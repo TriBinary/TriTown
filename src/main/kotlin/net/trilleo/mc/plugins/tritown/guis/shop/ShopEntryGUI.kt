@@ -6,18 +6,8 @@ import net.trilleo.mc.plugins.tritown.enums.LimitPeriod
 import net.trilleo.mc.plugins.tritown.enums.MatchMode
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
 import net.trilleo.mc.plugins.tritown.registration.PluginGUI
-import net.trilleo.mc.plugins.tritown.shops.ShopCost
-import net.trilleo.mc.plugins.tritown.shops.ShopDefinition
-import net.trilleo.mc.plugins.tritown.shops.ShopEntry
-import net.trilleo.mc.plugins.tritown.shops.ShopLimit
-import net.trilleo.mc.plugins.tritown.shops.ShopManager
-import net.trilleo.mc.plugins.tritown.shops.ShopPricing
-import net.trilleo.mc.plugins.tritown.shops.ShopStock
-import net.trilleo.mc.plugins.tritown.utils.ChatPrompt
-import net.trilleo.mc.plugins.tritown.utils.LoreUtil
-import net.trilleo.mc.plugins.tritown.utils.itemStack
-import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
-import net.trilleo.mc.plugins.tritown.utils.tr
+import net.trilleo.mc.plugins.tritown.shops.*
+import net.trilleo.mc.plugins.tritown.utils.*
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.ClickType
@@ -25,7 +15,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -102,6 +92,7 @@ class ShopEntryGUI : PluginGUI(
             SLOT_DISCOUNT -> entry.discountable = !entry.discountable
             SLOT_MATCH -> entry.matchMode =
                 if (entry.matchMode == MatchMode.EXACT) MatchMode.MATERIAL else MatchMode.EXACT
+
             SLOT_BACK -> return ShopRender.navigate { ShopEditorGUI.show(player, shop) }
             else -> return
         }
