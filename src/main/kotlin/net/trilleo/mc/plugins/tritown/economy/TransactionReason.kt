@@ -25,6 +25,8 @@ object TransactionReason {
     const val TOWN_DELETED = "money.reason.town-deleted"
     const val ADMIN_SET = "money.reason.admin-set"
     const val ADMIN_RESET = "money.reason.admin-reset"
+    const val SHOP_BUY = "money.reason.shop-buy"
+    const val SHOP_SELL = "money.reason.shop-sell"
 
     /** Encodes [key] and its [args] into the single string that is stored with the transaction. */
     fun of(key: String, vararg args: Pair<String, Any?>): String =

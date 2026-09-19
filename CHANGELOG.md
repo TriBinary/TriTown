@@ -21,6 +21,11 @@
   who quits with a menu open.
 + `PlayerData` and `ServerData` gained `getJsonObject`, so a nested object that was written can be read back.
 
+#### Economy
+
++ `EconomyUtil.withdraw` and `EconomyUtil.deposit` can now name the source and reason of a movement, so a feature no
+  longer has to reach past them for its transactions to be recorded as anything but an anonymous Vault call.
+
 
 ## Version 1.0.0
 

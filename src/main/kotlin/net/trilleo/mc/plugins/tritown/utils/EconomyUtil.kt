@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.utils
 import net.kyori.adventure.text.Component
 import net.milkbowl.vault.economy.Economy
 import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
+import net.trilleo.mc.plugins.tritown.economy.EconomyContext
 import net.trilleo.mc.plugins.tritown.economy.EconomyFormat
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
@@ -64,6 +65,20 @@ object EconomyUtil {
         require(amount >= 0) { "amount must not be negative" }
         return economy.depositPlayer(player, amount).transactionSuccess()
     }
+
+    /**
+     * Takes [amount] from [player], recorded as having come from [source] for [reason].
+     *
+     * The attribution reaches the ledger through the thread the call is made on,
+     * so it lands on the record without this having to know which provider won.
+     * Another plugin's economy keeps no such record and simply ignores it.
+     */
+    fun withdraw(player: OfflinePlayer, amount: Double, source: String, reason: String): Boolean =
+        EconomyContext.with(source, reason) { withdraw(player, amount) }
+
+    /** Gives [amount] to [player], recorded as having come from [source] for [reason]. */
+    fun deposit(player: OfflinePlayer, amount: Double, source: String, reason: String): Boolean =
+        EconomyContext.with(source, reason) { deposit(player, amount) }
 
     /**
      * Moves [amount] from [from] to [to].
