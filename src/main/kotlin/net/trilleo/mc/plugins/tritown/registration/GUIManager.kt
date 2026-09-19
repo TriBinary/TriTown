@@ -33,11 +33,14 @@ object GUIManager : Listener {
     private val guis = mutableMapOf<String, PluginGUI>()
     private val openGUIs = mutableMapOf<Player, Pair<PluginGUI, Inventory>>()
 
+    private lateinit var plugin: JavaPlugin
+
     /**
      * Scans the GUIs package, instantiates every [PluginGUI] found,
      * stores them by id, and registers this manager as an event listener.
      */
     fun registerAll(plugin: JavaPlugin) {
+        this.plugin = plugin
         val guiClasses = PackageScanner.findClasses(
             plugin, GUIS_PACKAGE, PluginGUI::class.java
         )
@@ -73,6 +76,21 @@ object GUIManager : Listener {
         openGUIs[player] = Pair(gui, inventory)
         player.openInventory(inventory)
         return true
+    }
+
+    /**
+     * Opens a registered GUI on the following tick.
+     *
+     * A click is still being delivered while its handler runs, and opening an
+     * inventory from inside that delivery leaves the server and the client
+     * disagreeing about what is on screen. Any menu reached by clicking inside
+     * another one is opened this way.
+     *
+     * @param player the player to open the GUI for
+     * @param id     the unique identifier of the GUI to open
+     */
+    fun openLater(player: Player, id: String) {
+        Bukkit.getScheduler().runTask(plugin, Runnable { open(player, id) })
     }
 
     /**

@@ -68,14 +68,14 @@ The server console reads commands from the terminal running Gradle.
 src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
 ├── commands/                # Sub-commands (auto-registered)
-│   ├── info/
-│   └── moderation/
+│   ├── admin/  economy/  info/
+│   └── moderation/  scoreboard/  shop/
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
 ├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
 │                            # storage (not scanned)
-├── enums/                   # AccountType, FlowCategory, TransactionType, FillMode, PagedGUIMode, …
-├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI)
+├── enums/                   # AccountType, FlowCategory, StatsWindow, TransactionType, FillMode, …
+├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI); admin/ is the panel
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── recipes/                 # Recipes (auto-registered, implement PluginRecipe)
@@ -196,6 +196,20 @@ complete stack and no separate economy plugin is needed. See
   money is counted without touching it. Group a movement with `FlowCategory`, never by totalling raw reason strings,
   and remember the supply is measured off the ledger rather than accumulated. See
   [Economy Statistics](docs/DEVELOPER_GUIDE.md#economy-statistics).
+
+## Working with the Admin Panel
+
+The panel in `guis/admin` is where an owner reads the server; `/tritown admin` opens it. See
+[Admin Panel](docs/DEVELOPER_GUIDE.md#admin-panel).
+
+- **A section is a card and a menu.** Adding one means adding a card to `AdminPanelGUI` and a menu of its own; nothing
+  else in the panel changes. Give it its own permission under `tritown.admin.*` and do not draw a card the viewer
+  cannot open.
+- **The panel reads, it does not write.** Anything that changes the server belongs in the command or menu that owns it,
+  not here.
+- **Format through `PanelRender`** — money, percentages, rates, timestamps and the cards themselves, so the same figure
+  reads the same wherever it appears. Amounts stay in minor units until they reach it.
+- **The window belongs to the viewer**, in `PanelState`, so every menu of the panel agrees on what is being looked at.
 
 ## Working with Shops
 

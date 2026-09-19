@@ -2,7 +2,7 @@
 
 This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, work
 with **translations** and the **configuration** system using TriTown's registration system, and how to build on
-**Towny**, the **Vault economy**, and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
+**Towny**, the **Vault economy**, the **admin panel** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
 follow the same pattern: extend a base class (or implement an interface), place the file in the correct package, and the
 plugin handles the rest automatically at startup. The configuration system provides typed access to `config.yml` values.
 
@@ -351,8 +351,8 @@ override fun onClick(event: InventoryClickEvent) {
 ```
 
 Never open another inventory from inside a click handler: the click is still being delivered, and the server and client
-end up disagreeing about what is on screen. Schedule it for the next tick instead
-(`Bukkit.getScheduler().runTask(Main.instance) { … }`).
+end up disagreeing about what is on screen. Use `GUIManager.openLater(player, id)`, which opens it on the following
+tick.
 
 ### Opening a GUI
 
@@ -363,6 +363,9 @@ import net.trilleo.mc.plugins.tritown.registration.GUIManager
 
 // Returns true if the GUI was found and opened, false otherwise
 GUIManager.open(player, "settings")
+
+// From inside a click handler, so the client is not left disagreeing about what is on screen
+GUIManager.openLater(player, "settings")
 ```
 
 ### Example
@@ -2329,6 +2332,37 @@ val before = EconomyPulse.sampleAt(flow.from)   // the measurement the window op
 
 Amounts are **minor units** throughout, exactly as the ledger holds them; they become text only at the menu, through
 `PanelRender`.
+
+---
+
+## Admin Panel
+
+The panel lives in `guis/admin` and is opened by `/tritown admin` (`commands/admin/AdminCommand`). It is a reading
+surface: apart from writing the economy to disk on request, nothing in it changes the server.
+
+| Menu               | Id               | Shows                                                              |
+|:-------------------|:-----------------|:-------------------------------------------------------------------|
+| `AdminPanelGUI`    | `admin-panel`    | The sections, each with enough of itself to say whether to open it  |
+| `EconomyPanelGUI`  | `admin-economy`  | Supply, accounts, distribution, faucets, sinks, net, and the chart  |
+| `EconomyFlowGUI`   | `admin-flow`     | Every category and every kind of account, in full                   |
+| `AdminShopsGUI`    | `admin-shops`    | Every shop's takings, opening into that shop's own figures          |
+
+Adding a section means adding a card to `AdminPanelGUI` and a menu of its own — nothing else in the panel changes.
+
+**The window belongs to the viewer, not to a menu.** `PanelState` holds which of `StatsWindow.DAY`, `WEEK`, `MONTH`
+or `ALL` each administrator is looking at, so switching it in the overview and then opening the breakdown does not
+quietly go back to the last day. It is dropped when they quit (`listeners/admin/PanelStateListener`) rather than when
+a menu closes, because opening the next menu closes the last one.
+
+**`PanelRender` is the only place a figure becomes text** — money, percentages, rates, timestamps, category and
+account-type names, and the cards themselves — so the same number reads the same wherever it appears.
+
+**The chart is stack sizes.** Each of the seven columns is a stained-glass pane whose stack size is its net change
+next to the largest one, green where the supply grew and red where it shrank. It reads as a chart at a glance without
+a single custom texture, and the exact figures are in the lore.
+
+Permissions: `tritown.admin` opens the panel, `tritown.admin.economy` and `tritown.admin.shops` open the sections. A
+card the viewer may not open is not drawn at all.
 
 ---
 

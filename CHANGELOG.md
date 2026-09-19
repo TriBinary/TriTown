@@ -32,6 +32,34 @@
   renaming it in FancyNpcs does not break anything. FancyNpcs is optional — without it everything else still works, and
   `/tritown shop open <id> [player]` still opens a shop from the console or for testing.
 
+#### Admin Panel
+
++ Added `/tritown admin`, an administration panel that opens as a menu. It is the way in to what an owner needs to read
+  about the server, starting with the economy; more sections will follow.
++ The economy panel puts the whole economy on one screen:
+    + **Money supply** — how much currency exists, how it splits between player wallets, town and nation banks and the
+      server's own accounts, how far it has moved over the window, and how much that is per wallet. The supply is
+      measured off the accounts themselves rather than added up from movements, so it is exact.
+    + **Faucets and sinks** — how much currency was created and how much was removed, each broken down by what caused
+      it: new players, shops, Towny, administrators or another plugin. The net says which way the economy is drifting,
+      per day and as a share of the supply, with how long it would take at that rate to double or run dry.
+    + **Wealth distribution** — the median, mean and largest wallet, the share held by the richest tenth, and an
+      inequality figure with a word for what it means.
+    + **Circulation** — how much money players moved between themselves, over how many payments, and how quickly the
+      supply turns over.
+    + **A chart** — the window drawn as seven columns, each as tall as its net change, so a payday, a sink nobody uses
+      or a runaway faucet shows up as a shape rather than a number.
+    + **Accounts, the richest accounts, the shops and the ledger's own settings**, so nothing needs a command to check.
++ Every figure can be read over the last day, the last week, the last month or everything on record. Click the clock to
+  change the window and the whole screen follows it.
++ A full breakdown lists every source of money and every kind of account with what it created, removed and netted, for
+  the same window.
++ The shop sales figures now have a home in the panel: one screen lists every shop with what it has taken in and paid
+  out, and clicking one opens the figures that shop already had. `/tritown shop stats <id>` still opens a single shop
+  directly, and shift-clicking a shop here opens its editor.
++ Each section has its own permission — `tritown.admin` to open the panel, `tritown.admin.economy` and
+  `tritown.admin.shops` for the sections — so a moderator can be given the reading without the editing.
+
 ### Fixes
 
 #### Misc
@@ -69,6 +97,8 @@
 + `PlayerData` and `ServerData` gained `getJsonObject`, so a nested object that was written can be read back.
 + Added `ChatPrompt`, which asks a player a question in chat and hands the answer back on the server thread. Menus use
   it for anything that has to be typed, such as a price or a permission node.
++ `GUIManager.openLater` opens a menu on the following tick, which is what a menu reached by clicking inside another
+  one needs so the server and the client do not disagree about what is on screen.
 
 #### Economy
 

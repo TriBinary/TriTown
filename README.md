@@ -33,6 +33,12 @@ town or nation members a discount while you are at it. Players reach a shop by c
 [FancyNpcs](https://modrinth.com/plugin/fancynpcs) NPC, and every sale is recorded in the transaction log and totalled
 in a sales view.
 
+**An admin panel.** `/tt admin` opens a menu that reads the server back to you. The economy section shows how much
+currency exists and who holds it, what created it and what removed it — new players, shops, Towny, administrators or
+another plugin — with the net drift per day, how unevenly wealth is spread, how fast money circulates, and a chart of
+the window drawn as columns. Read any of it over the last day, week or month, or over everything on record. Every
+shop's takings are in there too, next to the economy they act on.
+
 **English and Simplified Chinese.** Every message, menu and item TriTown shows is translated. By default each player
 sees whichever of the two their Minecraft client is set to, and everyone else sees English. Set `language` in
 `config.yml` to `en_US` or `zh_CN` to pick one for the whole server, or edit the files in `plugins/TriTown/lang/` to
@@ -86,6 +92,7 @@ Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/
 | `/eco <action> …`        | Administer balances (OP only)         |
 | `/tt scoreboard`         | Show or hide the sidebar              |
 | `/tt shop <action> …`    | Set up the server's shops (OP only)   |
+| `/tt admin [section]`    | Open the admin panel (OP only)        |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -96,6 +103,9 @@ viewing someone else's history additionally needs `tritown.economy.admin.history
 `edit <id>` to change what it offers, `open <id> [player]` to open it for somebody, `bind <id> <npc>` and
 `unbind <npc>` to put an NPC behind the counter, and `stats <id>` for what it has traded. Each action has its own
 permission, `tritown.shop.admin.<action>`. Players have no shop command of their own — they click an NPC.
+
+`/tt admin` opens the panel itself, and `economy` or `shops` opens that section directly. Opening the panel needs
+`tritown.admin`; the sections need `tritown.admin.economy` and `tritown.admin.shops` on top of it.
 
 Commands are sub-commands of `/tritown` (alias `/tt`) unless noted. The economy commands are registered as top-level
 commands as well, which `economy.commands.top-level-aliases` turns off — they are then only reachable as
