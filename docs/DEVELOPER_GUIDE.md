@@ -329,7 +329,30 @@ a count, and translate the key yourself there.
 | `setup`   | Yes      | Populate the inventory with items before it opens            |
 | `title`   | No       | Build the title yourself when `titleKey` alone is not enough |
 | `onClick` | No       | Handle click events (clicks are cancelled by default)        |
+| `onDrag`  | No       | Handle drag events (drags are cancelled by default)          |
 | `onClose` | No       | Handle cleanup when the GUI is closed                        |
+
+`onClick` and `onDrag` both cancel by default, so a GUI cannot be used to take items out of it. Override either one only
+when the menu reads what was clicked or dragged, and cancel the event there too unless the slot genuinely accepts it.
+
+A GUI that wants a click in the player's *own* inventory — to copy an item out of it, say — has to take it before the
+base class does, because `PagedPluginGUI.onClick` ignores anything outside its own inventory:
+
+```kotlin
+override fun onClick(event: InventoryClickEvent) {
+    val player = event.whoClicked as? Player
+    if (player != null && event.clickedInventory === player.inventory) {
+        event.isCancelled = true
+        event.currentItem?.let { copyIntoMenu(it) }
+        return
+    }
+    super.onClick(event)
+}
+```
+
+Never open another inventory from inside a click handler: the click is still being delivered, and the server and client
+end up disagreeing about what is on screen. Schedule it for the next tick instead
+(`Bukkit.getScheduler().runTask(Main.instance) { … }`).
 
 ### Opening a GUI
 
@@ -1764,9 +1787,13 @@ data.set("kills", kills + 1)
 | `getDouble`    | `getDouble(key, default = 0.0)`    | Returns a `Double` value                                                    |
 | `getBoolean`   | `getBoolean(key, default = false)` | Returns a `Boolean` value                                                   |
 | `getJsonArray` | `getJsonArray(key)`                | Returns a `JsonArray` value, or an empty `JsonArray` when absent            |
+| `getJsonObject`| `getJsonObject(key)`               | Returns a `JsonObject` value, or an empty `JsonObject` when absent          |
 | `set`          | `set(key, value)`                  | Stores a `String`, `Int`, `Double`, `Boolean`, `JsonArray`, or `JsonObject` |
 | `remove`       | `remove(key)`                      | Removes the entry at `key`                                                  |
 | `has`          | `has(key)`                         | Returns `true` when `key` exists                                            |
+
+`getJsonObject` hands back the stored object rather than a copy, so writing to it writes through; call `set` afterwards
+anyway, because a key that was absent comes back as a fresh object that nothing is holding.
 
 ### Custom Subclass
 
@@ -1860,9 +1887,13 @@ data.set("eventCount", events + 1)
 | `getDouble`    | `getDouble(key, default = 0.0)`    | Returns a `Double` value                                                    |
 | `getBoolean`   | `getBoolean(key, default = false)` | Returns a `Boolean` value                                                   |
 | `getJsonArray` | `getJsonArray(key)`                | Returns a `JsonArray` value, or an empty `JsonArray` when absent            |
+| `getJsonObject`| `getJsonObject(key)`               | Returns a `JsonObject` value, or an empty `JsonObject` when absent          |
 | `set`          | `set(key, value)`                  | Stores a `String`, `Int`, `Double`, `Boolean`, `JsonArray`, or `JsonObject` |
 | `remove`       | `remove(key)`                      | Removes the entry at `key`                                                  |
 | `has`          | `has(key)`                         | Returns `true` when `key` exists                                            |
+
+`getJsonObject` hands back the stored object rather than a copy, so writing to it writes through; call `set` afterwards
+anyway, because a key that was absent comes back as a fresh object that nothing is holding.
 
 ### Custom Subclass
 
@@ -2293,6 +2324,151 @@ string ("New town", "Upkeep") is not exposed on the event. See the note under th
 get it later.
 
 ---
+
+## Shops
+
+Admin shops: shops the server itself runs, defined in game and opened by clicking an NPC. The goods are created and the
+money paid for them leaves the economy, so there is no shop account behind a shop holding either.
+
+Everything lives under `shops/`, which is **not a scanned package** — for the same reason `economy/` is not. The
+manager has to be alive before the registrars build the menus and commands that read it.
+
+### The model
+
+| Type             | What it is                                                                                  |
+|:-----------------|:---------------------------------------------------------------------------------------------|
+| `ShopDefinition` | One shop: `id`, `displayName`, a `ShopGate`, its entries, and the FancyNpcs ids bound to it  |
+| `ShopEntry`      | One line of goods: the `ItemStack`, a buy `ShopCost`, a sell `ShopCost`, gate, limit, stock  |
+| `ShopCost`       | A price or a payout: an amount of money, a list of `ItemStack`s, or both                     |
+| `ShopGate`       | A permission node and a `TownyRequirement`, plus whether a locked entry hides                |
+| `ShopLimit`      | How much one player may buy per `LimitPeriod` window                                         |
+| `ShopStock`      | A shared supply that refills to full on a timer                                              |
+| `ShopStats`      | Bundles traded and currency moved, per entry                                                 |
+
+`id` is stable and is what NPC bindings and purchase counters are keyed by; `displayName` is administrator-written
+MiniMessage and can be changed freely. Entry ids are UUIDs, so reordering or renaming never disturbs a counter.
+
+An entry's own stack size is the **bundle**: an entry holding 16 bread sells sixteen loaves per click. `bundleSize`,
+`displayStack()` and `goodsStacks(bundles)` are the three ways to ask about it — the last splits into stacks the game
+allows, which is what is both measured for room and handed over.
+
+### Preserving an item
+
+`ItemCodec` wraps Paper's `ItemStack.serializeAsBytes()` / `deserializeBytes()` and Base64s the result. That is the only
+round-trip that keeps every data component, so a renamed, enchanted, custom-model or plugin-invented item comes back
+exactly as it went in, and Paper upgrades the embedded game version when Minecraft moves on.
+
+`ItemCodec.decode` returns `null` rather than throwing. One unreadable entry must not take a whole shop with it.
+
+### Storage
+
+`plugins/TriTown/shops/shops.json`, written by `JsonShopStorage` through a temporary file with the previous copy kept
+as `.bak` — the same approach as `JsonEconomyStorage`. A file that will not parse falls back to the backup rather than
+starting empty, because an empty start would be written back over the real data at the next save.
+
+The storage layer works on `StoredShop` / `StoredEntry` / `StoredCost`, which hold Base64 strings rather than
+`ItemStack`s. That keeps it free of Bukkit and therefore testable without a server; `ShopManager` converts between
+the stored and live shapes.
+
+Saving has two speeds, and the difference matters:
+
+| Call                   | When                                            | Cost                                    |
+|:-----------------------|:-------------------------------------------------|:-----------------------------------------|
+| `ShopManager.save()`   | A definition changed — an edit that must not be lost | Writes the whole file now           |
+| `ShopManager.markDirty()` | Stock or statistics changed on a purchase    | Nothing; `ShopSaveTask` flushes it later |
+
+### Trading
+
+`ShopTrade.buy` and `ShopTrade.sell` are the only places a trade happens, and both run on the server thread because
+they touch an inventory. The ordering is what makes them safe: **everything that can refuse is asked before anything is
+taken, and anything taken is remembered so it can be put back.**
+
+A buy, in order:
+
+1. Re-check the gate, the per-player limit and the stock, restocking lazily first.
+2. Quote the price, applying the best discount the player's standing in Towny earns.
+3. Check there is room for the goods.
+4. Take the item side of the price, keeping what was removed.
+5. Take the stock.
+6. `EconomyUtil.withdraw(player, money, EconomyContext.SOURCE_SHOP, reason)` — on refusal, put the stock and the items
+   back and stop.
+7. Hand over the goods, record the purchase against the player's limit, and update the statistics.
+
+A sell is the mirror image. Never check `has` and withdraw separately — `EconomyUtil.withdraw` does both in one step.
+
+The pricing, limit and stock arithmetic is deliberately free of Bukkit (`ShopPricing`, `ShopLimit`, `ShopStock`) so it
+can be unit-tested, in the same way `EconomyLedger` is.
+
+### Attribution
+
+A shop movement must not appear in `/eco history` as an anonymous Vault call, so it goes through the attributed
+overloads of `EconomyUtil`:
+
+```kotlin
+val reason = TransactionReason.of(TransactionReason.SHOP_BUY, "shop" to shop.displayName)
+EconomyUtil.withdraw(player, quote.money, EconomyContext.SOURCE_SHOP, reason)
+```
+
+`EconomyContext` is a thread-local, so the attribution reaches the record through the Vault provider on the same thread
+without feature code ever naming `EconomyService`. Another plugin's economy keeps no such record and ignores it.
+
+### Access
+
+`ShopAccess` is the only place Towny is read, and it is read fresh on every check — a player who joins a town sees the
+town's prices without relogging. `standing(player)` is called once per menu render rather than once per entry, because
+every entry asks the same questions.
+
+Gate permissions are written by whoever set the shop up, so they cannot be registered at startup the way a command's
+nodes are. They are checked as they stand and defined in the server's permissions plugin.
+
+### Per-player limits
+
+Counters live in the buyer's own `PlayerData` under `shop-limits`, keyed `"<shopId>/<entryId>"`, each holding a count
+and the window it belongs to. A count from a window that has turned over is ignored rather than cleared, so nothing has
+to sweep counters at midnight. `PlayerDataManager` only serves online players, which is the only case a purchase needs.
+
+### FancyNpcs
+
+FancyNpcs is a soft dependency, and the isolation that makes that work is worth understanding before changing it:
+
+- **`listeners/shop/ShopNpcListener`** is the only class naming a FancyNpcs type in a signature. `PackageScanner`
+  catches `NoClassDefFoundError` and skips a class it cannot load, so without FancyNpcs this listener simply never
+  registers.
+- **`shops/npc/FancyNpcsAdapter`** is the only other class touching the API. It is `internal` and is reached solely
+  through `ShopNpcBridge`, so the JVM never resolves it on a server without the plugin.
+- **`shops/npc/ShopNpcBridge`** exposes `List<String>` and `String?` and nothing else. Anything that would put a
+  FancyNpcs type in its signatures would take `ShopCommand` down with it.
+
+Bindings store `NpcData.getId()`, not the name, so renaming an NPC changes nothing. An NPC opens one shop: binding it
+again moves it rather than leaving it ambiguous.
+
+### The menus
+
+Every shop menu is in `guis/shop/`, and they all follow the singleton rules the GUI section sets out: which shop is open
+is held per viewer in a `ConcurrentHashMap<UUID, …>` and cleared in `onClose`, and a paged menu builds its items once
+rather than in `getItems`.
+
+| Menu               | What it does                                                          |
+|:-------------------|:------------------------------------------------------------------------|
+| `ShopGUI`          | The player's view; buys and sells, and redraws only the entry traded   |
+| `ShopConfirmGUI`   | A second look above `shops.confirm-above`; re-quotes on accept         |
+| `ShopListGUI`      | Every shop, for an administrator                                       |
+| `ShopEditorGUI`    | One shop's entries; adds one from the administrator's own inventory    |
+| `ShopEntryGUI`     | One entry's prices, limit, stock and gate                              |
+| `ShopCostGUI`      | The item side of a price or a payout                                   |
+| `ShopSettingsGUI`  | A shop's name, gate and bound NPCs                                     |
+| `ShopStatsGUI`     | What a shop has traded                                                 |
+
+`ShopRender` holds what they all draw with — item names, price lines, requirement names — and `ShopRender.navigate`,
+which opens the next menu on the following tick.
+
+**Items are never taken to add them.** Clicking a stack in the administrator's own inventory copies it and cancels the
+event; a drag reads `event.oldCursor` and cancels too. A live slot would lose the item to a crash or a mistimed close,
+and an administrator setting up a shop is usually holding the only copy of what they are adding.
+
+Anything free-form — a price, a permission node, a shop's name — is asked for in chat through `ChatPrompt`, because
+a chest menu has nowhere to type and a price of 12500 is not somewhere to click.
+
 
 ## Sidebar
 

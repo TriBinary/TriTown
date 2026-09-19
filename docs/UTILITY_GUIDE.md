@@ -11,6 +11,7 @@ reduce boilerplate and provide commonly needed functionality out of the box.
 | `TagUtil`       | Per-player string tag management with player-data persistence          |
 | `Lang`          | Translations: per-player language files and the `tr()` helper          |
 | `MessageUtil`   | Prefix-decorated message sender for any command sender                 |
+| `ChatPrompt`    | Asks a player a question in chat and hands the answer back             |
 | `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
 | `PDCUtil`       | Persistent data container helpers for Entity, Chunk, and ItemStack     |
 | `GameRuleUtil`  | Convenient get, set, and toggle helpers for Minecraft game rules       |
@@ -504,6 +505,8 @@ EconomyUtil.deposit(player, 100.0)
 | `has(player, amount)`        | Whether the player has at least `amount`.                                                   |
 | `withdraw(player, amount)`   | Takes `amount`; returns `false` without charging if the player cannot afford it.            |
 | `deposit(player, amount)`    | Gives `amount`; returns `false` if the provider refuses.                                    |
+| `withdraw(…, source, reason)`| Takes `amount` and records where it went and why.                                           |
+| `deposit(…, source, reason)` | Gives `amount` and records where it came from and why.                                      |
 | `transfer(from, to, amount)` | Moves `amount` between two players.                                                         |
 | `format(amount)`             | Formats `amount` as plain text, the way other plugins print it.                             |
 | `formatRich(amount)`         | Formats `amount` as a `Component`, using the configured MiniMessage pattern.                |
@@ -518,6 +521,64 @@ refunds the sender if the deposit fails.
 
 Use `format` for anything another plugin will print — it must never contain MiniMessage tags — and `formatRich` for
 TriTown's own messages.
+
+The four-argument `withdraw` and `deposit` attach a source and a reason to the transaction, so it shows up in
+`/eco history` as something other than an anonymous Vault call. A feature with a story to tell should use them rather
+than reaching past `EconomyUtil` for the economy service:
+
+```kotlin
+val reason = TransactionReason.of(TransactionReason.SHOP_BUY, "shop" to shop.displayName)
+EconomyUtil.withdraw(player, price, EconomyContext.SOURCE_SHOP, reason)
+```
+
+The attribution travels on the calling thread, so it reaches the record without this having to know which provider won.
+Another plugin's economy keeps no such record and ignores it.
+
+---
+
+## ChatPrompt
+
+A chest menu has nowhere to type, so anything free-form an editor needs — a name, an exact price, a permission node
+— is asked for in chat instead. `ChatPrompt` closes that loop: it sends the question, waits for the next thing the
+player types, and hands it back.
+
+The answer arrives on the server thread, so a callback may touch Bukkit freely. Typing `cancel`, quitting, or being
+asked something else instead drops the pending question without running the callback, and the answer never reaches the
+chat channel.
+
+### Usage
+
+```kotlin
+import net.trilleo.mc.plugins.tritown.utils.ChatPrompt
+import net.trilleo.mc.plugins.tritown.utils.tr
+
+player.closeInventory()
+ChatPrompt.ask(player, player.tr("gui.shop-entry.prompt-price")) { input ->
+    val price = input.toDoubleOrNull()
+    if (price == null) {
+        player.sendPrefixed(player.tr("common.error", "message" to player.tr("common.invalid-amount")))
+    } else {
+        entry.buy = ShopCost(price)
+    }
+    ShopEntryGUI.show(player, shop, entry)
+}
+```
+
+Reopen the menu on both paths, as above. A mistyped price should not leave the player standing in the world wondering
+where the editor went.
+
+### Methods
+
+| Method                            | Description                                                              |
+|:----------------------------------|:--------------------------------------------------------------------------|
+| `ask(player, message, onInput)`   | Sends `message` and runs `onInput` with what the player types next       |
+| `isWaiting(player)`               | Whether the player is being asked something                             |
+| `cancel(player)`                  | Drops any pending question without running its callback                 |
+| `consume(player, message)`        | Feeds a chat message in; used by `ChatPromptListener`, not by features   |
+| `CANCEL_WORD`                     | The word a player types to back out                                     |
+
+Only one question can be waiting for a player at a time: asking a second drops the first, so two menus cannot both be
+listening.
 
 ---
 

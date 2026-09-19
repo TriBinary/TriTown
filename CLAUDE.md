@@ -17,6 +17,7 @@ overview.
 | Platform       | Paper API 26.2 (MC 26.2)                         |
 | Towny          | 0.103.2.7 (`towny_version` in gradle.properties) |
 | Vault API      | 1.7.1 (`vault_api_version` in gradle.properties) |
+| FancyNpcs API  | 2.9.2 (`fancynpcs_version`, optional at runtime) |
 | Java toolchain | JDK 25                                           |
 
 ## After Every Change: Keep the Changelog and Docs in Sync
@@ -56,7 +57,7 @@ Before finishing any task that changes the plugin, do all of the following:
 ./gradlew startServer  # Runs copyPlugin, then launches the paper-*.jar in run/
 ```
 
-The local test server lives in `run/` (gitignored). `copyPlugin` puts the matching Towny jar in `run/plugins/`, but the
+The local test server lives in `run/` (gitignored). `copyPlugin` puts the matching Towny and FancyNpcs jars in `run/plugins/`, but the
 Paper 26.2 jar (`run/paper-*.jar`) and Vault must be downloaded by hand, and `eula.txt` accepted, before `startServer`
 works. No economy plugin is needed — TriTown supplies the economy itself. The server console reads commands from the
 terminal running Gradle.
@@ -78,9 +79,10 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── recipes/                 # Recipes (auto-registered, implement PluginRecipe)
 ├── registration/            # Auto-registration engine (do not modify lightly)
+├── shops/                   # Admin shops: model, trading, storage, FancyNpcs bridge (not scanned)
 ├── tasks/                   # Scheduled tasks (auto-registered, extend PluginTask)
-└── utils/                   # Lang, EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, CountdownUtil, TeamUtil,
-                             # TagUtil, PDCUtil, GameRuleUtil
+└── utils/                   # Lang, EconomyUtil, itemStack DSL, MessageUtil, LoreUtil, ChatPrompt, CountdownUtil,
+                             # TeamUtil, TagUtil, PDCUtil, GameRuleUtil
 src/main/resources/
 ├── config.yml  plugin.yml
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
@@ -90,8 +92,8 @@ src/main/resources/
 
 The plugin uses `PackageScanner` to discover components at startup — you **never** edit `plugin.yml` or wire things
 manually. Just extend the right base class and place the file in the correct package. Packages outside the table below
-are never scanned, which is why the economy core lives in `economy/`: it has to be alive in `onLoad`, long before the
-registrars run.
+are never scanned, which is why the economy core lives in `economy/` and the shop core in `shops/`: both have to be
+alive before the registrars build the commands and menus that read them.
 
 | Component   | Base Class                     | Package                 |
 |:------------|:-------------------------------|:------------------------|
@@ -189,6 +191,27 @@ complete stack and no separate economy plugin is needed. See
   reach TriTown as ordinary deposits and withdrawals. A `BankTransactionEvent` handler that wrote a record would
   double-count every town deposit.
 - **Costs and rewards are configurable** — put amounts in `config.yml`, not in Kotlin.
+
+## Working with Shops
+
+**Shops are the server's own, not a player's.** See [Shops](docs/DEVELOPER_GUIDE.md#shops).
+
+- **Go through `ShopManager`** — it is the only thing that reads or writes a shop. `save()` for a change to a
+  definition, which must never be lost; `markDirty()` for stock and statistics, which `ShopSaveTask` flushes.
+- **Trade only through `ShopTrade`** — its ordering is what keeps a trade safe: everything that can refuse is asked
+  before anything is taken, and anything taken is remembered so it can be put back. Never charge and hand over in two
+  places.
+- **Serialize items with `ItemCodec`** — Paper's byte form is the only round-trip that keeps every data component, so a
+  custom item survives. Never describe an item field by field.
+- **Read Towny through `ShopAccess`** — it is the one place shops touch Towny, and it re-reads on every check.
+- **Keep FancyNpcs isolated** — only `listeners/shop/ShopNpcListener` may name a FancyNpcs type in a signature, and
+  only `shops/npc/FancyNpcsAdapter` may touch the API. `ShopNpcBridge` exposes plain types so a server without the
+  plugin still loads everything else. Adding a FancyNpcs type to its signatures would take the shop command with it.
+- **Attribute money with the four-argument `EconomyUtil.withdraw`/`deposit`** so a trade is recorded as a shop movement
+  rather than an anonymous Vault call.
+- **Shop and entry names are administrator-written MiniMessage stored in the shop file**, not translation keys. Escape
+  anything player-written before embedding it; a shop's own name is deliberately not escaped, because an administrator
+  wrote it.
 
 ## Versioning & Releases
 
