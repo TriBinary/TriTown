@@ -193,6 +193,22 @@ abstract class PagedPluginGUI(
     protected fun contentIndex(page: Int, rawSlot: Int): Int? =
         contentPositions[rawSlot]?.let { position -> page * pageSize + position }
 
+    /**
+     * Redraws the page [player] is looking at, into the inventory they have open.
+     *
+     * A menu whose contents change under a click — an entry removed, an item
+     * moved — would otherwise have to reopen itself to show the change, which
+     * drops the viewer back onto the first page of whatever they were part-way
+     * through. The page is clamped, so the last item leaving a page steps back
+     * rather than showing an empty one.
+     */
+    protected fun refresh(player: Player, inventory: Inventory) {
+        val total = totalPages(player)
+        val page = (playerPages[player.uniqueId] ?: 0).coerceIn(0, total - 1)
+        playerPages[player.uniqueId] = page
+        renderPage(player, inventory, page)
+    }
+
     // ----- PluginGUI overrides ------------------------------------------------
 
     override fun setup(player: Player, inventory: Inventory) {

@@ -498,7 +498,16 @@ gui:
     not-buyable: "<dark_gray>Not for sale"
     not-sellable: "<dark_gray>Not bought back"
     click-entry: "<yellow>Click <gray>to edit this entry"
+    right-click-entry: "<yellow>Right-click <gray>to move it somewhere else"
     shift-click-entry: "<yellow>Shift-click <gray>to remove it"
+    being-moved: "<aqua>Being moved"
+    click-put-down: "<yellow>Click <gray>to leave it where it is"
+    click-place-before: "<yellow>Click <gray>to drop the held entry in front of this one"
+    holding: "<aqua>You are moving this entry"
+    move-first: "<aqua>To the front"
+    move-first-lore: "<gray>Put the entry you are moving at the very start of the shop."
+    move-last: "<aqua>To the back"
+    move-last-lore: "<gray>Put the entry you are moving at the very end of the shop."
     add: "<green>Add an entry"
     add-lore: "<gray>Click an item in your own inventory, or drag it here. Your item stays where it is."
     settings: "<gold>Shop settings"
@@ -507,6 +516,25 @@ gui:
     stats-lore: "<gray>What this shop has traded."
     back: "<yellow>All shops"
     back-lore: "<gray>Back to the list of shops."
+    sort: "<gold>Sort the whole shop"
+    sort-lore: "<gray>Put every entry in order at once, instead of moving them one at a time."
+
+  shop-sort:
+    title: "<dark_gray>Sort the shop"
+    info: "<gold>Choose an order"
+    info-lore: "<gray>This replaces the order the entries are in now, and there is no way back to it. Move entries one at a time to keep an order of your own."
+    name: "<gold>By name, A to Z"
+    name-reversed: "<gold>By name, Z to A"
+    name-lore: "<gray>A renamed item is ordered under the name you gave it."
+    price: "<gold>By price, cheapest first"
+    price-reversed: "<gold>By price, dearest first"
+    price-lore: "<gray>By what players pay for it. Entries that are not for sale go last."
+    click-choose: "<yellow>Click <gray>to choose this order"
+    chosen: "<green>Chosen"
+    confirm: "<green><bold>Sort the shop</bold>"
+    confirm-lore: "<gray>Put every entry in the order you chose."
+    cancel: "<red><bold>Cancel</bold>"
+    cancel-lore: "<gray>Back to the editor, nothing reordered."
 
   shop-entry:
     title: "<dark_gray>Entry"
@@ -608,6 +636,7 @@ shop:
   editor:
     entry-added: "Added {item} to the shop. Set a price next."
     entry-removed: "Removed that entry."
+    sorted: "Put all {amount} entries in order."
 
 
 # The sidebar. Which lines appear, and in what order, is set per board in

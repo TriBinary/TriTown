@@ -10,6 +10,9 @@
     + `/tritown shop create <id>` makes one and drops you straight into the editor. Add an item by clicking it in your
       own inventory or dragging it over the menu — your item stays where it is, and everything about it is kept, so a
       renamed, enchanted or otherwise custom item is sold exactly as you made it.
+    + The order entries are in is the order players see. Right-click one in the editor to pick it up and click where it
+      belongs — on any page — or send it straight to the front or the back. A whole shop can also be sorted by item
+      name or by price in one go.
     + An entry can be sold, bought back, or both. Left-click buys one, shift-left-click buys as many as you can afford
       and carry, right-click sells one, and shift-right-click sells everything you are carrying.
     + A price can be money, items, or both at once, and so can a payout — so a shop can sell for currency, barter, or

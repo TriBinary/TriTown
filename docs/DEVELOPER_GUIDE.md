@@ -482,6 +482,20 @@ override fun onContentClick(event: InventoryClickEvent, page: Int) {
 
 `pageSize` is how many items one page holds, should a subclass need it.
 
+**Redraw in place with `refresh(player, inventory)`** when a click changes what the menu shows — an entry removed, an
+item moved. Reopening the menu to show the change puts the viewer back on the first page of whatever they were part-way
+through, which is exactly wrong for a menu being edited page by page. `refresh` clamps the page too, so the last item
+leaving a page steps back rather than showing an empty one:
+
+```kotlin
+override fun onContentClick(event: InventoryClickEvent, page: Int) {
+    event.isCancelled = true
+    val index = contentIndex(page, event.rawSlot) ?: return
+    entries.removeAt(index)
+    refresh(event.whoClicked as Player, event.inventory)
+}
+```
+
 ### Modes
 
 `PagedPluginGUI` supports two item-supply modes controlled by the `mode` constructor parameter:
@@ -2654,6 +2668,7 @@ rather than in `getItems`.
 | `ShopEditorGUI`    | One shop's entries; adds one from the administrator's own inventory    |
 | `ShopEntryGUI`     | One entry's prices, limit, stock and gate                              |
 | `ShopCostGUI`      | The item side of a price or a payout                                   |
+| `ShopSortGUI`      | Puts a whole shop in one order, on an administrator's say-so           |
 | `ShopSettingsGUI`  | A shop's name, gate and bound NPCs                                     |
 | `ShopStatsGUI`     | What a shop has traded                                                 |
 
@@ -2667,6 +2682,20 @@ which opens the next menu on the following tick.
 **Items are never taken to add them.** Clicking a stack in the administrator's own inventory copies it and cancels the
 event; a drag reads `event.oldCursor` and cancels too. A live slot would lose the item to a crash or a mistimed close,
 and an administrator setting up a shop is usually holding the only copy of what they are adding.
+
+**Nor to reorder them.** The order of `ShopDefinition.entries` is the order players see, and the editor rearranges it
+with a mark rather than a cursor: a right click writes the entry's id into the editor's `moving` map, the next click on
+a slot says where it goes, and the entry always lands immediately before whatever was clicked. A stack held on the
+cursor would not survive turning the page, and the same live-slot objection applies as for adding. While an entry is
+marked the navigation row carries the move's own controls — the held entry, which puts it back down, and the two ends of
+the shop — in the slots the editor's usual actions occupy, and clicks in the administrator's own inventory do nothing
+so that a move cannot end in an accidental new entry. Every move redraws the page in place through
+`PagedPluginGUI.refresh`, so a shop can be rearranged across pages without being thrown back to the first one.
+
+**`ShopSorting` is the only thing that sorts a shop**, and `ShopSortGUI` asks before it runs: an order is chosen, then
+applied, because sorting overwrites an arrangement made by hand and nothing records how it was reached. An entry with
+no buy price sorts last whichever way the prices run, and item names are compared in the server's own words rather than
+each viewer's, because one shop has one order and it cannot depend on who is looking at it.
 
 Anything free-form — a price, a permission node, a shop's name — is asked for in chat through `ChatPrompt`, because
 a chest menu has nowhere to type and a price of 12500 is not somewhere to click.

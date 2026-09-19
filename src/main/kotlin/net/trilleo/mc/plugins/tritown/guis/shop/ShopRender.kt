@@ -96,6 +96,19 @@ object ShopRender {
     }
 
     /**
+     * A copy of [item] that glints, for the one thing a menu is asking about.
+     *
+     * The glint is overridden rather than an enchantment added, because the
+     * goods are drawn exactly as they are sold and an enchantment on the icon
+     * would misdescribe what is on the shelf.
+     */
+    fun glowing(item: ItemStack): ItemStack = item.clone().apply {
+        val meta = itemMeta ?: return@apply
+        meta.setEnchantmentGlintOverride(true)
+        itemMeta = meta
+    }
+
+    /**
      * A copy of [item] with [lines] added under whatever lore it already has.
      *
      * The goods keep their own description, because an item that says what it

@@ -175,6 +175,10 @@ A shop is created with `/tt shop create <id>`, which opens its editor. Everythin
   inventory — the item is copied, with every property it has, so a renamed and enchanted sword goes on the shelf as
   that exact sword. The stack size you click becomes the bundle: click a stack of 16 bread and one purchase is 16
   loaves. The bundle can be changed afterwards, and is not limited to a stack — 128 bread is handed over as two.
+- **Arranging it.** Entries are shown to players in the order they are in the editor. Right-click one to pick it up,
+  then click where it should go — including on another page — and it drops in front of whatever you clicked; two
+  buttons send it to the front or the back of the shop instead. A whole shop can be put in order at once by name or by
+  price, which replaces the arrangement you made by hand and asks before it does.
 - **Pricing it.** An entry has a buy side and a sell side, and each may be switched on or off on its own. Either side
   can ask for money, for items, or for both at once. Money is typed in chat when you click the price; items are added
   by clicking them in your inventory, and the stack size is the quantity.

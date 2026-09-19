@@ -499,7 +499,16 @@ gui:
     not-buyable: "<dark_gray>不出售"
     not-sellable: "<dark_gray>不回收"
     click-entry: "<yellow>单击 <gray>编辑这件商品"
+    right-click-entry: "<yellow>右键 <gray>将其挑起来换个位置"
     shift-click-entry: "<yellow>Shift + 单击 <gray>将其移除"
+    being-moved: "<aqua>正在移动"
+    click-put-down: "<yellow>单击 <gray>放回原位"
+    click-place-before: "<yellow>单击 <gray>将手上的商品放到它前面"
+    holding: "<aqua>你正在移动这件商品"
+    move-first: "<aqua>放到最前"
+    move-first-lore: "<gray>将正在移动的商品放到商店的最前面。"
+    move-last: "<aqua>放到最后"
+    move-last-lore: "<gray>将正在移动的商品放到商店的最后面。"
     add: "<green>添加商品"
     add-lore: "<gray>单击你背包里的物品，或将其拖到这里。你的物品不会被拿走。"
     settings: "<gold>商店设置"
@@ -508,6 +517,25 @@ gui:
     stats-lore: "<gray>这家商店的交易情况。"
     back: "<yellow>商店列表"
     back-lore: "<gray>返回商店列表。"
+    sort: "<gold>整店排序"
+    sort-lore: "<gray>一次性排好所有商品，不用逐件移动。"
+
+  shop-sort:
+    title: "<dark_gray>商店排序"
+    info: "<gold>选择排序方式"
+    info-lore: "<gray>这会覆盖商品现在的顺序，且无法恢复。想保留自己排的顺序，就逐件移动。"
+    name: "<gold>按名称，A 到 Z"
+    name-reversed: "<gold>按名称，Z 到 A"
+    name-lore: "<gray>重命名过的物品按你取的名字排序。"
+    price: "<gold>按售价，从低到高"
+    price-reversed: "<gold>按售价，从高到低"
+    price-lore: "<gray>按玩家购买时支付的价格。不出售的商品排在最后。"
+    click-choose: "<yellow>单击 <gray>选择这种顺序"
+    chosen: "<green>已选择"
+    confirm: "<green><bold>开始排序</bold>"
+    confirm-lore: "<gray>按你选的顺序排列所有商品。"
+    cancel: "<red><bold>取消</bold>"
+    cancel-lore: "<gray>返回编辑器，不改变顺序。"
 
   shop-entry:
     title: "<dark_gray>商品设置"
@@ -609,6 +637,7 @@ shop:
   editor:
     entry-added: "已将 {item} 加入商店，接下来设置价格。"
     entry-removed: "已移除该商品。"
+    sorted: "已将全部 {amount} 件商品重新排序。"
 
 
 scoreboard:
