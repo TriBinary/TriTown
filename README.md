@@ -62,12 +62,14 @@ FancyNpcs is optional too: without it shops still work, they just cannot be open
 ./gradlew build
 ```
 
-The compiled JAR is placed in `build/libs/`. Run `./gradlew copyPlugin` to copy it, along with the matching Towny and
-FancyNpcs jars, into `run/plugins/` for the local test server, or `./gradlew startServer` to copy them and start the
-server. Before the first start:
+The compiled JAR is placed in `build/libs/`. Run `./gradlew copyPlugin` to copy it, along with the matching Towny jar,
+into `run/plugins/` for the local test server, or `./gradlew startServer` to copy them and start the server. Before the
+first start:
 
 - download a Paper 26.2 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
 - put Vault into `run/plugins/`;
+- put [FancyNpcs](https://modrinth.com/plugin/fancynpcs) into `run/plugins/` as well, to test shop NPCs — only its API
+  is published to Maven, so the plugin itself is not fetched by the build;
 - accept the EULA in `run/eula.txt` after the first launch.
 
 Prebuilt jars are attached to every [GitHub release](https://github.com/Trilleo/TriTown/releases).

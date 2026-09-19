@@ -38,12 +38,12 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:${providers.gradleProperty("vault_api_version").get()}") {
         isTransitive = false
     }
-    // Optional at runtime: NPCs open shops when FancyNpcs is installed, and the feature stays off when it is not.
+    // API only, and optional at runtime: NPCs open shops when FancyNpcs is installed, and the feature stays off when
+    // it is not. The plugin jar itself is not on Maven and has to be installed by hand.
     compileOnly("de.oliver:FancyNpcs:${providers.gradleProperty("fancynpcs_version").get()}") {
         isTransitive = false
     }
     serverPlugins("com.palmergames.bukkit.towny:towny:${providers.gradleProperty("towny_version").get()}")
-    serverPlugins("de.oliver:FancyNpcs:${providers.gradleProperty("fancynpcs_version").get()}")
     testImplementation(kotlin("test"))
     // Aligned with what Paper 26.2 bundles, since the plugin uses these at runtime through paper-api.
     testImplementation("net.kyori:adventure-api:5.2.0")
@@ -81,10 +81,11 @@ tasks.jar {
     }
 }
 
-// Copies the depended-on plugins into the test server, replacing any older version left behind by a version bump.
+// Copies Towny into the test server, replacing any other Towny version left behind by a version bump.
+// FancyNpcs is not copied: only its API is published to Maven, and the plugin itself comes from Modrinth.
 tasks.register<Copy>("copyServerPlugins") {
     val pluginsDir = layout.projectDirectory.dir("run/plugins")
-    doFirst { delete(fileTree(pluginsDir) { include("towny-*.jar", "FancyNpcs-*.jar") }) }
+    doFirst { delete(fileTree(pluginsDir) { include("towny-*.jar") }) }
     from(serverPlugins)
     into(pluginsDir)
 }
