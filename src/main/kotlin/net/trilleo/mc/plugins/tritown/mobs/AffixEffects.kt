@@ -116,7 +116,7 @@ object AffixEffects {
             val minion = mob.world.spawnEntity(spot, mob.type, SpawnReason.CUSTOM) as? LivingEntity ?: return@repeat
             MobProfiles.assign(
                 minion,
-                MobProfile(profile.level, MobRank.NORMAL, emptySet(), MobSettings.snapshot.nameplates),
+                MobProfile(profile.level, MobRank.NORMAL, emptySet(), MobSettings.snapshot.nameplates, eligible = false),
             )
             MobNameplate.updateLater(minion)
             if (target != null) (minion as? Mob)?.target = target

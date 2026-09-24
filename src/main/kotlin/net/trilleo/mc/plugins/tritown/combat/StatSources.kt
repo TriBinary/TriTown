@@ -5,6 +5,7 @@ import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
@@ -67,10 +68,16 @@ object StatSources {
         return StatSheet.of(Stat.DEFENSE to defense)
     }
 
-    /** The lens's worth for every point of attack damage the held item adds to the bare hand. */
+    /**
+     * The lens's worth for every point of attack damage the held item adds to
+     * the bare hand, and Magic Find for its Looting.
+     */
     private fun weapon(player: Player, balance: Balance): StatSheet {
         val item = player.inventory.itemInMainHand
-        return StatSheet.of(Stat.DAMAGE to added(item, Attribute.ATTACK_DAMAGE, EquipmentSlot.HAND) * balance.lens)
+        return StatSheet.of(
+            Stat.DAMAGE to added(item, Attribute.ATTACK_DAMAGE, EquipmentSlot.HAND) * balance.lens,
+            Stat.MAGIC_FIND to item.getEnchantmentLevel(Enchantment.LOOTING) * balance.vanilla.lootingMagicFind,
+        )
     }
 
     private fun effects(player: Player, balance: Balance): StatSheet {

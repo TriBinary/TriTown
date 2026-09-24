@@ -16,8 +16,12 @@ class LangFilesTest {
     private val english = languages.getValue("en_US")
     private val config = loadConfig()
 
-    /** Keys built at runtime (`"money.source.$source"`), which the source scan cannot see. */
-    private val dynamicPrefixes = listOf("command.", "money.source.")
+    /**
+     * Keys built at runtime (`"money.source.$source"`), which the source scan
+     * cannot see. Content items' keys are held to the content files instead, by
+     * `ContentFilesTest`.
+     */
+    private val dynamicPrefixes = listOf("command.", "money.source.", "item.")
 
     private val keyLiteral = Regex("\"([a-z][a-z0-9-]*(?:\\.[a-z0-9-]+)+)\"")
     private val placeholder = Regex("\\{([a-z]+)}")

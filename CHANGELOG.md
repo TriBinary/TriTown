@@ -28,6 +28,16 @@
     + Armored, Frenzied, Vampiric, Enraged, Molten, Frostbound, Venomous, Volatile (explodes a moment after dying),
       Summoner, Blinking (steps in behind you) and Warded (shrugs off arrows until hit in melee).
     + Champions glow, and ranked mobs always show their nameplate. Bosses such as the Warden never spawn ranked.
++ Wild mobs now drop **materials** from level 3: Grave Dust, Bone Shards, Ember Cores, Void Fragments and ten more, one
+  for each family of mob. Elites and champions always drop theirs, along with **essence** whose grade follows the
+  mob's level.
+    + A new stat, **Magic Find**, makes a normal mob's material likelier. Looting gives some.
+    + Only a mob that spawned in the wild drops any of it, and only when players dealt at least half its damage, so traps
+      and lava pits earn nothing. The drops are the killer's.
+    + Materials look like the vanilla item they are modelled on but are inert: they cannot be crafted with, placed or
+      used. Each player reads their names in their own language.
+    + Administrators hand them out with `/tritown item give <player> <id> [amount]` (`tritown.item.admin`), and set
+      which mob drops what in `plugins/TriTown/content/mobs.yml`.
 + Server owners tune it all in `plugins/TriTown/content/balance.yml`, and set the rings per kind of world, or per world,
   under `mobs.levels` in `config.yml`. `/tritown mob balance` shows what the numbers make of each level, and
   `/tritown mob level` shows the level where you stand and why (`tritown.mob.admin`).

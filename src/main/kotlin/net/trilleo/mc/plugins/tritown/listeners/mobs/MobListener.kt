@@ -43,7 +43,8 @@ class MobListener : Listener {
         val settings = MobSettings.snapshot
         val level = MobZones.levelAt(event.location)
         val rank = if (entity.type in settings.rankExempt) MobRank.NORMAL else MobRoll.rank(level, balance, Random)
-        val profile = MobProfile(level, rank, MobRoll.affixes(rank, balance, Random).toSet(), settings.nameplates)
+        val affixes = MobRoll.affixes(rank, balance, Random).toSet()
+        val profile = MobProfile(level, rank, affixes, settings.nameplates, eligible = true)
 
         MobProfiles.assign(entity, profile)
         settle(entity, profile)
@@ -79,6 +80,7 @@ class MobListener : Listener {
     fun onUnload(event: EntityRemoveFromWorldEvent) {
         RankedMobs.untrack(event.entity.uniqueId)
         AffixEffects.forget(event.entity.uniqueId)
+        MobLoot.forget(event.entity.uniqueId)
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
@@ -96,6 +98,7 @@ class MobListener : Listener {
         if (entity is Player) return
         val profile = MobProfiles.of(entity)
         AffixEffects.onDeath(entity, profile)
+        event.drops += MobLoot.dropsFor(entity)
         if (profile.level > 1) {
             event.droppedExp =
                 (event.droppedExp * (1.0 + MobSettings.snapshot.xpPerLevel * (profile.level - 1))).roundToInt()

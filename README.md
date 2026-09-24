@@ -158,6 +158,7 @@ itself, are still anyone's.
 | `/tt protection <inspect/release>` | See or clear who owns what you look at (OP only) |
 | `/tt stats [player]`     | See your combat stats, or another player's |
 | `/tt mob <level/balance>` | Inspect mob levels and the balance (OP only) |
+| `/tt item <give/list>`   | Hand out the server's own items (OP only) |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -189,7 +190,8 @@ from and break anything a player has claimed.
 `/tt stats` opens your combat stats — or, with a name, those of anyone online — each broken down by where it comes
 from. It has no permission node; whether it runs at all is `combat.enabled`. `/tt mob level` says what level mobs
 spawning where you stand would be, and why, and `/tt mob balance` prints what the balance in force makes of each level;
-both need `tritown.mob.admin`.
+both need `tritown.mob.admin`. `/tt item give <player> <id> [amount]` hands out a material or essence, and `/tt item
+list` names them all; both need `tritown.item.admin`.
 
 `/tt admin` opens the panel itself, and `economy`, `shops` or `storage` opens that section directly. Opening the panel
 needs `tritown.admin`; the sections need `tritown.admin.economy`, `tritown.admin.shops` and `tritown.admin.storage` on
@@ -407,9 +409,18 @@ drops.
 From level 5 a wild mob can spawn as an **elite** (★), and from level 15 as a **champion** (★★): several times the
 health, harder hits, and one to three affixes, named on the mob and shown by the particles around it — Armored,
 Frenzied, Vampiric, Enraged, Molten, Frostbound, Venomous, Volatile, Summoner, Blinking or Warded. Champions glow.
-Bosses such as the Warden never spawn ranked (`mobs.ranks.exempt`). Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working
+Bosses such as the Warden never spawn ranked (`mobs.ranks.exempt`).
+
+From level 3, wild mobs drop **materials** on top of their usual loot — Grave Dust from zombies, Ember Cores from
+blazes, Void Fragments from endermen, fourteen in all — and elites and champions always do, along with **essence**
+whose grade follows their level. **Magic Find** makes a normal mob's material likelier; Looting gives some. Only a mob
+that spawned in the wild drops any of it, and only when players dealt at least half its damage, so a trap or a lava pit
+earns nothing. What drops is the killer's, like the rest of the mob's loot. Materials are inert: they look like the
+vanilla item they are modelled on, but cannot be crafted with, placed or used. Mobs never drop money. Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working
 as they do in vanilla. Levels are kept with the mob, so they survive restarts.
 
+Which mob drops which material, and how often, is in `plugins/TriTown/content/mobs.yml`, and the items themselves —
+how each looks and how rare it is — in `items.yml` beside it; their names are in the language files under `item`.
 What everything is worth is in `plugins/TriTown/content/balance.yml`: the lens (RPG health per vanilla half-heart, 5),
 your base stats, how much a level grows a mob, and what vanilla armor is worth as Defense. `/tt reload` reads it again,
 and `/tt mob balance` shows what your numbers make of each level before anyone fights. A value it cannot use falls back

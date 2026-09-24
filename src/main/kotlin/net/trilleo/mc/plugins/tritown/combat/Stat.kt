@@ -25,7 +25,10 @@ enum class Stat(val percent: Boolean) {
 
     CRIT_CHANCE(true),
 
-    CRIT_DAMAGE(true);
+    CRIT_DAMAGE(true),
+
+    /** Makes a mob likelier to drop its material, by its value in percent. */
+    MAGIC_FIND(false);
 
     /** The translation key naming the stat, spelled out so the language test can see it. */
     val key: String
@@ -36,5 +39,6 @@ enum class Stat(val percent: Boolean) {
             STRENGTH -> "combat.stat.strength"
             CRIT_CHANCE -> "combat.stat.crit-chance"
             CRIT_DAMAGE -> "combat.stat.crit-damage"
+            MAGIC_FIND -> "combat.stat.magic-find"
         }
 }

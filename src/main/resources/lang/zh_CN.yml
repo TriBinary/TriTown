@@ -25,6 +25,7 @@ command:
     protection: "物品保护"
     adventure: "冒险"
     mobs: "怪物"
+    items: "物品"
 
   help:
     header: "TriTown 命令"
@@ -166,6 +167,14 @@ command:
     level-deep: "<gray> · 位于 Y 0 以下，等级更高。"
     balance-header: "各等级的僵尸对上一整套钻石装备："
     balance-row: "<gray>Lv <white>{level}</white>：<red>{health}❤</red>，每击 <red>{hit}</red> · <white>{hits}</white> 下击杀 · 每击扣除基础生命的 <white>{percent}%</white>"
+
+  item:
+    description: "发放服务器自己的物品"
+    usage: "<red>用法：<white>/tritown item <give <player> <id> [amount]|list></white>"
+    not-found: "<red><white>{name}</white> 不在线。"
+    unknown: "<red>没有物品 <white>{id}</white>。<gray>/tritown item list</gray> 会列出所有物品。"
+    given: "已将 <white>{amount}x {id}</white> 发给 <white>{name}</white>。"
+    list: "共 <white>{amount}</white> 种物品：<gray>{ids}"
 
   trades:
     description: "打开服务器的全局商店"
@@ -1156,6 +1165,7 @@ gui:
       strength: "<gray>按其数值的百分比提高你对怪物的每次伤害。"
       crit-chance: "<gray>攻击怪物时触发暴击的几率，跳劈会提高它。"
       crit-damage: "<gray>暴击额外造成的伤害。"
+      magic-find: "<gray>提高怪物掉落其材料的几率。抢夺附魔会提高它。"
     source:
       base: "基础"
       armor: "盔甲"
@@ -1258,6 +1268,7 @@ combat:
     strength: "<dark_red>❁ 力量"
     crit-chance: "<blue>☣ 暴击率"
     crit-damage: "<blue>☠ 暴击伤害"
+    magic-find: "<aqua>✯ 魔法寻宝"
 
   hud:
     bar: "<red>❤ {health}/{max}</red>      <green>❈ {defense}"
@@ -1289,6 +1300,74 @@ mob:
     summoner: "召唤"
     blinking: "闪现"
     warded: "护盾"
+
+
+# plugins/TriTown/content/items.yml 中的物品，按 id 排列。名称会使用物品稀有度的颜色，所以名称本身不带颜色。
+# 每行描述请保持简短：它是物品提示框中的一行。
+item:
+  grave-dust:
+    name: "墓土"
+    lore: "从行尸身上刮下的尘土。"
+  bone-shard:
+    name: "碎骨"
+    lore: "从骷髅骨架上崩下的碎片。"
+  silk-strand:
+    name: "蛛丝"
+    lore: "比寻常蛛网更坚韧的丝线。"
+  volatile-powder:
+    name: "不稳定火药"
+    lore: "余温未散，轻拿轻放。"
+  frost-shard:
+    name: "霜晶碎片"
+    lore: "握在手中也不会融化。"
+  tidal-pearl:
+    name: "潮汐珍珠"
+    lore: "一颗珠子里藏着大海的重量。"
+  night-membrane:
+    name: "夜幕薄膜"
+    lore: "取自猎捕失眠者的怪物。"
+  raider-mark:
+    name: "袭击者徽记"
+    lore: "袭击村庄之人的随身之物。"
+  gilded-tusk:
+    name: "镀金獠牙"
+    lore: "黄金，以及曾以此为傲的某物。"
+  ember-core:
+    name: "余烬之核"
+    lore: "烈焰人的心脏，仍在燃烧。"
+  wailing-tear:
+    name: "哀嚎之泪"
+    lore: "贴近耳边，仍能听见啜泣。"
+  cinder-ash:
+    name: "余烬骨灰"
+    lore: "凋灵骷髅骨头燃尽后的残余。"
+  void-fragment:
+    name: "虚空碎片"
+    lore: "群星之间那片虚无的一角。"
+  rift-shell:
+    name: "裂隙之壳"
+    lore: "打开它，里面是别处。"
+  dim-essence:
+    name: "黯淡精华"
+    lore: "从强者身上汲取的力量。"
+  glowing-essence:
+    name: "辉光精华"
+    lore: "从更强者身上汲取的力量。"
+  radiant-essence:
+    name: "璀璨精华"
+    lore: "从最强者身上汲取的力量。"
+  astral-essence:
+    name: "星界精华"
+    lore: "来自世界尽头之外的力量。"
+
+# 物品提示框底部的标签。
+rarity:
+  common: "<white><bold>普通"
+  uncommon: "<green><bold>优秀"
+  rare: "<blue><bold>稀有"
+  epic: "<dark_purple><bold>史诗"
+  legendary: "<gold><bold>传说"
+  mythic: "<light_purple><bold>神话"
 
 
 scoreboard:

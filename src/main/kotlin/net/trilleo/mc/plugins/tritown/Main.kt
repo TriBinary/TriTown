@@ -27,6 +27,7 @@ import net.trilleo.mc.plugins.tritown.storage.storage.JsonStorageStore
 import net.trilleo.mc.plugins.tritown.trades.TradeManager
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
 import net.trilleo.mc.plugins.tritown.utils.Lang
+import net.trilleo.mc.plugins.tritown.utils.LangTranslator
 import net.trilleo.mc.plugins.tritown.utils.MessageUtil
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.logging.Level
@@ -118,6 +119,7 @@ class Main : JavaPlugin() {
         ContentRegistry.load(this)
         CombatSettings.load(pluginConfig)
         MobSettings.load(pluginConfig)
+        LangTranslator.register()
 
         // Before the registrars, like the shops: the main menu reads a player's storage as it is drawn.
         StorageSettings.load(pluginConfig)
@@ -209,6 +211,7 @@ class Main : JavaPlugin() {
         // So no menu item is saved into an inventory and left behind once TriTown is gone.
         MenuItem.stripAll()
         DamageIndicators.clearAll()
+        LangTranslator.unregister()
 
         ShopManager.shutdown()
 

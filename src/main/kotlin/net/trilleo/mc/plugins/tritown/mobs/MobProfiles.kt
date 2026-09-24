@@ -6,19 +6,26 @@ import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
 
-/** What TriTown decided about a mob when it spawned. */
+/**
+ * What TriTown decided about a mob when it spawned.
+ *
+ * @param eligible whether the mob spawned the way a wild one does, so it may
+ *   drop more than vanilla gives: a summoner's minions, for one, may not
+ */
 data class MobProfile(
     val level: Int,
     val rank: MobRank,
     val affixes: Set<Affix>,
     val nameplate: Boolean,
+    val eligible: Boolean,
 ) {
 
     fun has(affix: Affix): Boolean = affix in affixes
 
     companion object {
         /** A mob TriTown never touched: level 1, which is to say vanilla. */
-        val VANILLA = MobProfile(level = 1, rank = MobRank.NORMAL, affixes = emptySet(), nameplate = false)
+        val VANILLA =
+            MobProfile(level = 1, rank = MobRank.NORMAL, affixes = emptySet(), nameplate = false, eligible = false)
     }
 }
 
@@ -39,6 +46,7 @@ object MobProfiles {
     private val RANK = NamespacedKey("tritown", "rank")
     private val AFFIXES = NamespacedKey("tritown", "affixes")
     private val NAMEPLATE = NamespacedKey("tritown", "nameplate")
+    private val ELIGIBLE = NamespacedKey("tritown", "eligible")
 
     fun of(entity: LivingEntity): MobProfile {
         if (entity is Player) return MobProfile.VANILLA
@@ -51,6 +59,7 @@ object MobProfiles {
                 .mapNotNull { name -> Affix.entries.firstOrNull { it.name == name } }
                 .toSet(),
             nameplate = data.get(NAMEPLATE, PersistentDataType.BOOLEAN) == true,
+            eligible = data.get(ELIGIBLE, PersistentDataType.BOOLEAN) == true,
         )
     }
 
@@ -62,6 +71,7 @@ object MobProfiles {
         data.set(RANK, PersistentDataType.STRING, profile.rank.name)
         data.set(AFFIXES, PersistentDataType.LIST.strings(), profile.affixes.map { it.name })
         data.set(NAMEPLATE, PersistentDataType.BOOLEAN, profile.nameplate)
+        data.set(ELIGIBLE, PersistentDataType.BOOLEAN, profile.eligible)
         entity.persistentDataContainer.set(PROFILE, PersistentDataType.TAG_CONTAINER, data)
     }
 

@@ -25,7 +25,7 @@ class YamlReader(private val root: Map<*, *>) {
 
     fun integer(path: List<String>, default: Int, min: Int): Int {
         val raw = find(path) ?: return default
-        val value = (raw as? Number)?.takeIf { it.toDouble() == it.toLong().toDouble() }?.toInt()
+        val value = wholeNumber(raw)
         if (value == null || value < min) {
             warn(path, "a whole number of at least $min", raw, default)
             return default
@@ -33,9 +33,61 @@ class YamlReader(private val root: Map<*, *>) {
         return value
     }
 
+    /**
+     * A `[low, high]` pair of whole numbers of at least [min], or a single one
+     * standing for both.
+     */
+    fun range(path: List<String>, default: IntRange, min: Int): IntRange {
+        val raw = find(path) ?: return default
+        val bounds = when (raw) {
+            is List<*> -> raw.map(::wholeNumber)
+            else -> listOf(wholeNumber(raw), wholeNumber(raw))
+        }
+        val low = bounds.getOrNull(0)
+        val high = bounds.getOrNull(1)
+        if (bounds.size != 2 || low == null || high == null || low < min || high < low) {
+            warn(path, "[low, high] whole numbers of at least $min", raw, "[${default.first}, ${default.last}]")
+            return default
+        }
+        return low..high
+    }
+
+    fun boolean(path: List<String>, default: Boolean): Boolean {
+        val raw = find(path) ?: return default
+        if (raw !is Boolean) {
+            warn(path, "true or false", raw, default)
+            return default
+        }
+        return raw
+    }
+
+    fun text(path: List<String>): String? = find(path)?.toString()?.takeIf { it.isNotBlank() }
+
+    fun texts(path: List<String>): List<String> = when (val raw = find(path)) {
+        null -> emptyList()
+        is List<*> -> raw.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }
+        else -> listOf(raw.toString())
+    }
+
+    /** The keys of the section at [path], in the order the file has them. */
+    fun keys(path: List<String>): List<String> =
+        (find(path) as? Map<*, *>)?.keys?.map { it.toString() }.orEmpty()
+
+    /** The entries of the list at [path] that are sections. */
+    fun sections(path: List<String>): List<Map<*, *>> =
+        (find(path) as? List<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
+
+    /** Records a problem this reader could not see for itself, such as an id that names nothing. */
+    fun warn(path: List<String>, message: String) {
+        warnings += "${path.joinToString(".")}: $message"
+    }
+
     private fun warn(path: List<String>, expected: String, raw: Any, default: Any) {
         warnings += "${path.joinToString(".")} must be $expected, not '$raw'; using $default"
     }
+
+    private fun wholeNumber(raw: Any?): Int? =
+        (raw as? Number)?.takeIf { it.toDouble() == it.toLong().toDouble() }?.toInt()
 
     private fun find(path: List<String>): Any? {
         var node: Any? = root

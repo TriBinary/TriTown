@@ -41,8 +41,11 @@ data class Balance(
         fun damage(level: Int): Double = damageGrowth.pow(level.coerceAtLeast(1) - 1)
     }
 
-    /** Defense a point of vanilla armor or toughness on a worn piece is worth. */
-    data class VanillaMapping(val armorPoint: Double, val toughnessPoint: Double)
+    /**
+     * What vanilla gear is worth: Defense for a point of armor or toughness on a
+     * worn piece, and Magic Find for a level of Looting on the held weapon.
+     */
+    data class VanillaMapping(val armorPoint: Double, val toughnessPoint: Double, val lootingMagicFind: Double)
 
     data class Ranks(val elite: Rank, val champion: Rank)
 
@@ -92,7 +95,7 @@ data class Balance(
             jumpCritChance = 25.0,
             effects = EffectBonuses(strengthPerLevel = 40.0, weaknessPerLevel = 40.0),
             mobs = MobCurves(healthGrowth = 1.13, damageGrowth = 1.10),
-            vanilla = VanillaMapping(armorPoint = 8.0, toughnessPoint = 20.0),
+            vanilla = VanillaMapping(armorPoint = 8.0, toughnessPoint = 20.0, lootingMagicFind = 10.0),
             ranks = Ranks(
                 elite = Rank(chance = 3.0, minLevel = 5, health = 4.0, damage = 1.5, minAffixes = 1, maxAffixes = 2),
                 champion = Rank(chance = 0.4, minLevel = 15, health = 12.0, damage = 2.0, minAffixes = 2, maxAffixes = 3),

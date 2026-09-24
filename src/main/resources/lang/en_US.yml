@@ -25,6 +25,7 @@ command:
     protection: "Protection"
     adventure: "Adventure"
     mobs: "Mobs"
+    items: "Items"
 
   help:
     header: "TriTown Commands"
@@ -166,6 +167,14 @@ command:
     level-deep: "<gray> · Below Y 0, which adds to it."
     balance-header: "A zombie at each level, against a full diamond kit:"
     balance-row: "<gray>Lv <white>{level}</white>: <red>{health}❤</red>, hits for <red>{hit}</red> · dies in <white>{hits}</white> swings · each hit takes <white>{percent}%</white> of base health"
+
+  item:
+    description: "Give out the server's own items"
+    usage: "<red>Usage: <white>/tritown item <give <player> <id> [amount]|list></white>"
+    not-found: "<red><white>{name}</white> is not online."
+    unknown: "<red>There is no item <white>{id}</white>. <gray>/tritown item list</gray> names them all."
+    given: "Gave <white>{amount}x {id}</white> to <white>{name}</white>."
+    list: "<white>{amount}</white> items: <gray>{ids}"
 
   trades:
     description: "Open the server's global shop"
@@ -1156,6 +1165,7 @@ gui:
       strength: "<gray>Adds its value in percent to every hit on a mob."
       crit-chance: "<gray>The chance that a hit on a mob is critical. Jump attacks add to it."
       crit-damage: "<gray>How much more a critical hit does."
+      magic-find: "<gray>Makes a mob likelier to drop its material. Looting adds to it."
     source:
       base: "Base"
       armor: "Armor"
@@ -1258,6 +1268,7 @@ combat:
     strength: "<dark_red>❁ Strength"
     crit-chance: "<blue>☣ Crit Chance"
     crit-damage: "<blue>☠ Crit Damage"
+    magic-find: "<aqua>✯ Magic Find"
 
   hud:
     bar: "<red>❤ {health}/{max}</red>      <green>❈ {defense}"
@@ -1290,6 +1301,74 @@ mob:
     summoner: "Summoner"
     blinking: "Blinking"
     warded: "Warded"
+
+
+# The items in plugins/TriTown/content/items.yml, by id. A name takes the colour of the item's rarity, so
+# names carry no colour of their own. Keep each lore line short: it is one line of the item's tooltip.
+item:
+  grave-dust:
+    name: "Grave Dust"
+    lore: "Scraped off the walking dead."
+  bone-shard:
+    name: "Bone Shard"
+    lore: "Splintered from a skeleton's frame."
+  silk-strand:
+    name: "Silk Strand"
+    lore: "Stronger than any web a spider leaves."
+  volatile-powder:
+    name: "Volatile Powder"
+    lore: "Still warm. Handle gently."
+  frost-shard:
+    name: "Frost Shard"
+    lore: "It never melts, even in your hand."
+  tidal-pearl:
+    name: "Tidal Pearl"
+    lore: "The sea's weight, held in a bead."
+  night-membrane:
+    name: "Night Membrane"
+    lore: "Torn from what hunts the sleepless."
+  raider-mark:
+    name: "Raider's Mark"
+    lore: "Carried by those who ride against villages."
+  gilded-tusk:
+    name: "Gilded Tusk"
+    lore: "Gold, and something that was proud of it."
+  ember-core:
+    name: "Ember Core"
+    lore: "A blaze's heart, still burning."
+  wailing-tear:
+    name: "Wailing Tear"
+    lore: "It still sobs when held to the ear."
+  cinder-ash:
+    name: "Cinder Ash"
+    lore: "What is left of a wither skeleton's bones."
+  void-fragment:
+    name: "Void Fragment"
+    lore: "A piece of the nothing between the stars."
+  rift-shell:
+    name: "Rift Shell"
+    lore: "It opens onto somewhere else."
+  dim-essence:
+    name: "Dim Essence"
+    lore: "Power drawn from the strong."
+  glowing-essence:
+    name: "Glowing Essence"
+    lore: "Power drawn from the stronger."
+  radiant-essence:
+    name: "Radiant Essence"
+    lore: "Power drawn from the strongest."
+  astral-essence:
+    name: "Astral Essence"
+    lore: "Power from beyond the edge of the world."
+
+# The label at the foot of an item's tooltip.
+rarity:
+  common: "<white><bold>COMMON"
+  uncommon: "<green><bold>UNCOMMON"
+  rare: "<blue><bold>RARE"
+  epic: "<dark_purple><bold>EPIC"
+  legendary: "<gold><bold>LEGENDARY"
+  mythic: "<light_purple><bold>MYTHIC"
 
 
 # The sidebar. Which lines appear, and in what order, is set per board in

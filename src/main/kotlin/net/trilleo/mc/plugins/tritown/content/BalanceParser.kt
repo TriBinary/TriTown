@@ -48,6 +48,11 @@ object BalanceParser {
                     default.vanilla.toughnessPoint,
                     min = 0.0
                 ),
+                lootingMagicFind = reader.number(
+                    listOf("vanilla", "looting-magic-find"),
+                    default.vanilla.lootingMagicFind,
+                    min = 0.0
+                ),
             ),
             ranks = Balance.Ranks(
                 elite = rank(reader, "elite", default.ranks.elite),

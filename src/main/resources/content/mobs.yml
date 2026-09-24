@@ -1,0 +1,86 @@
+# TriTown - Mobs
+#
+# What wild mobs drop on top of vanilla's loot. /tritown reload reads this file again. The items are defined in
+# items.yml.
+#
+# Only a mob that spawned in the wild drops any of this — never one from a spawner, an egg or a command — and only
+# when a player killed it and players dealt at least player-share percent of its health between them, so a trap, a
+# lava pit or another mob doing the work earns nothing. A tamed pet's damage counts for its owner. What drops is the
+# killer's, like the rest of the mob's loot.
+
+# Kinds of mob that drop the same material, by their Minecraft names. A kind may be in one family only; one in none
+# drops no material, though a ranked one still drops essence.
+families:
+  zombie:
+    mobs: [ZOMBIE, HUSK, ZOMBIE_VILLAGER]
+    material: grave-dust
+  skeleton:
+    mobs: [SKELETON, BOGGED]
+    material: bone-shard
+  spider:
+    mobs: [SPIDER, CAVE_SPIDER]
+    material: silk-strand
+  creeper:
+    mobs: [CREEPER]
+    material: volatile-powder
+  stray:
+    mobs: [STRAY]
+    material: frost-shard
+  drowned:
+    mobs: [DROWNED, GUARDIAN]
+    material: tidal-pearl
+  phantom:
+    mobs: [PHANTOM]
+    material: night-membrane
+  raider:
+    mobs: [PILLAGER, VINDICATOR, EVOKER, RAVAGER, WITCH]
+    material: raider-mark
+  piglin:
+    mobs: [PIGLIN, PIGLIN_BRUTE, ZOMBIFIED_PIGLIN, HOGLIN, ZOGLIN]
+    material: gilded-tusk
+  blaze:
+    mobs: [BLAZE, MAGMA_CUBE]
+    material: ember-core
+  ghast:
+    mobs: [GHAST]
+    material: wailing-tear
+  wither-skeleton:
+    mobs: [WITHER_SKELETON]
+    material: cinder-ash
+  enderman:
+    mobs: [ENDERMAN, ENDERMITE]
+    material: void-fragment
+  shulker:
+    mobs: [SHULKER]
+    material: rift-shell
+
+loot:
+  # The lowest level a mob drops anything extra at.
+  min-level: 3
+  # Percent of a mob's health players must have dealt between them.
+  player-share: 50
+  # Magic Find makes a normal mob's material likelier, by its value in percent, up to this much.
+  magic-find-cap: 100
+  # For each rank: the percent chance of the family's material, how many drop ([fewest, most]), and how much essence.
+  normal:
+    chance: 4
+    amount: [1, 1]
+  elite:
+    chance: 100
+    amount: [1, 3]
+    essence: [1, 2]
+  champion:
+    chance: 100
+    amount: [3, 6]
+    essence: [3, 5]
+
+# Which essence a ranked mob drops: the first grade whose max-level its level is within.
+essence:
+  - item: dim-essence
+    max-level: 15
+  - item: glowing-essence
+    max-level: 30
+  - item: radiant-essence
+    max-level: 45
+  - item: astral-essence
+    max-level: 60

@@ -68,11 +68,11 @@ The server console reads commands from the terminal running Gradle.
 src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
 ├── commands/                # Sub-commands (auto-registered)
-│   ├── admin/  adventure/  economy/  info/  menu/  mobs/  news/
-│   └── moderation/  protection/  scoreboard/  shop/  storage/  trade/
+│   ├── admin/  adventure/  economy/  info/  items/  menu/  mobs/
+│   └── moderation/  news/  protection/  scoreboard/  shop/  storage/  trade/
 ├── combat/                  # Combat: stats, DamageMath, the health lens, the HUD, indicators (not scanned)
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
-├── content/                 # The content files: balance.yml and its parser, ContentRegistry (not scanned)
+├── content/                 # The content files and their parsers, ContentRegistry, content items (not scanned)
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
 ├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
 │                            # storage (not scanned)
@@ -82,7 +82,7 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
-├── mobs/                    # Mob levels: zones, profiles, nameplates (not scanned)
+├── mobs/                    # Mobs: levels, ranks and affixes, nameplates, loot (not scanned)
 ├── news/                    # Server news: posts, storage, read state, notifications (not scanned)
 ├── protection/              # Item protection: drop owners, drop windows, container and entity claims
 │                            # (not scanned)
@@ -97,7 +97,7 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
                              # ChatPrompt, CountdownUtil, TeamUtil, TagUtil, PDCUtil, GameRuleUtil, AtomicFile
 src/main/resources/
 ├── config.yml  plugin.yml
-├── content/                 # balance.yml — what the combat layer is tuned with
+├── content/                 # balance.yml, items.yml, mobs.yml — what the combat layer is made of and tuned with
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
 ```
 
@@ -129,6 +129,8 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
 - **Never write a player-facing string in Kotlin.** Every message, item name, lore line and menu title comes from
   `sender.tr("key")` / `player.tr("key", "name" to value)`. A hardcoded sentence is a bug, even a short one.
+- **Text on an item is a `LangTranslator.component(key)`**, never rendered text: the item is seen by many players, and
+  only a translatable key reads in each one's language and keeps every copy identical so it stacks.
 - `Lang` loads `plugins/TriTown/lang/<id>.yml` (copied from `src/main/resources/lang/` on first start). With
   `language: auto` in `config.yml` each player gets the file matching their client locale (`zh_tw` → `zh_CN` by prefix),
   falling back to `en_US`. The console, and anything without a player behind it, uses the configured language.
@@ -138,7 +140,8 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 - Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
   per menu. Reuse an existing key before adding one.
 - Key names must appear as whole string literals (`tr(if (credit) "a.credit" else "a.debit")`, not `"a.$state"`) so
-  `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list) and `money.source.*`.
+  `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list), `money.source.*`, and
+  `item.*` for content items, which `ContentFilesTest` holds to `items.yml` instead.
 - Placeholder names are lowercase letters only (`{name}`, `{balance}`), which is what the test checks for.
 - A GUI declares `titleKey` and its title is translated for the viewer; override `title(player)` when the title carries
   live data.
@@ -369,6 +372,10 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
   claims are always level 1, so vanilla farms keep working. Read a level through `MobProfiles.level`.
 - **Environment damage to a mob is level-1 units** (`DamageMath.environmentHit`), so no trap outgrows level 1. Keep it
   that way for any new source of damage a player does not deal by hand.
+- **Extra loot only ever comes from `MobLoot`**: an eligible mob, killed by a player, with players' damage over
+  `player-share`. Mobs never drop money — a new faucet belongs in a shop the owner prices.
+- **A content item stays an echo shard with an `item_model`**, whose one use `ContentItemListener` refuses. A new base
+  item would need every vanilla use of it refused first.
 - **Every affix effect lives in `AffixEffects`**, and is triggered by a mob. A new affix goes there, in `Affix`, and in
   both language files, and must never let a player's hit on a player change.
 - **A mob's nameplate is shared by every viewer**, so its frame is rendered in the configured language (`Lang.tr(null,

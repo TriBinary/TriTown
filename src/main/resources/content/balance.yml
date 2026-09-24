@@ -42,6 +42,8 @@ mobs:
 vanilla:
   armor-point: 8
   toughness-point: 20
+  # Magic Find each level of Looting on the held weapon gives.
+  looting-magic-find: 10
 
 # Wild mobs that spawn at or above min-level can spawn ranked instead, chance percent of the time. A rank multiplies a
 # mob's health and hits, and gives it affixes: between min-affixes and max-affixes of them, picked at random. The

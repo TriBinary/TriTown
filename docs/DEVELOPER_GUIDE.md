@@ -1133,8 +1133,11 @@ list's command descriptions and a transaction's recorded source.
 - **Escape player-written text** with `MiniMessage.miniMessage().escapeTags(...)` before passing it as an argument.
   Arguments are inserted verbatim.
 - **Write keys as whole string literals.** `tr(if (credit) "gui.history.credit" else "gui.history.debit")` is fine;
-  `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list) and
-  `money.source.*` are the only runtime-built keys.
+  `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list),
+  `money.source.*` and `item.*` (content items, held to `items.yml` by `ContentFilesTest`) are the only runtime-built
+  keys.
+- **Text on an item goes through `LangTranslator`**, so each viewer reads it in their own language and every copy
+  stacks. See [LangTranslator](UTILITY_GUIDE.md#langtranslator).
 - **Placeholder names are lowercase letters only** — `{name}`, `{balance}`, `{pages}`.
 - **Server-log messages stay English.** `logger.info`/`warning`/`severe` are for the owner, not the player.
 - Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
@@ -3507,6 +3510,43 @@ one with a player within 32 blocks its turn twice a second: particles, and blink
 
 A slime's children keep its level but not its rank, or one champion would split into a crowd of them.
 
+### Loot
+
+A wild mob drops the materials and essence `mobs.yml` gives it (see [Content Files](#content-files)) on top of vanilla's
+loot, through `MobLoot.dropsFor`, when all of these hold:
+
+1. it is **eligible**: its profile says it spawned in the wild. A summoner's minions, and anything from a spawner, are
+   not;
+2. a **player killed it**;
+3. **players dealt enough of it**: the `DamageLedger` has at least `player-share` percent of its pool credited to
+   players, a tamed pet's hits counting for its owner. `DamageListener.afterDamage` credits each hit, capped at the
+   health the mob had left. So a trap, a lava pit or another mob doing the work earns nothing;
+4. it is at least `min-level`.
+
+`LootRoller` rolls the drops: the family's material at the rank's chance — a normal mob's multiplied by the killer's
+Magic Find, up to `magic-find-cap` — and, for a ranked mob, essence of the grade its level falls in. It is plain Kotlin
+over a seeded `Random`, tested in `LootRollerTest`; the ledger is tested in `DamageLedgerTest`.
+
+The drops go into `EntityDeathEvent.getDrops()`, so item protection's death window hands them to the killer like the
+rest of the mob's loot, and nothing new had to be taught to it. **Mobs never drop money**: materials are sold to the
+server's shops, so every faucet stays one the owner prices.
+
+### Content items
+
+Materials and essence are *content items*, defined in `items.yml` and made by `ContentItems.create`. Every one is an
+**echo shard** wearing another vanilla item's look through the `item_model` component, and carrying its id under
+`PluginItem.ITEM_ID_KEY`. An echo shard's only use is crafting a recovery compass, which
+`listeners/items/ContentItemListener` refuses in a crafting grid and a crafter — so a content item can't be placed,
+eaten, smelted, brewed, traded to a villager or used as what it looks like. Pick nothing else as the base without
+re-checking every use it has.
+
+Its name and lore are `LangTranslator` components (`item.<id>.name`, `item.<id>.lore`), and its name takes its
+`Rarity`'s colour, so every copy is identical and each player reads it in their own language. `ContentItems.idOf`
+recognises one even after its definition is gone, so it stays as inert as the day it dropped.
+
+`/tritown item give <player> <id> [amount]` and `item list` (`tritown.item.admin`, `commands/items/ItemCommand`) hand
+them out.
+
 **Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] ★ Vampiric Zombie 1,820/2,400❤` — redrawn a tick after it is
 hurt or healed. A ranked mob's is always visible, so nobody walks into a champion unwarned. A name is shared by every viewer, so its frame is rendered in the configured language, and the kind of
 mob is a `<lang:entity.minecraft.…>` tag that each client fills in itself. It shows on the crosshair, the way a named
@@ -3563,11 +3603,21 @@ content files say what it is worth. They live in `src/main/resources/content/`, 
 
 | File          | Holds                                                                                     |
 |:--------------|:------------------------------------------------------------------------------------------|
-| `balance.yml` | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla armor's worth |
+| `balance.yml` | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks and affixes |
+| `items.yml`   | Content items: each id's look (`model`), `rarity` and `glint`                              |
+| `mobs.yml`    | Mob families and their material, the loot rules per rank, and the essence grades           |
 
-`ContentRegistry` loads them with SnakeYAML into an immutable snapshot and swaps it in whole. Parsing is plain Kotlin
-over the parsed map (`BalanceParser`), so the bundled file is checked in a test: `BalanceParserTest` requires it to
-parse to exactly `Balance.DEFAULT` with no warnings, so the defaults in Kotlin and the file can never disagree.
+`ContentRegistry` loads them with SnakeYAML into immutable snapshots and swaps each in whole. Parsing is plain Kotlin
+over the parsed map (`BalanceParser`, `ContentParser`, both reading through `YamlReader`), so the bundled files are
+checked in tests:
+
+- `BalanceParserTest` requires `balance.yml` to parse to exactly `Balance.DEFAULT` with no warnings, so the defaults in
+  Kotlin and the file can never disagree.
+- `ContentFilesTest` requires `items.yml` and `mobs.yml` to parse without a warning, every item to have its name and
+  lore in every language, and no language to translate an item that does not exist.
+
+What only the server can check — that a `model` is a real item, that a family's mob is a real kind — is checked as the
+files load, and warned about in the console.
 
 - A value that is missing takes the default quietly; one that is present but unusable takes it too, and the console
   names it.

@@ -5,6 +5,7 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.util.*
 
 /**
  * Translations for every player-facing string.
@@ -76,14 +77,23 @@ object Lang {
     fun find(sender: CommandSender?, key: String): String? = language(sender).values[key]
 
     /**
+     * The translation of [key] for a client set to [locale], or `null` when no
+     * language defines it. Follows `language` in `config.yml` the way [tr]
+     * does, so a server set to one language shows it on items too.
+     */
+    fun find(locale: Locale, key: String): String? = language(locale.toString()).values[key]
+
+    /**
      * The id of the language [sender] reads, such as `zh_CN` — the same one [tr]
      * picks, so text kept outside the language files can follow it.
      */
     fun idFor(sender: CommandSender?): String = language(sender).id
 
-    private fun language(sender: CommandSender?): Language {
-        val id =
-            if (configured.equals(AUTO, ignoreCase = true)) (sender as? Player)?.locale()?.toString() else configured
+    private fun language(sender: CommandSender?): Language = language((sender as? Player)?.locale()?.toString())
+
+    /** The language for a client asking for [clientLocale], whatever `language` in `config.yml` makes of it. */
+    private fun language(clientLocale: String?): Language {
+        val id = if (configured.equals(AUTO, ignoreCase = true)) clientLocale else configured
         return id?.let(::match) ?: fallback
     }
 

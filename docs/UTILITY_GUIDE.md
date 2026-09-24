@@ -10,6 +10,7 @@ reduce boilerplate and provide commonly needed functionality out of the box.
 | `TeamUtil`      | Custom team management with server-data persistence                    |
 | `TagUtil`       | Per-player string tag management with player-data persistence          |
 | `Lang`          | Translations: per-player language files and the `tr()` helper          |
+| `LangTranslator` | Text on an item, drawn in each viewer's own language                  |
 | `MessageUtil`   | Prefix-decorated message sender for any command sender                 |
 | `ChatPrompt`    | Asks a player a question in chat and hands the answer back             |
 | `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
@@ -377,6 +378,7 @@ has to follow.
 | `Lang.load(plugin, language)`        | Copies the bundled files to `plugins/TriTown/lang/` if missing and loads every language file.        |
 | `Lang.tr(sender, key, vararg args)`  | The translation of `key` for `sender`, with `{name}` placeholders filled; the key itself if missing. |
 | `Lang.find(sender, key)`             | The raw translation, or `null` when no language defines `key` (for runtime-built keys).              |
+| `Lang.find(locale, key)`             | The same for a client locale, honouring `language` in `config.yml`, for `LangTranslator`.            |
 | `Lang.idFor(sender)`                 | The id of the language `sender` reads, as `tr` picks it, for text kept outside the language files.   |
 | `Lang.ids`                           | Ids of every loaded language file (`en_US`, `zh_CN`, and any the server owner added).                |
 | `CommandSender.tr(key, vararg args)` | Extension shorthand for `Lang.tr(this, key, *args)`.                                                 |
@@ -395,6 +397,25 @@ val line = player.tr("command.balance.yours", "balance" to EconomyUtil.format(ba
 
 Values are MiniMessage with `{placeholder}` arguments, and arguments are inserted verbatim — escape player-written text
 with `MiniMessage.miniMessage().escapeTags(...)` before passing it.
+
+---
+
+## LangTranslator
+
+An item is stored once but seen by everyone who holds it, trades for it or looks at it in a shop, so its text cannot be
+rendered in one player's language. `LangTranslator.component(key)` returns a translatable component keyed
+`tritown:<key>` instead, and Paper renders it through Adventure's `GlobalTranslator` for each client as the item is
+sent, which `LangTranslator` answers from `Lang`. `Main` registers it on enable and removes it on disable.
+
+```kotlin
+stack.setData(DataComponentTypes.ITEM_NAME, LangTranslator.component("item.grave-dust.name").color(NamedTextColor.WHITE))
+```
+
+- **The item carries only keys**, so two copies are always identical and stack wherever they came from. Never render
+  item text into a stack that can reach another player.
+- **Keep such text free of arguments.** Compose a line from components instead — a translated label followed by a
+  plain number — rather than filling `{placeholders}`.
+- Only `tritown:` keys are answered; the game's own translations are left alone.
 
 ---
 

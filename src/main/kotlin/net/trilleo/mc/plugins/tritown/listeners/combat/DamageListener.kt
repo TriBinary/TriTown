@@ -4,6 +4,7 @@ import net.trilleo.mc.plugins.tritown.combat.*
 import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
+import net.trilleo.mc.plugins.tritown.mobs.MobLoot
 import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
 import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
 import org.bukkit.attribute.Attribute
@@ -57,7 +58,8 @@ class DamageListener : Listener {
 
     /**
      * Everything that follows a hit that landed: a mob's affixes answering it,
-     * its nameplate catching up, and the damage a player dealt floating up.
+     * its nameplate catching up, the hit counted towards its loot, and the
+     * damage a player dealt floating up.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     fun afterDamage(event: EntityDamageEvent) {
@@ -74,6 +76,7 @@ class DamageListener : Listener {
         }
 
         MobNameplate.updateLater(victim)
+        MobLoot.credit(victim, attacker, dealt)
         val left = (victim.health - event.finalDamage) / CombatHealth.vanillaMax(victim)
         AffixEffects.afterHurt(victim, MobProfiles.of(victim), left)
 
