@@ -1269,8 +1269,27 @@ combat:
 
 mob:
   # A levelled mob's name. Everyone sees the same one, so it is in the server's language. {name} is the kind of mob,
-  # which each player's client writes in its own language.
-  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] <red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+  # which each player's client writes in its own language. {badge} is the rank's, and {affixes} lists each affix as
+  # affix-name writes it.
+  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] {badge}{affixes}<red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+  affix-name: "<yellow>{name} "
+
+  rank:
+    elite: "<gold>★ "
+    champion: "<light_purple>★★ "
+
+  affix:
+    armored: "Armored"
+    frenzied: "Frenzied"
+    vampiric: "Vampiric"
+    enraged: "Enraged"
+    molten: "Molten"
+    frostbound: "Frostbound"
+    venomous: "Venomous"
+    volatile: "Volatile"
+    summoner: "Summoner"
+    blinking: "Blinking"
+    warded: "Warded"
 
 
 # The sidebar. Which lines appear, and in what order, is set per board in

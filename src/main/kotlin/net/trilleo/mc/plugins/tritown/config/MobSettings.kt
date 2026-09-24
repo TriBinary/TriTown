@@ -2,6 +2,7 @@ package net.trilleo.mc.plugins.tritown.config
 
 import net.trilleo.mc.plugins.tritown.mobs.LevelZone
 import org.bukkit.World
+import org.bukkit.entity.EntityType
 
 /**
  * An immutable snapshot of the `mobs` block of `config.yml`.
@@ -10,6 +11,7 @@ import org.bukkit.World
  * @param depthBonus levels an Overworld mob gains for spawning below Y 0
  * @param xpPerLevel how much more experience a mob drops per level above 1, as a fraction
  * @param nameplates whether levelled mobs carry their level and health as a name
+ * @param rankExempt kinds of mob that never spawn ranked
  */
 data class MobSettings(
     val nightBonus: Int,
@@ -20,6 +22,7 @@ data class MobSettings(
     val worlds: Map<String, LevelZone>,
     val xpPerLevel: Double,
     val nameplates: Boolean,
+    val rankExempt: Set<EntityType>,
 ) {
 
     /** The rings mobs in [world] follow: its own, if it has any, or those of its kind of world. */
@@ -58,6 +61,9 @@ data class MobSettings(
                 worlds = worlds,
                 xpPerLevel = config.getDouble("mobs.xp-per-level", 0.02).coerceAtLeast(0.0),
                 nameplates = config.getBoolean("mobs.nameplates", true),
+                rankExempt = config.getStringList("mobs.ranks.exempt")
+                    .mapNotNull { name -> EntityType.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } }
+                    .toSet(),
             )
         }
 

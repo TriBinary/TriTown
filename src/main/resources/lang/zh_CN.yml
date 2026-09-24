@@ -1269,7 +1269,26 @@ combat:
 
 mob:
   # 有等级的怪物的名字。所有人看到的是同一个，所以使用服务器的语言。{name} 是怪物的种类，由每位玩家的客户端以自己的语言显示。
-  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] <red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+  # {badge} 是等阶的标记，{affixes} 按 affix-name 的写法列出每个词缀。
+  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] {badge}{affixes}<red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+  affix-name: "<yellow>{name} "
+
+  rank:
+    elite: "<gold>★ "
+    champion: "<light_purple>★★ "
+
+  affix:
+    armored: "重甲"
+    frenzied: "迅捷"
+    vampiric: "吸血"
+    enraged: "暴怒"
+    molten: "熔火"
+    frostbound: "霜缚"
+    venomous: "剧毒"
+    volatile: "爆裂"
+    summoner: "召唤"
+    blinking: "闪现"
+    warded: "护盾"
 
 
 scoreboard:

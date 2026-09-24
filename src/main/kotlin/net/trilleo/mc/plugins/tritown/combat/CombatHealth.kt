@@ -19,10 +19,15 @@ object CombatHealth {
     fun vanillaMax(entity: LivingEntity): Double =
         entity.getAttribute(Attribute.MAX_HEALTH)?.value?.takeIf { it > 0.0 } ?: DamageMath.VANILLA_PLAYER_HEALTH
 
-    fun max(entity: LivingEntity): Double = when (entity) {
-        is Player -> DamageMath.playerMaxHealth(PlayerStats.sheet(entity)[Stat.HEALTH], vanillaMax(entity))
-        else -> DamageMath.mobMaxHealth(vanillaMax(entity), ContentRegistry.balance, MobProfiles.level(entity))
+    fun max(entity: LivingEntity): Double {
+        if (entity is Player) return DamageMath.playerMaxHealth(PlayerStats.sheet(entity)[Stat.HEALTH], vanillaMax(entity))
+        val balance = ContentRegistry.balance
+        val profile = MobProfiles.of(entity)
+        return DamageMath.mobMaxHealth(vanillaMax(entity), balance, profile.level, profile.rank.health(balance))
     }
+
+    /** How full the pool is, from 0 to 1 — the same as the entity's hearts. */
+    fun fraction(entity: LivingEntity): Double = (entity.health / vanillaMax(entity)).coerceIn(0.0, 1.0)
 
     fun current(entity: LivingEntity): Double =
         DamageMath.toRpg(entity.health, max(entity), vanillaMax(entity)).coerceAtLeast(0.0)

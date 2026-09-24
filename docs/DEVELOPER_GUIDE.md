@@ -3479,8 +3479,36 @@ drops them all.
 A level grows a mob's pool by `health-growth^(level−1)` and its hits by `damage-growth^(level−1)`, and its dropped
 experience by `mobs.xp-per-level` per level.
 
-**Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] Zombie 1,820/2,400❤` — redrawn a tick after it is
-hurt or healed. A name is shared by every viewer, so its frame is rendered in the configured language, and the kind of
+### Ranks and affixes
+
+A wild mob at or above a rank's `min-level` can spawn **elite** or **champion** instead (`MobRoll.rank`, the champion
+roll first). A rank multiplies the mob's pool and hits (`DamageMath`'s `multiplier`) and gives it distinct random
+affixes (`MobRoll.affixes`). Rank, chances and multipliers are the `ranks` block of `balance.yml`; `mobs.ranks.exempt`
+keeps bosses such as the Warden unranked. `MobRoll` is plain Kotlin over a `Random` the caller hands in, tested in
+`MobRollTest` with seeds.
+
+| Affix      | Does                                                                     |
+|:-----------|:-------------------------------------------------------------------------|
+| Armored    | Has Defense                                                              |
+| Frenzied   | Moves faster (an attribute modifier saved with the mob)                  |
+| Vampiric   | Heals a share of what it deals to a player                               |
+| Enraged    | Hits harder below a share of its health                                  |
+| Molten, Frostbound, Venomous | Sets a player it hits on fire, slows them, poisons them |
+| Volatile   | A telegraphed blast where it died: a hit from the mob, not a real explosion, so no blocks or drops are lost |
+| Summoner   | Calls minions of its kind once below a share of its health, at its level but unranked |
+| Blinking   | Steps in behind a target that keeps its distance                         |
+| Warded     | Shrugs off projectiles until something strikes it in melee               |
+
+**`AffixEffects` is the only place any of it happens**, and every effect is triggered by a mob, so none of it can reach
+a hit between players. What an affix remembers about one mob — a broken ward, minions already called, the last blink —
+is in memory and forgotten when the mob unloads, which only ever favours the mob. `RankedMobs` holds the ranked mobs in
+loaded chunks (kept in step by `MobListener`'s spawn, load and unload handlers), and `tasks/mobs/AffixTask` gives each
+one with a player within 32 blocks its turn twice a second: particles, and blinking.
+
+A slime's children keep its level but not its rank, or one champion would split into a crowd of them.
+
+**Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] ★ Vampiric Zombie 1,820/2,400❤` — redrawn a tick after it is
+hurt or healed. A ranked mob's is always visible, so nobody walks into a champion unwarned. A name is shared by every viewer, so its frame is rendered in the configured language, and the kind of
 mob is a `<lang:entity.minecraft.…>` tag that each client fills in itself. It shows on the crosshair, the way a named
 mob's does. Setting a name never makes a mob persistent (only a name tag does), and a mob a player names keeps their
 name: `PlayerNameEntityEvent` drops the nameplate.

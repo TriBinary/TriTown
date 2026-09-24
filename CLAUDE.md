@@ -369,6 +369,8 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
   claims are always level 1, so vanilla farms keep working. Read a level through `MobProfiles.level`.
 - **Environment damage to a mob is level-1 units** (`DamageMath.environmentHit`), so no trap outgrows level 1. Keep it
   that way for any new source of damage a player does not deal by hand.
+- **Every affix effect lives in `AffixEffects`**, and is triggered by a mob. A new affix goes there, in `Affix`, and in
+  both language files, and must never let a player's hit on a player change.
 - **A mob's nameplate is shared by every viewer**, so its frame is rendered in the configured language (`Lang.tr(null,
   …)`) and a mob's kind is a `<lang:…>` tag the client fills in. Setting a name must never make a mob persistent.
 

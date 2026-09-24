@@ -61,9 +61,12 @@ object DamageMath {
     fun shotHit(vanillaHit: Double, shooter: StatSheet, balance: Balance, crit: Boolean): Double =
         vanillaHit * balance.lens * strengthMultiplier(shooter) * critMultiplier(shooter, crit)
 
-    /** A mob's hit on a player or another mob, before the target's Defense. */
-    fun mobHit(vanillaHit: Double, balance: Balance, level: Int): Double =
-        vanillaHit * balance.lens * balance.mobs.damage(level)
+    /**
+     * A mob's hit on a player or another mob, before the target's Defense.
+     * [multiplier] is what the mob's rank and affixes make of it.
+     */
+    fun mobHit(vanillaHit: Double, balance: Balance, level: Int, multiplier: Double = 1.0): Double =
+        vanillaHit * balance.lens * balance.mobs.damage(level) * multiplier
 
     /**
      * Whatever else hurts a mob — fire, lava, falling, cactus, a player's
@@ -74,8 +77,9 @@ object DamageMath {
 
     fun afterDefense(hit: Double, defense: Double): Double = hit * defenseMultiplier(defense)
 
-    fun mobMaxHealth(vanillaMax: Double, balance: Balance, level: Int): Double =
-        vanillaMax * balance.lens * balance.mobs.health(level)
+    /** A mob's RPG pool. [multiplier] is what its rank makes of it. */
+    fun mobMaxHealth(vanillaMax: Double, balance: Balance, level: Int, multiplier: Double = 1.0): Double =
+        vanillaMax * balance.lens * balance.mobs.health(level) * multiplier
 
     /**
      * A player's RPG pool. The Health stat is measured against vanilla's 20, so

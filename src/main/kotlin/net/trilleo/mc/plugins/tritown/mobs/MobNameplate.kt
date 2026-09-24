@@ -10,14 +10,16 @@ import org.bukkit.entity.LivingEntity
 import java.util.*
 
 /**
- * The name a levelled mob wears: its level, its kind and its RPG health.
+ * The name a levelled mob wears: its level, its rank and affixes, its kind and
+ * its RPG health.
  *
  * A name is shared by everyone who sees the mob, so its frame is in the
  * server's configured language. The kind is written as the game's own
  * translation key, which each client fills in in its own language.
  *
- * It shows when a player looks straight at the mob, the way a named mob's
- * does. Setting it does not make the mob persistent: only a name tag does
+ * A normal mob's shows when a player looks straight at it, the way a named
+ * mob's does; a ranked mob's always shows, so nobody walks into a champion
+ * unwarned. Setting it does not make the mob persistent: only a name tag does
  * that, and a mob a player names keeps their name and loses the nameplate.
  */
 object MobNameplate {
@@ -25,21 +27,29 @@ object MobNameplate {
     private val pending = HashSet<UUID>()
 
     fun update(entity: LivingEntity) {
-        if (!entity.isValid || !MobProfiles.hasNameplate(entity)) return
+        if (!entity.isValid) return
+        val profile = MobProfiles.of(entity)
+        if (!profile.nameplate) return
+
         val text = Lang.tr(
             null,
             "mob.nameplate",
-            "level" to MobProfiles.level(entity),
+            "level" to profile.level,
+            "badge" to (profile.rank.badgeKey?.let { Lang.tr(null, it) } ?: ""),
+            "affixes" to profile.affixes.sortedBy { it.ordinal }.joinToString("") { affix ->
+                Lang.tr(null, "mob.affix-name", "name" to Lang.tr(null, affix.key))
+            },
             "name" to "<lang:${entity.type.translationKey()}>",
             "health" to CombatFormat.health(CombatHealth.current(entity)),
             "max" to CombatFormat.number(CombatHealth.max(entity)),
         )
         entity.customName(ComponentUtil.parse(text))
+        entity.isCustomNameVisible = profile.rank != MobRank.NORMAL
     }
 
     /** [update] on the next tick, once the hit or heal in progress has landed. Asked for twice, it runs once. */
     fun updateLater(entity: LivingEntity) {
-        if (!MobProfiles.hasNameplate(entity) || !pending.add(entity.uniqueId)) return
+        if (!MobProfiles.of(entity).nameplate || !pending.add(entity.uniqueId)) return
         Bukkit.getScheduler().runTask(Main.instance, Runnable {
             pending.remove(entity.uniqueId)
             update(entity)

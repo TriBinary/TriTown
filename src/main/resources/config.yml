@@ -318,6 +318,16 @@ mobs:
   xp-per-level: 0.02
   # Show a levelled mob's level and health when a player looks at it.
   nameplates: true
+  # A wild mob can spawn as an elite or a champion: tougher, harder-hitting, and
+  # with affixes such as Vampiric or Blinking. How often, from which level, and
+  # what the affixes do is in plugins/TriTown/content/balance.yml.
+  ranks:
+    # Kinds of mob that never spawn ranked, because they are bosses already.
+    exempt:
+      - WARDEN
+      - ELDER_GUARDIAN
+      - ENDER_DRAGON
+      - WITHER
 
 # ── Towns ───────────────────────────────────────────────────────────────────
 towns:

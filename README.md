@@ -66,10 +66,11 @@ away or disconnects.
 **Fights worth gearing up for.** Mobs in the wild are levelled by where they spawn: every ring further from spawn is
 harder, the Nether and the End start higher, and night and the deep add to it. Health and hits are in RPG numbers —
 your 100 health is drawn over your ten hearts, a level-1 zombie has 100 and a level-30 one over 3,000 — and your
-Defense, Damage, Strength and crits come from what you wear and hold. `/tt stats` shows them and where each comes from,
-your health and Defense sit above your hotbar, and every hit you land floats its damage up from the mob. At level 1 with vanilla
-gear it plays exactly like vanilla. Town claims are always level 1 and mobs from spawners stay vanilla, so farms keep
-working, and players fighting each other are left entirely to vanilla.
+Defense, Damage, Strength and crits come from what you wear and hold. Some mobs spawn as elites and champions, with
+affixes that make them fight differently. `/tt stats` shows your stats and where each comes from, your health and
+Defense sit above your hotbar, and every hit you land floats its damage up from the mob. At level 1 with vanilla gear it
+plays exactly like vanilla. Town claims are always level 1 and mobs from spawners stay vanilla, so farms keep working,
+and players fighting each other are left entirely to vanilla.
 
 **Server news.** Update notes, written in game and read from the main menu or with `/tt news`. A post is a title and
 categories of short entries — a line or two about one change each, tagged New, Changed, Fixed, Removed or Note — read
@@ -264,6 +265,7 @@ version stays available as `/tritown:balance` and so on.
 | `mobs.levels.worlds.<name>`               | —                  | Rings of a world's own, by name                                                 |
 | `mobs.xp-per-level`                       | `0.02`             | Extra experience a mob drops per level above 1                                  |
 | `mobs.nameplates`                         | `true`             | Show a levelled mob's level and health when a player looks at it                |
+| `mobs.ranks.exempt`                       | bosses             | Kinds of mob that never spawn as elites or champions                            |
 | `towns.founding-credit`                   | `100.0`            | Credit only `/t new` can spend, given once to players without a town; `0` is off |
 | `news.enabled`                            | `true`             | Turn the server news off entirely                                               |
 | `news.join-message.enabled`               | `true`             | List a player's unread posts a moment after they join                           |
@@ -400,7 +402,12 @@ rings around it, each harder than the one inside:
 | End       | 8    | the main island (1,000) | 500 blocks, +3 levels | 60 |
 
 Night and being below Y 0 each add 2 in the Overworld. A level grows a mob's health and hits, and the experience it
-drops. Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working
+drops.
+
+From level 5 a wild mob can spawn as an **elite** (★), and from level 15 as a **champion** (★★): several times the
+health, harder hits, and one to three affixes, named on the mob and shown by the particles around it — Armored,
+Frenzied, Vampiric, Enraged, Molten, Frostbound, Venomous, Volatile, Summoner, Blinking or Warded. Champions glow.
+Bosses such as the Warden never spawn ranked (`mobs.ranks.exempt`). Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working
 as they do in vanilla. Levels are kept with the mob, so they survive restarts.
 
 What everything is worth is in `plugins/TriTown/content/balance.yml`: the lens (RPG health per vanilla half-heart, 5),

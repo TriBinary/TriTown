@@ -42,3 +42,47 @@ mobs:
 vanilla:
   armor-point: 8
   toughness-point: 20
+
+# Wild mobs that spawn at or above min-level can spawn ranked instead, chance percent of the time. A rank multiplies a
+# mob's health and hits, and gives it affixes: between min-affixes and max-affixes of them, picked at random. The
+# champion roll comes first.
+ranks:
+  elite:
+    chance: 3
+    min-level: 5
+    health: 4
+    damage: 1.5
+    min-affixes: 1
+    max-affixes: 2
+  champion:
+    chance: 0.4
+    min-level: 15
+    health: 12
+    damage: 2
+    min-affixes: 2
+    max-affixes: 3
+
+# What each affix does. Percentages are percentages and durations seconds, unless they say ticks.
+affixes:
+  # Armored: Defense the mob has, the way a player's armor works against mobs.
+  armored-defense: 150
+  # Frenzied: how much faster it moves.
+  frenzied-speed: 30
+  # Vampiric: how much of the damage it deals it heals.
+  vampiric-heal: 25
+  # Enraged: below this share of its health, its hits land harder by enraged-damage.
+  enraged-below: 30
+  enraged-damage: 50
+  # Molten sets you on fire, Frostbound slows you and Venomous poisons you, for this long.
+  molten-seconds: 2
+  frostbound-seconds: 3
+  venomous-seconds: 3
+  # Volatile: explodes where it died this long after dying, as hard as this. A creeper is 3. Blocks are never broken.
+  volatile-power: 2.5
+  volatile-delay-ticks: 30
+  # Summoner: once below this share of its health, calls this many of its kind to its side.
+  summoner-below: 50
+  summoner-minions: 2
+  # Blinking: steps in behind its target when it is further away than this, at most once per cooldown.
+  blinking-range: 6
+  blinking-cooldown-ticks: 100

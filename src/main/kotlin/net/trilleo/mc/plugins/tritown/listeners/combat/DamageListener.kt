@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.listeners.combat
 import net.trilleo.mc.plugins.tritown.combat.*
 import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
 import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
 import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
 import org.bukkit.attribute.Attribute
@@ -10,6 +11,7 @@ import org.bukkit.entity.AbstractArrow
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
 import org.bukkit.entity.Tameable
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -30,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom
  * | anything the world does to a player | left alone                                         |
  * | player → mob (melee)       | the player's stats, scaled by vanilla's share of a full swing |
  * | player → mob (arrow, trident) | vanilla's hit, scaled by the stats the shot was fired with |
- * | mob → player or mob        | vanilla's hit, grown by the attacker's level, through Defense |
+ * | mob → player or mob        | vanilla's hit, grown by the attacker's level and rank, through Defense |
  * | anything else → mob        | level-1 units, so no trap or fire outgrows level 1          |
  *
  * The result is converted to vanilla damage through the target's own pool
@@ -53,22 +55,39 @@ class DamageListener : Listener {
         if (victim is Player) hurtPlayer(event, victim, attacker, balance) else hurtMob(event, victim, attacker, balance)
     }
 
+    /**
+     * Everything that follows a hit that landed: a mob's affixes answering it,
+     * its nameplate catching up, and the damage a player dealt floating up.
+     */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     fun afterDamage(event: EntityDamageEvent) {
         val victim = event.entity as? LivingEntity ?: return
-        if (victim is Player) return
+        if (!Combat.isActive(victim.world)) return
+        val attacker = event.damageSource.causingEntity as? LivingEntity
+        val dealt = DamageMath.toRpg(event.finalDamage, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
+
+        if (victim is Player) {
+            if (attacker == null || attacker is Player) return
+            val profile = MobProfiles.of(attacker)
+            if (profile.affixes.isNotEmpty()) AffixEffects.afterHittingPlayer(attacker, profile, victim, dealt)
+            return
+        }
+
         MobNameplate.updateLater(victim)
+        val left = (victim.health - event.finalDamage) / CombatHealth.vanillaMax(victim)
+        AffixEffects.afterHurt(victim, MobProfiles.of(victim), left)
 
         val crit = crits.remove(event) ?: return
-        val dealt = DamageMath.toRpg(event.finalDamage, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
         if (dealt > 0.0) DamageIndicators.show(victim, dealt, crit)
     }
 
     private fun hurtPlayer(event: EntityDamageEvent, victim: Player, attacker: LivingEntity?, balance: Balance) {
         if (attacker == null || attacker is Player || (attacker as? Tameable)?.isTamed == true) return
 
+        val profile = MobProfiles.of(attacker)
+        val multiplier = AffixEffects.damageMultiplier(attacker, profile, balance)
         val hit = DamageMath.afterDefense(
-            DamageMath.mobHit(event.damage, balance, MobProfiles.level(attacker)),
+            DamageMath.mobHit(event.damage, balance, profile.level, multiplier),
             PlayerStats.sheet(victim)[Stat.DEFENSE],
         )
         applyWithoutArmor(event, victim, DamageMath.toVanilla(hit, CombatHealth.max(victim), CombatHealth.vanillaMax(victim)))
@@ -76,6 +95,11 @@ class DamageListener : Listener {
 
     private fun hurtMob(event: EntityDamageEvent, victim: LivingEntity, attacker: LivingEntity?, balance: Balance) {
         val direct = event.damageSource.directEntity
+        val profile = MobProfiles.of(victim)
+        if (AffixEffects.wards(victim, profile, projectile = direct is Projectile, melee = event.cause in MELEE)) {
+            event.isCancelled = true
+            return
+        }
         var crit: Boolean? = null
 
         val hit = when {
@@ -93,11 +117,17 @@ class DamageListener : Listener {
                 DamageMath.shotHit(event.damage, sheet, balance, crit)
             }
 
-            attacker != null && attacker !is Player -> DamageMath.mobHit(event.damage, balance, MobProfiles.level(attacker))
+            attacker != null && attacker !is Player -> {
+                val attackerProfile = MobProfiles.of(attacker)
+                val multiplier = AffixEffects.damageMultiplier(attacker, attackerProfile, balance)
+                DamageMath.mobHit(event.damage, balance, attackerProfile.level, multiplier)
+            }
+
             else -> DamageMath.environmentHit(event.damage, balance)
         }
 
-        event.damage = DamageMath.toVanilla(hit, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
+        val defended = DamageMath.afterDefense(hit, AffixEffects.defense(profile))
+        event.damage = DamageMath.toVanilla(defended, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
         crit?.let { crits[event] = it }
     }
 

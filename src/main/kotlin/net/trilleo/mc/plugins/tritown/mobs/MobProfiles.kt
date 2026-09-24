@@ -6,51 +6,71 @@ import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
 
+/** What TriTown decided about a mob when it spawned. */
+data class MobProfile(
+    val level: Int,
+    val rank: MobRank,
+    val affixes: Set<Affix>,
+    val nameplate: Boolean,
+) {
+
+    fun has(affix: Affix): Boolean = affix in affixes
+
+    companion object {
+        /** A mob TriTown never touched: level 1, which is to say vanilla. */
+        val VANILLA = MobProfile(level = 1, rank = MobRank.NORMAL, affixes = emptySet(), nameplate = false)
+    }
+}
+
 /**
- * What TriTown decided about a mob when it spawned, kept in the mob's own
- * persistent data under `tritown:mob`.
+ * Reads and writes a mob's [MobProfile], kept in its own persistent data under
+ * `tritown:mob`.
  *
- * The game saves it with the entity, so a mob keeps its level through chunk
- * unloads and restarts without any file of TriTown's. Only a mob that spawned
- * the way a wild one does gets a profile. One with none — from a spawner, an
- * egg, a command, or from before TriTown was installed — is level 1, which is
- * to say vanilla.
+ * The game saves it with the entity, so a mob keeps its level and rank through
+ * chunk unloads and restarts without any file of TriTown's. Only a mob that
+ * spawned the way a wild one does gets a profile. One with none — from a
+ * spawner, an egg, a command, or from before TriTown was installed — is
+ * [MobProfile.VANILLA].
  */
 object MobProfiles {
 
     private val PROFILE = NamespacedKey("tritown", "mob")
     private val LEVEL = NamespacedKey("tritown", "level")
+    private val RANK = NamespacedKey("tritown", "rank")
+    private val AFFIXES = NamespacedKey("tritown", "affixes")
     private val NAMEPLATE = NamespacedKey("tritown", "nameplate")
 
-    fun level(entity: LivingEntity): Int {
-        if (entity is Player) return 1
-        return profile(entity)?.get(LEVEL, PersistentDataType.INTEGER)?.coerceAtLeast(1) ?: 1
+    fun of(entity: LivingEntity): MobProfile {
+        if (entity is Player) return MobProfile.VANILLA
+        val data = container(entity) ?: return MobProfile.VANILLA
+        return MobProfile(
+            level = data.get(LEVEL, PersistentDataType.INTEGER)?.coerceAtLeast(1) ?: 1,
+            rank = data.get(RANK, PersistentDataType.STRING)
+                ?.let { name -> MobRank.entries.firstOrNull { it.name == name } } ?: MobRank.NORMAL,
+            affixes = data.get(AFFIXES, PersistentDataType.LIST.strings()).orEmpty()
+                .mapNotNull { name -> Affix.entries.firstOrNull { it.name == name } }
+                .toSet(),
+            nameplate = data.get(NAMEPLATE, PersistentDataType.BOOLEAN) == true,
+        )
     }
 
-    /** Whether the mob's name is TriTown's nameplate, rather than a name a player gave it or none at all. */
-    fun hasNameplate(entity: LivingEntity): Boolean =
-        profile(entity)?.get(NAMEPLATE, PersistentDataType.BOOLEAN) == true
+    fun level(entity: LivingEntity): Int = of(entity).level
 
-    fun assign(entity: LivingEntity, level: Int, nameplate: Boolean) {
-        val profile = entity.persistentDataContainer.adapterContext.newPersistentDataContainer()
-        profile.set(LEVEL, PersistentDataType.INTEGER, level)
-        profile.set(NAMEPLATE, PersistentDataType.BOOLEAN, nameplate)
-        entity.persistentDataContainer.set(PROFILE, PersistentDataType.TAG_CONTAINER, profile)
-    }
-
-    /** Hands [from]'s profile to what it turned into: a zombie drowning, a slime splitting. */
-    fun copy(from: LivingEntity, to: LivingEntity) {
-        val profile = profile(from) ?: return
-        to.persistentDataContainer.set(PROFILE, PersistentDataType.TAG_CONTAINER, profile)
+    fun assign(entity: LivingEntity, profile: MobProfile) {
+        val data = entity.persistentDataContainer.adapterContext.newPersistentDataContainer()
+        data.set(LEVEL, PersistentDataType.INTEGER, profile.level)
+        data.set(RANK, PersistentDataType.STRING, profile.rank.name)
+        data.set(AFFIXES, PersistentDataType.LIST.strings(), profile.affixes.map { it.name })
+        data.set(NAMEPLATE, PersistentDataType.BOOLEAN, profile.nameplate)
+        entity.persistentDataContainer.set(PROFILE, PersistentDataType.TAG_CONTAINER, data)
     }
 
     /** Stops drawing a nameplate on the mob, because a player has named it. */
     fun dropNameplate(entity: LivingEntity) {
-        val profile = profile(entity) ?: return
-        profile.set(NAMEPLATE, PersistentDataType.BOOLEAN, false)
-        entity.persistentDataContainer.set(PROFILE, PersistentDataType.TAG_CONTAINER, profile)
+        if (container(entity) == null) return
+        assign(entity, of(entity).copy(nameplate = false))
     }
 
-    private fun profile(entity: LivingEntity): PersistentDataContainer? =
+    private fun container(entity: LivingEntity): PersistentDataContainer? =
         entity.persistentDataContainer.get(PROFILE, PersistentDataType.TAG_CONTAINER)
 }

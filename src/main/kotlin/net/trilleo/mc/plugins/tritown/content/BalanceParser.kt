@@ -14,7 +14,7 @@ object BalanceParser {
     class Result(val balance: Balance, val warnings: List<String>)
 
     fun parse(root: Map<*, *>): Result {
-        val reader = Reader(root)
+        val reader = YamlReader(root)
         val default = Balance.DEFAULT
 
         val balance = Balance(
@@ -49,28 +49,47 @@ object BalanceParser {
                     min = 0.0
                 ),
             ),
+            ranks = Balance.Ranks(
+                elite = rank(reader, "elite", default.ranks.elite),
+                champion = rank(reader, "champion", default.ranks.champion),
+            ),
+            affixes = affixes(reader, default.affixes),
         )
         return Result(balance, reader.warnings)
     }
 
-    private class Reader(private val root: Map<*, *>) {
+    private fun rank(reader: YamlReader, name: String, default: Balance.Rank): Balance.Rank {
+        val path = listOf("ranks", name)
+        val minAffixes = reader.integer(path + "min-affixes", default.minAffixes, min = 0)
+        return Balance.Rank(
+            chance = reader.number(path + "chance", default.chance, min = 0.0),
+            minLevel = reader.integer(path + "min-level", default.minLevel, min = 1),
+            health = reader.number(path + "health", default.health, min = 1.0),
+            damage = reader.number(path + "damage", default.damage, min = 1.0),
+            minAffixes = minAffixes,
+            maxAffixes = reader.integer(path + "max-affixes", default.maxAffixes, min = minAffixes),
+        )
+    }
 
-        val warnings = mutableListOf<String>()
+    private fun affixes(reader: YamlReader, default: Balance.AffixTuning): Balance.AffixTuning {
+        fun number(name: String, value: Double) = reader.number(listOf("affixes", name), value, min = 0.0)
+        fun integer(name: String, value: Int) = reader.integer(listOf("affixes", name), value, min = 0)
 
-        fun number(path: List<String>, default: Double, min: Double): Double {
-            val raw = find(path) ?: return default
-            val value = (raw as? Number)?.toDouble()
-            if (value == null || value.isNaN() || value.isInfinite() || value < min) {
-                warnings += "${path.joinToString(".")} must be a number of at least $min, not '$raw'; using $default"
-                return default
-            }
-            return value
-        }
-
-        private fun find(path: List<String>): Any? {
-            var node: Any? = root
-            for (segment in path) node = (node as? Map<*, *>)?.get(segment) ?: return null
-            return node
-        }
+        return Balance.AffixTuning(
+            armoredDefense = number("armored-defense", default.armoredDefense),
+            frenziedSpeed = number("frenzied-speed", default.frenziedSpeed),
+            vampiricHeal = number("vampiric-heal", default.vampiricHeal),
+            enragedBelow = number("enraged-below", default.enragedBelow),
+            enragedDamage = number("enraged-damage", default.enragedDamage),
+            moltenSeconds = integer("molten-seconds", default.moltenSeconds),
+            frostboundSeconds = integer("frostbound-seconds", default.frostboundSeconds),
+            venomousSeconds = integer("venomous-seconds", default.venomousSeconds),
+            volatilePower = number("volatile-power", default.volatilePower),
+            volatileDelayTicks = integer("volatile-delay-ticks", default.volatileDelayTicks),
+            summonerBelow = number("summoner-below", default.summonerBelow),
+            summonerMinions = integer("summoner-minions", default.summonerMinions),
+            blinkingRange = number("blinking-range", default.blinkingRange),
+            blinkingCooldownTicks = integer("blinking-cooldown-ticks", default.blinkingCooldownTicks),
+        )
     }
 }

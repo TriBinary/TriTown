@@ -23,6 +23,11 @@
     + Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms work as they do
       in vanilla. Traps and fire only ever hurt a mob as much as they would at level 1.
     + The sidebar's wilderness line shows the level where you stand.
++ Wild mobs can now spawn as **elites** (★, from level 5) and **champions** (★★, from level 15): much tougher, harder
+  hitting, and with one to three affixes named on the mob.
+    + Armored, Frenzied, Vampiric, Enraged, Molten, Frostbound, Venomous, Volatile (explodes a moment after dying),
+      Summoner, Blinking (steps in behind you) and Warded (shrugs off arrows until hit in melee).
+    + Champions glow, and ranked mobs always show their nameplate. Bosses such as the Warden never spawn ranked.
 + Server owners tune it all in `plugins/TriTown/content/balance.yml`, and set the rings per kind of world, or per world,
   under `mobs.levels` in `config.yml`. `/tritown mob balance` shows what the numbers make of each level, and
   `/tritown mob level` shows the level where you stand and why (`tritown.mob.admin`).
