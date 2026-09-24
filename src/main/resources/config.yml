@@ -248,6 +248,77 @@ item-protection:
   # Explosions leave a claimed container standing, so nobody can blow one open.
   explosion-guard: true
 
+# ── Combat ──────────────────────────────────────────────────────────────────
+# Fights with mobs in RPG numbers: every player and mob has a health pool drawn
+# over their vanilla hearts, and hits are worked out from stats — Health,
+# Defense, Damage, Strength, Crit Chance and Crit Damage — that /tritown stats
+# shows. What those are worth, and how mobs grow, is in
+# plugins/TriTown/content/balance.yml.
+#
+# Players fighting each other are left to vanilla, and so is everything the
+# world does to a player: falls, lava, drowning. At level 1 with vanilla gear
+# the game plays exactly as vanilla does.
+combat:
+  # Turn the whole combat layer off: hits stay vanilla and mobs are not levelled.
+  enabled: true
+  # Worlds where hits stay vanilla and mobs are not levelled, such as a minigame
+  # world.
+  disabled-worlds: []
+  hud:
+    # Show each player's health and Defense above the hotbar. Towny's own
+    # notices can use the same line; if yours do, turn one of them off.
+    action-bar: true
+    # Float the damage of every hit on a mob up from the mob.
+    damage-indicators: true
+    # The most damage indicators that may exist at once, across the server.
+    indicator-limit: 64
+
+# ── Mobs ────────────────────────────────────────────────────────────────────
+# Wild hostile mobs are levelled by where they spawn. The further from a world's
+# spawn, the higher the level: more health, harder hits, more experience. Mobs
+# in town claims are always level 1, so towns are safe and a mob farm inside one
+# works as it does in vanilla. So do mobs from spawners, eggs and commands.
+# /tritown mob level tells you the level where you stand.
+mobs:
+  levels:
+    # Levels an Overworld mob gains for spawning at night, and for spawning
+    # below Y 0. Neither applies inside the spawn area.
+    night-bonus: 2
+    depth-bonus: 2
+    # Each kind of world is a spawn area of spawn-radius blocks where mobs are
+    # the base level, and rings of ring-width blocks around it, each per-ring
+    # levels harder than the one inside it, up to cap.
+    overworld:
+      base: 1
+      spawn-radius: 300
+      ring-width: 500
+      per-ring: 2
+      cap: 30
+    # The Nether is an eighth of the Overworld's size, so its rings are too.
+    nether:
+      base: 4
+      spawn-radius: 64
+      ring-width: 64
+      per-ring: 2
+      cap: 45
+    # The spawn area is the main island; the outer islands are the rings.
+    end:
+      base: 8
+      spawn-radius: 1000
+      ring-width: 500
+      per-ring: 3
+      cap: 60
+    # Rings of its own for a world, by name. Anything left out is the
+    # Overworld's. For example:
+    #   resources:
+    #     base: 10
+    #     cap: 40
+    worlds: {}
+  # How much more experience a mob drops for each level above 1, as a fraction.
+  xp-per-level: 0.02
+  # Show a levelled mob's level and health when a player looks at it.
+  nameplates: true
+
 # ── Towns ───────────────────────────────────────────────────────────────────
 towns:
   # Money set aside for a player's first town, on top of their starting balance.
@@ -310,6 +381,9 @@ news:
 #   Plot    %plot_town% %plot_nation% %plot_type% %plot_owner% %plot_price%
 #           %plot_coords% %plot_pvp% %plot_mobs%
 #   Money   %balance% %balance_raw% %baltop_rank%
+#   Combat  %health% %max_health% %defense% %mob_level%
+#           %danger% (a whole fragment: " · Lv 21" in the wilderness, empty
+#           where combat is off)
 #
 # Conditions: always, no-town, has-town, no-nation, has-nation, in-wilderness,
 #   in-own-town, in-own-plot, in-other-town, in-ally-town, in-enemy-town,

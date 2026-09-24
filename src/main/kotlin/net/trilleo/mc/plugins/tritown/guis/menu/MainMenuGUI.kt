@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.guis.menu
 
 import com.palmergames.bukkit.towny.TownyAPI
+import net.trilleo.mc.plugins.tritown.combat.Combat
 import net.trilleo.mc.plugins.tritown.config.ShopSettings
 import net.trilleo.mc.plugins.tritown.config.StorageSettings
 import net.trilleo.mc.plugins.tritown.economy.BaltopCache
@@ -87,7 +88,11 @@ class MainMenuGUI : PluginGUI(
                 GUIManager.refresh(player)
             }
 
-            Button.PROFILE, Button.SERVER, null -> Unit
+            Button.PROFILE -> if (Combat.isActive(player.world)) {
+                MenuRender.later(player) { CommandRegistrar.run(player, "stats") }
+            }
+
+            Button.SERVER, null -> Unit
         }
     }
 
@@ -191,6 +196,10 @@ class MainMenuGUI : PluginGUI(
             "gui.menu.profile-nation",
             "nation" to (resident?.nationOrNull?.let { TownyUtil.name(it.name) } ?: none),
         )
+        if (Combat.isActive(player.world)) {
+            lines += ""
+            lines += player.tr("gui.menu.profile-stats")
+        }
 
         return MenuRender.head(
             player,

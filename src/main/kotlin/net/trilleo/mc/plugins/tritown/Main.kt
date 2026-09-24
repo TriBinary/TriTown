@@ -2,7 +2,10 @@ package net.trilleo.mc.plugins.tritown
 
 import com.palmergames.bukkit.towny.TownyEconomyHandler
 import net.milkbowl.vault.economy.Economy
+import net.trilleo.mc.plugins.tritown.combat.DamageIndicators
+import net.trilleo.mc.plugins.tritown.combat.PlayerStats
 import net.trilleo.mc.plugins.tritown.config.*
+import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 import net.trilleo.mc.plugins.tritown.economy.*
@@ -112,6 +115,10 @@ class Main : JavaPlugin() {
         ProtectionSettings.load(pluginConfig)
         MainMenuSettings.load(pluginConfig, logger)
 
+        ContentRegistry.load(this)
+        CombatSettings.load(pluginConfig)
+        MobSettings.load(pluginConfig)
+
         // Before the registrars, like the shops: the main menu reads a player's storage as it is drawn.
         StorageSettings.load(pluginConfig)
         if (StorageSettings.snapshot.enabled) StorageManager.start(JsonStorageStore(dataFolder, logger), logger)
@@ -164,6 +171,13 @@ class Main : JavaPlugin() {
         TradeSettings.load(pluginConfig)
         TownSettings.load(pluginConfig)
         ProtectionSettings.load(pluginConfig)
+
+        ContentRegistry.load(this)
+        CombatSettings.load(pluginConfig)
+        MobSettings.load(pluginConfig)
+        // The balance, or what a stat is worth, may have changed under every cached sheet.
+        PlayerStats.invalidateAll()
+
         // Only the settings, as with the shops: the storage files are never re-read while players hold them open.
         StorageSettings.load(pluginConfig)
         // Only the settings, as with the shops: every change to a post is already on disk.
@@ -194,6 +208,7 @@ class Main : JavaPlugin() {
 
         // So no menu item is saved into an inventory and left behind once TriTown is gone.
         MenuItem.stripAll()
+        DamageIndicators.clearAll()
 
         ShopManager.shutdown()
 

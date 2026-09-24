@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### New Features
+
+#### Combat
+
++ Fights with mobs now happen in RPG numbers. You have 100 health drawn over your ten hearts, a level-1 zombie has 100,
+  and hits come from your stats.
+    + **Health**, **Defense**, **Damage**, **Strength**, **Crit Chance** and **Crit Damage**. Your armor gives Defense,
+      your weapon Damage, and the Strength effect Strength. Jump attacks add to your crit chance.
+    + See yours, and where each comes from, with `/tritown stats` or by clicking your profile in the main menu. Add a
+      name to see another player's.
+    + Your health and Defense sit above your hotbar, and every hit you land floats its damage up from the mob.
+    + At level 1 with vanilla gear the game plays exactly as vanilla does.
+    + None of it applies between players: a fight between players, or with a player's pet, is vanilla. So is everything
+      the world does to you, such as falling, lava and drowning.
++ Wild mobs are now levelled by where they spawn. Each ring further from a world's spawn is harder, the Nether and the
+  End start higher, and night and going below Y 0 add to it.
+    + A level grows a mob's health, its hits and the experience it drops. Looking at a levelled mob shows its level and
+      health.
+    + Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms work as they do
+      in vanilla. Traps and fire only ever hurt a mob as much as they would at level 1.
+    + The sidebar's wilderness line shows the level where you stand.
++ Server owners tune it all in `plugins/TriTown/content/balance.yml`, and set the rings per kind of world, or per world,
+  under `mobs.levels` in `config.yml`. `/tritown mob balance` shows what the numbers make of each level, and
+  `/tritown mob level` shows the level where you stand and why (`tritown.mob.admin`).
++ Added the sidebar markers `%health%`, `%max_health%`, `%defense%`, `%mob_level%` and `%danger%`.
+
 ## Version 1.4.0
 
 ### New Features

@@ -1,0 +1,44 @@
+# TriTown - Combat balance
+#
+# The numbers the combat layer is tuned with. /tritown reload reads this file again. A value that is missing or unusable
+# falls back to the bundled default, and the console says which.
+#
+# How it fits together: every living thing has an RPG health pool, drawn over its vanilla hearts. Vanilla health stays
+# the truth — the pool is the same fraction full as the hearts — so potions, regeneration, totems and deaths all work as
+# they always have. Only hits between a player and a mob, or between mobs, are worked out in RPG numbers. Hits between
+# players, and everything the world does (falling, lava, drowning), are left to vanilla.
+
+# RPG health per vanilla half-heart at level 1. A player's 20 vanilla health is 100 RPG health at the default, a vanilla
+# iron sword hits for 30, and a zombie has 100. At level 1 with vanilla gear the game plays exactly like vanilla,
+# whatever this is.
+lens: 5
+
+# What every player has before any gear.
+player:
+  health: 100
+  # Percent chance for a hit on a mob to be critical.
+  crit-chance: 20
+  # Percent more damage a critical hit does.
+  crit-damage: 50
+
+# A vanilla jump attack adds this much crit chance, instead of vanilla's flat 50% more damage.
+jump-crit-chance: 25
+
+# Strength that one level of a potion effect is worth. Strength adds to the damage a player does to mobs by this many
+# percent; Weakness takes it away.
+effects:
+  strength-per-level: 40
+  weakness-per-level: 40
+
+# How mobs grow with their level. A level-L mob has growth^(L-1) times the health and damage of a level-1 one: with
+# these, a level-30 zombie has about 34x the health and hits about 16x as hard.
+mobs:
+  health-growth: 1.13
+  damage-growth: 1.10
+
+# How vanilla armor becomes Defense. Each worn piece gives this much Defense per point of armor and of toughness. Every
+# point of Defense takes a share off a mob's hit: 100 Defense halves it, 300 leaves a quarter. At the defaults a full
+# iron set is 120 Defense and a full diamond set 320, which is what vanilla's armor gives against a zombie.
+vanilla:
+  armor-point: 8
+  toughness-point: 20

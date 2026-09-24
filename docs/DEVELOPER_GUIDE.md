@@ -2,7 +2,7 @@
 
 This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, work
 with **translations** and the **configuration** system using TriTown's registration system, and how to build on
-**Towny**, the **Vault economy**, the **admin panel**, **shops**, **player trades**, **personal storage**, **item protection**, the **news** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
+**Towny**, the **Vault economy**, the **admin panel**, **shops**, **player trades**, **personal storage**, **item protection**, the **news**, **combat** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
 follow the same pattern: extend a base class (or implement an interface), place the file in the correct package, and the
 plugin handles the rest automatically at startup. The configuration system provides typed access to `config.yml` values.
 
@@ -3386,6 +3386,166 @@ checks on each click as well as the command.
 `NewsSettings` is a snapshot swapped in whole on a reload. The posts themselves are never re-read on a reload; every
 change to them is already on disk.
 
+## Combat
+
+Fights with mobs happen in RPG numbers: players and mobs have health pools in the hundreds and thousands, and hits come
+from stats. The core lives in `combat/` (stats, the pipeline's maths, the HUD) and `mobs/` (levels, profiles,
+nameplates), neither of which is scanned. The listeners are `listeners/combat/DamageListener`, `StatListener` and
+`listeners/mobs/MobListener`, the HUD task is `tasks/combat/CombatHudTask`, the menu is `guis/adventure/StatsGUI`, and
+the commands are `commands/adventure/StatsCommand` (`/tritown stats`) and `commands/mobs/MobCommand` (`/tritown mob`).
+
+### Vanilla health is the truth
+
+Every living entity has an **RPG pool** (`CombatHealth.max`): a player's is their Health stat, a mob's is its vanilla
+maximum × the lens × its level's growth. **Current RPG health is never stored.** It is always
+`vanillaHealth / vanillaMax × rpgMax`, so the pool is exactly as full as the entity's hearts.
+
+That one rule is why so little had to be built. Vanilla keeps doing what it does: saving health, natural regeneration,
+potions, totems, `/kill` and death, killer credit and drops. Nothing can drift out of step because there is nothing
+else to keep in step. **Never change a player's or a mob's vanilla `MAX_HEALTH`, and never store RPG health.**
+
+The **lens** (`balance.yml`, default 5) is RPG health per vanilla half-heart at level 1. Every hit and every pool is
+multiplied by it alike, so level-1 play with vanilla gear is vanilla at any lens. That is the balance anchor.
+
+### The pipeline
+
+`DamageListener.onDamage` runs at `HIGH` on every `EntityDamageEvent` in a world where `Combat.isActive`. The attacker is
+the damage source's *causing* entity, which covers arrows, fangs, explosions and pets.
+
+| Hit                                   | Worked out as                                                                   |
+|:--------------------------------------|:--------------------------------------------------------------------------------|
+| player → player, or a pet → a player  | **left alone**                                                                  |
+| the world → a player                  | left alone, so falls, lava and drowning take vanilla's share                    |
+| player → mob, melee                   | `DamageMath.meleeHit`: `(lens + Damage) × (1 + Strength/100) × share × crit`    |
+| player → mob, arrow or trident        | `DamageMath.shotHit`: vanilla's hit × lens × Strength × crit                    |
+| mob → player, mob → mob               | `DamageMath.mobHit`: vanilla's hit × lens × `damage-growth^(level−1)`, then Defense |
+| the world, or a player's potion or TNT → mob | `DamageMath.environmentHit`: vanilla × lens, i.e. level-1 units          |
+
+- **The share** is vanilla's own melee hit divided by the player's attack damage (`DamageMath.vanillaShare`). It carries
+  everything *but* the weapon — attack cooldown, sweeping, Sharpness, Smite, a mace's fall — so those keep working as
+  vanilla meant them. Vanilla's jump-crit ×1.5 is divided back out; a jump attack adds `jump-crit-chance` instead.
+- **Arrows and tridents** carry the shooter's Strength and crit stats in their own data (`ShotStats`), written by
+  `StatListener` at `EntityShootBowEvent` / `ProjectileLaunchEvent`, so a shot lands with the stats it was fired with.
+- **Environment hits on mobs** are level-1 units whatever the mob's level, so a lava pit, fall trap or fire aspect is
+  only ever as strong as it is against a level-1 mob. That is what stops traps from farming the wild.
+
+The RPG hit becomes vanilla damage through the victim's own pool (`DamageMath.toVanilla`), which is written to the
+event's `BASE`:
+
+- **A mob** keeps vanilla's reductions as they are — `event.damage = …` recalculates them.
+- **A player's** worn armor is already their Defense, so vanilla's armor reduction would count it twice.
+  `applyWithoutArmor` zeroes the `ARMOR` modifier and carries every other one over with `VanillaReductions`: each takes
+  the same *share* of what reaches it as it took of vanilla's hit (Resistance, Protection and its kin, a shield, a
+  helmet under an anvil, invulnerability frames), and absorption soaks up what it can hold. The modifier API is
+  deprecated without a replacement; it is still the only way to take one reduction out and keep the rest.
+
+`afterDamage` (at `MONITOR`) floats the damage up from the mob (`DamageIndicators`) for hits a player landed, and asks
+the mob's nameplate to redraw.
+
+### Stats
+
+`Stat` is Health, Defense, Damage, Strength, Crit Chance and Crit Damage. **None of them apply between players.**
+`StatSheet` is an immutable value per stat, and `StatSources` is the only place one is built:
+
+| Source    | Gives                                                                                            |
+|:----------|:-------------------------------------------------------------------------------------------------|
+| `BASE`    | `balance.yml`'s `player` block: Health, Crit Chance, Crit Damage                                 |
+| `ARMOR`   | Defense for each worn piece: its armor × `armor-point` + its toughness × `toughness-point`        |
+| `WEAPON`  | Damage for the held item: its attack damage × the lens                                           |
+| `EFFECTS` | Strength for the Strength effect, less for Weakness, per level                                    |
+
+Items are read through their `ATTRIBUTE_MODIFIERS` component, so a material's defaults and any custom modifiers both
+count. Defense works as `100 / (100 + Defense)` of a mob's hit getting through.
+
+`PlayerStats` caches a sheet per player. `StatListener` drops it whenever equipment, the held item or effects may have
+changed, and a sheet also expires after a second regardless, which catches what no event reports. `/tritown reload`
+drops them all.
+
+### Levels
+
+`MobListener.onSpawn` gives a hostile mob (`Enemy`) a level as it spawns, stored in its own persistent data under
+`tritown:mob` by `MobProfiles`. The game saves it with the entity, so the level survives unloads and restarts.
+
+- **Only wild spawns are levelled**: `NATURAL`, `REINFORCEMENTS`, `PATROL`, `JOCKEY`, `MOUNT`. Spawners, trial spawners,
+  eggs, raids, commands and built golems get no profile, and a mob with no profile is level 1. Vanilla farms keep
+  working.
+- **Transformations keep the level**: `EntityTransformEvent` copies the profile to what a mob becomes — a drowned zombie,
+  a slime's children.
+- **The level comes from where it spawned** (`MobZones`): distance from the world's spawn picks a ring of the world's
+  `LevelZone`, and night and depth add to it in the Overworld. `LevelZone` is plain Kotlin, tested in `LevelZoneTest`.
+- **Town claims are always level 1**, checked with Towny on every spawn. Towns are safe, and a mob farm inside one works
+  as it does in vanilla.
+
+A level grows a mob's pool by `health-growth^(level−1)` and its hits by `damage-growth^(level−1)`, and its dropped
+experience by `mobs.xp-per-level` per level.
+
+**Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] Zombie 1,820/2,400❤` — redrawn a tick after it is
+hurt or healed. A name is shared by every viewer, so its frame is rendered in the configured language, and the kind of
+mob is a `<lang:entity.minecraft.…>` tag that each client fills in itself. It shows on the crosshair, the way a named
+mob's does. Setting a name never makes a mob persistent (only a name tag does), and a mob a player names keeps their
+name: `PlayerNameEntityEvent` drops the nameplate.
+
+### Balance
+
+Every number is in `plugins/TriTown/content/balance.yml` (see [Content Files](#content-files)); nothing is tuned in
+Kotlin. `DamageMath` holds every formula and is the only place one lives — a listener only turns an event into a call
+and the result back into vanilla damage — so the whole model runs in tests:
+
+- `DamageMathTest` covers each formula.
+- `BalanceSimulationTest` holds the bundled tuning to the design: **the vanilla anchor** (at level 1 with iron, diamond
+  or netherite, a zombie dies in vanilla's number of swings and hits for vanilla's share, ±15%), the default crits
+  adding no more than 15% to an average swing, every level being harder than the last, and vanilla diamond being
+  outclassed by the Overworld's cap.
+
+`BalanceSimulator` is the same model as a table, and `/tritown mob balance` prints it so an owner can see what an edit
+does before anyone fights. A change that breaks `BalanceSimulationTest` changes how the game feels, and has to be a
+decision.
+
+### The HUD
+
+`CombatHudTask` redraws each fighting player's health and Defense on the action bar twice a second
+(`combat.hud.action-bar`). Towny's own notices can use the same line.
+
+`DamageIndicators` are text displays that live under a second. They are never persistent, so a crash or an unloading
+chunk leaves nothing behind, `Main.onDisable` removes the rest, and `combat.hud.indicator-limit` caps how many exist at
+once.
+
+The sidebar gets `%health%`, `%max_health%`, `%defense%`, `%mob_level%` and `%danger%` (`CombatPlaceholders`).
+`%danger%` returns a whole translated fragment (`scoreboard.danger`), or nothing where combat is off, so the default
+wilderness line can end with it and still read naturally without it.
+
+### Settings
+
+| Key                          | What it does                                                         |
+|:-----------------------------|:---------------------------------------------------------------------|
+| `combat.enabled`             | Everything above                                                      |
+| `combat.disabled-worlds`     | Worlds, by name, where hits stay vanilla and mobs are not levelled    |
+| `combat.hud.*`               | The action bar, the damage indicators and their limit                 |
+| `mobs.levels.*`              | Night and depth bonuses, each kind of world's rings, and per-world ones |
+| `mobs.xp-per-level`          | Extra experience per level above 1                                    |
+| `mobs.nameplates`            | Whether levelled mobs wear a nameplate                                |
+
+`CombatSettings` and `MobSettings` are snapshots swapped in whole on a reload.
+
+## Content Files
+
+The combat layer is tuned in files of its own rather than in `config.yml`: `config.yml` says what runs where, and the
+content files say what it is worth. They live in `src/main/resources/content/`, are copied to
+`plugins/TriTown/content/` on first start the way the language files are, and `/tritown reload` reads them again.
+
+| File          | Holds                                                                                     |
+|:--------------|:------------------------------------------------------------------------------------------|
+| `balance.yml` | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla armor's worth |
+
+`ContentRegistry` loads them with SnakeYAML into an immutable snapshot and swaps it in whole. Parsing is plain Kotlin
+over the parsed map (`BalanceParser`), so the bundled file is checked in a test: `BalanceParserTest` requires it to
+parse to exactly `Balance.DEFAULT` with no warnings, so the defaults in Kotlin and the file can never disagree.
+
+- A value that is missing takes the default quietly; one that is present but unusable takes it too, and the console
+  names it.
+- A file that cannot be read at all keeps what was loaded before — the defaults, the first time — so a typo made while
+  the server runs never takes combat down with it.
+
 ## Sidebar
 
 The sidebar lives in `net.trilleo.mc.plugins.tritown.scoreboard`, which — like `economy` — is **not** one of the
@@ -3435,7 +3595,7 @@ IN_CAPITAL -> context.plotTown?.isCapital == true
 ### Placeholders
 
 A line is **translated first and substituted second**, so a translator can move a value to wherever it reads best.
-`PlaceholderEngine` holds the `%marker%` resolvers; the four `placeholders/` objects register them when the service
+`PlaceholderEngine` holds the `%marker%` resolvers; the five `placeholders/` objects register them when the service
 starts. An unknown marker is left on screen as written, so a typo shows up instead of silently blanking a value, and a
 resolver that throws falls back to `common.none` rather than taking the whole sidebar down.
 
@@ -3447,6 +3607,7 @@ PlaceholderEngine.register("town_plot_price") { context ->
 
 Every value a resolver returns must already be escaped — the line it lands in is parsed as MiniMessage afterwards. Use
 `TownyUtil.name` / `TownyUtil.text` for anything player-written.
+The one exception is `%danger%`, which returns a whole translated fragment of TriTown's own (see [Combat](#the-hud)).
 
 ### Rendering and cost
 

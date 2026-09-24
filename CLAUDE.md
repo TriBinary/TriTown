@@ -68,9 +68,11 @@ The server console reads commands from the terminal running Gradle.
 src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
 ├── commands/                # Sub-commands (auto-registered)
-│   ├── admin/  economy/  info/  menu/  news/  protection/
-│   └── moderation/  scoreboard/  shop/  storage/  trade/
+│   ├── admin/  adventure/  economy/  info/  menu/  mobs/  news/
+│   └── moderation/  protection/  scoreboard/  shop/  storage/  trade/
+├── combat/                  # Combat: stats, DamageMath, the health lens, the HUD, indicators (not scanned)
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
+├── content/                 # The content files: balance.yml and its parser, ContentRegistry (not scanned)
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
 ├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
 │                            # storage (not scanned)
@@ -80,6 +82,7 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
+├── mobs/                    # Mob levels: zones, profiles, nameplates (not scanned)
 ├── news/                    # Server news: posts, storage, read state, notifications (not scanned)
 ├── protection/              # Item protection: drop owners, drop windows, container and entity claims
 │                            # (not scanned)
@@ -94,6 +97,7 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
                              # ChatPrompt, CountdownUtil, TeamUtil, TagUtil, PDCUtil, GameRuleUtil, AtomicFile
 src/main/resources/
 ├── config.yml  plugin.yml
+├── content/                 # balance.yml — what the combat layer is tuned with
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
 ```
 
@@ -343,6 +347,30 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
 - **Keep the model free of Bukkit types** — it is the file's shape. An icon is a material's name, read back through
   `NewsRender.material`.
 - **Every editor click re-checks `tritown.news.manage`**, not only the command that opened the menu.
+
+## Working with Combat
+
+**Fights with mobs are in RPG numbers; fights between players are vanilla.** See [Combat](docs/DEVELOPER_GUIDE.md#combat).
+
+- **Vanilla health is the truth.** An entity's RPG health is always `vanillaHealth / vanillaMax × rpgMax`. Never store
+  RPG health anywhere, and never change a player's or a mob's vanilla `MAX_HEALTH`: everything vanilla does with
+  health — regeneration, potions, totems, death — works only because the two cannot drift apart.
+- **Never touch a hit between players.** `DamageListener` leaves player→player hits, a pet biting a player, and
+  everything the world does to a player exactly as vanilla has them. Anything new that fires on a hit must skip players
+  too, or it becomes a PvP advantage.
+- **Every formula lives in `DamageMath`**, which is plain Kotlin. Listeners turn an event into a call and the result
+  back into vanilla damage (`DamageMath.toVanilla`); they never do arithmetic of their own. A change that fails
+  `BalanceSimulationTest` changes how the game feels, so it is a decision, not a fix-up.
+- **Numbers belong in `content/balance.yml`**, never in Kotlin. A new tunable goes in `Balance` with its default,
+  `BalanceParser`, and the bundled file — `BalanceParserTest` fails when the file and `Balance.DEFAULT` disagree.
+- **Build stats only in `StatSources`**, and read them through `PlayerStats`. Anything new that changes a player's stats
+  must invalidate their sheet (see `StatListener`).
+- **Only wild spawns are levelled.** A mob from a spawner, an egg or a command has no profile and is level 1, and town
+  claims are always level 1, so vanilla farms keep working. Read a level through `MobProfiles.level`.
+- **Environment damage to a mob is level-1 units** (`DamageMath.environmentHit`), so no trap outgrows level 1. Keep it
+  that way for any new source of damage a player does not deal by hand.
+- **A mob's nameplate is shared by every viewer**, so its frame is rendered in the configured language (`Lang.tr(null,
+  …)`) and a mob's kind is a `<lang:…>` tag the client fills in. Setting a name must never make a mob persistent.
 
 ## Versioning & Releases
 

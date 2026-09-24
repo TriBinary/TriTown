@@ -63,6 +63,14 @@ cannot be spent behind their back, and anything changing on the table clears bot
 swapped out after somebody has agreed to it. Everything comes straight back if either of you closes the menu, walks
 away or disconnects.
 
+**Fights worth gearing up for.** Mobs in the wild are levelled by where they spawn: every ring further from spawn is
+harder, the Nether and the End start higher, and night and the deep add to it. Health and hits are in RPG numbers —
+your 100 health is drawn over your ten hearts, a level-1 zombie has 100 and a level-30 one over 3,000 — and your
+Defense, Damage, Strength and crits come from what you wear and hold. `/tt stats` shows them and where each comes from,
+your health and Defense sit above your hotbar, and every hit you land floats its damage up from the mob. At level 1 with vanilla
+gear it plays exactly like vanilla. Town claims are always level 1 and mobs from spawners stay vanilla, so farms keep
+working, and players fighting each other are left entirely to vanilla.
+
 **Server news.** Update notes, written in game and read from the main menu or with `/tt news`. A post is a title and
 categories of short entries — a line or two about one change each, tagged New, Changed, Fixed, Removed or Note — read
 straight off the menu, or as a book when it runs long. Players hear about what they have missed: a list of unread posts,
@@ -147,6 +155,8 @@ itself, are still anyone's.
 | `/tt storage`            | Open your storage                     |
 | `/tt admin [section]`    | Open the admin panel (OP only)        |
 | `/tt protection <inspect/release>` | See or clear who owns what you look at (OP only) |
+| `/tt stats [player]`     | See your combat stats, or another player's |
+| `/tt mob <level/balance>` | Inspect mob levels and the balance (OP only) |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -174,6 +184,11 @@ builder place and fill the containers the storage replaces.
 `/tt protection inspect` shows who owns the container, item frame, armor stand or mob you are looking at, and
 `release` clears that claim; both need `tritown.protection.admin`. `tritown.protection.bypass` lets staff open, take
 from and break anything a player has claimed.
+
+`/tt stats` opens your combat stats — or, with a name, those of anyone online — each broken down by where it comes
+from. It has no permission node; whether it runs at all is `combat.enabled`. `/tt mob level` says what level mobs
+spawning where you stand would be, and why, and `/tt mob balance` prints what the balance in force makes of each level;
+both need `tritown.mob.admin`.
 
 `/tt admin` opens the panel itself, and `economy`, `shops` or `storage` opens that section directly. Opening the panel
 needs `tritown.admin`; the sections need `tritown.admin.economy`, `tritown.admin.shops` and `tritown.admin.storage` on
@@ -239,6 +254,16 @@ version stays available as `/tritown:balance` and so on.
 | `item-protection.enabled`                 | `true`             | Items only change hands through a trade                                         |
 | `item-protection.disabled-worlds`         | `[]`               | Worlds where nothing is protected                                               |
 | `item-protection.<part>`                  | `true`             | Each of `drops`, `actions`, `mob-loot`, `projectiles`, `containers`, `entities`, `explosion-guard` |
+| `combat.enabled`                         | `true`             | Turn the combat layer off: hits stay vanilla and mobs are not levelled          |
+| `combat.disabled-worlds`                  | `[]`               | Worlds where hits stay vanilla and mobs are not levelled                        |
+| `combat.hud.action-bar`                   | `true`             | Show each player's health and Defense above the hotbar                          |
+| `combat.hud.damage-indicators`            | `true`             | Float each hit's damage up from the mob it hit                                  |
+| `combat.hud.indicator-limit`              | `64`               | The most damage indicators that may exist at once                               |
+| `mobs.levels.night-bonus` / `.depth-bonus` | `2`               | Levels an Overworld mob gains at night, and below Y 0                           |
+| `mobs.levels.<overworld/nether/end>`      | see below          | Each kind of world's `base`, `spawn-radius`, `ring-width`, `per-ring` and `cap` |
+| `mobs.levels.worlds.<name>`               | —                  | Rings of a world's own, by name                                                 |
+| `mobs.xp-per-level`                       | `0.02`             | Extra experience a mob drops per level above 1                                  |
+| `mobs.nameplates`                         | `true`             | Show a levelled mob's level and health when a player looks at it                |
 | `towns.founding-credit`                   | `100.0`            | Credit only `/t new` can spend, given once to players without a town; `0` is off |
 | `news.enabled`                            | `true`             | Turn the server news off entirely                                               |
 | `news.join-message.enabled`               | `true`             | List a player's unread posts a moment after they join                           |
@@ -351,6 +376,37 @@ in money is paid across in one payment, recorded in the transaction log like any
 
 Closing the menu calls the trade off and everything goes straight back. So does walking too far apart, disconnecting,
 or the server stopping.
+
+### Combat
+
+Every player and every mob has an RPG health pool drawn over their vanilla hearts. The pool is always exactly as full
+as the hearts are, so potions, regeneration, totems and deaths all work as they always have; only the numbers change.
+Hits between a player and a mob, or between two mobs, are worked out from stats:
+
+- **Health** is your pool, 100 to start. **Defense** takes a share off every mob's hit — 100 halves it — and comes from
+  your armor. **Damage** comes from your weapon, **Strength** adds to every hit in percent (the Strength effect gives
+  some), and **Crit Chance** and **Crit Damage** decide how often a hit lands harder and by how much. Jump attacks add
+  to your crit chance.
+- None of it applies between players. A hit from one player to another, or from a player's pet, is left to vanilla, and
+  so is everything the world does to you: falling, lava, drowning.
+
+Mobs are levelled by where they spawn. Each kind of world has a spawn area where mobs stay at its base level, and
+rings around it, each harder than the one inside:
+
+| World     | Base | Spawn area         | Each ring            | Cap |
+|:----------|:-----|:-------------------|:---------------------|:----|
+| Overworld | 1    | 300 blocks         | 500 blocks, +2 levels | 30  |
+| Nether    | 4    | 64 blocks          | 64 blocks, +2 levels  | 45  |
+| End       | 8    | the main island (1,000) | 500 blocks, +3 levels | 60 |
+
+Night and being below Y 0 each add 2 in the Overworld. A level grows a mob's health and hits, and the experience it
+drops. Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working
+as they do in vanilla. Levels are kept with the mob, so they survive restarts.
+
+What everything is worth is in `plugins/TriTown/content/balance.yml`: the lens (RPG health per vanilla half-heart, 5),
+your base stats, how much a level grows a mob, and what vanilla armor is worth as Defense. `/tt reload` reads it again,
+and `/tt mob balance` shows what your numbers make of each level before anyone fights. A value it cannot use falls back
+to the bundled default, and the console says which.
 
 ### The sidebar
 

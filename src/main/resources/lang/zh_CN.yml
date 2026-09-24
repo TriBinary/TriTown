@@ -23,6 +23,8 @@ command:
     news: "公告"
     storage: "仓库"
     protection: "物品保护"
+    adventure: "冒险"
+    mobs: "怪物"
 
   help:
     header: "TriTown 命令"
@@ -144,6 +146,26 @@ command:
     public: "<gray>它不归属任何人：所有人都可以使用。"
     owner: "它归属于 <white>{name}</white>。"
     released: "已解除 <white>{name}</white> 的归属。现在所有人都可以使用。"
+
+  stats:
+    description: "查看你的战斗属性"
+    players-only: "<red>属性在菜单中显示，只有玩家能打开。"
+    unavailable: "<red>这个世界没有开启战斗属性。"
+    not-found: "<red><white>{name}</white> 不在线。"
+
+  mob:
+    description: "查看怪物等级与战斗平衡"
+    usage: "<red>用法：<white>/tritown mob <level|balance></white>"
+    players-only: "<red>要在游戏中站在某处才能查看那里的等级。"
+    inactive: "<red>这个世界的怪物没有等级。"
+    level: "在这里生成的怪物为 <white>{level}</white> 级。"
+    level-town: "<gray> · 城镇领地内始终为 1 级。"
+    level-hub: "<gray> · 这里是出生区域，保持基础等级。"
+    level-ring: "<gray> · 距出生点第 <white>{ring}</white> 圈。"
+    level-night: "<gray> · 现在是夜晚，等级更高。"
+    level-deep: "<gray> · 位于 Y 0 以下，等级更高。"
+    balance-header: "各等级的僵尸对上一整套钻石装备："
+    balance-row: "<gray>Lv <white>{level}</white>：<red>{health}❤</red>，每击 <red>{hit}</red> · <white>{hits}</white> 下击杀 · 每击扣除基础生命的 <white>{percent}%</white>"
 
   trades:
     description: "打开服务器的全局商店"
@@ -349,6 +371,7 @@ gui:
     profile-rank: "<gray>财富排行：<white>第 {rank} 名</white>"
     profile-town: "<gray>城镇：<white>{town}</white>"
     profile-nation: "<gray>国家：<white>{nation}</white>"
+    profile-stats: "<yellow>点击<gray>查看你的战斗属性"
     town: "<green><bold>城镇</bold></green>"
     town-name: "<gray>城镇：<white>{town}</white>"
     town-residents: "<gray>居民：<white>{amount}</white>"
@@ -1116,6 +1139,29 @@ gui:
     cancel-lore: "<gray>返回，不做任何修改。"
 
 # 商店在菜单之外发给玩家的消息。
+  stats:
+    title: "<dark_gray>我的属性"
+    title-other: "<dark_gray>{name} 的属性"
+    profile: "<gold><bold>我的属性</bold></gold>"
+    profile-other: "<gold><bold>{name}</bold></gold>"
+    profile-health: "<red>❤ {health}<dark_gray>/</dark_gray>{max}</red>"
+    profile-pvp: "<dark_gray>属性只对怪物生效，玩家之间的战斗与原版相同。"
+    stat-name: "{stat} <white>{value}"
+    source-line: "<dark_gray>• <gray>{source}：<white>{value}"
+    defense-reduction: "<gray>怪物对你的伤害减少 <white>{percent}%</white>。"
+    about:
+      health: "<gray>怪物需要打掉你多少生命。它显示在你的红心上，红心始终与它保持同样的比例。"
+      defense: "<gray>减少怪物每次攻击的伤害，100 点防御可减半。"
+      damage: "<gray>你的武器为每次攻击怪物增加的伤害。"
+      strength: "<gray>按其数值的百分比提高你对怪物的每次伤害。"
+      crit-chance: "<gray>攻击怪物时触发暴击的几率，跳劈会提高它。"
+      crit-damage: "<gray>暴击额外造成的伤害。"
+    source:
+      base: "基础"
+      armor: "盔甲"
+      weapon: "武器"
+      effects: "状态效果"
+
 shop:
   traded: "以 <gold>{price}</gold> 成交 <white>{amount}个</white> {item}。"
   traded-items: "成交 <white>{amount}个</white> {item}。"
@@ -1203,6 +1249,29 @@ trade:
     shutdown: "<gray>服务器正在关闭，交易已取消，你放上的东西都已退回。"
 
 
+# 战斗。各项属性在任何地方都以这里的符号和颜色显示。
+combat:
+  stat:
+    health: "<red>❤ 生命值"
+    defense: "<green>❈ 防御"
+    damage: "<red>⚔ 伤害"
+    strength: "<dark_red>❁ 力量"
+    crit-chance: "<blue>☣ 暴击率"
+    crit-damage: "<blue>☠ 暴击伤害"
+
+  hud:
+    bar: "<red>❤ {health}/{max}</red>      <green>❈ {defense}"
+
+  # 从被击中的怪物身上飘起。附近的人看到的是同一个，所以使用服务器的语言。
+  indicator:
+    hit: "<gray>{amount}"
+    crit: "<gradient:#ffff55:#ffaa00:#ff5555>✧{amount}✧</gradient>"
+
+mob:
+  # 有等级的怪物的名字。所有人看到的是同一个，所以使用服务器的语言。{name} 是怪物的种类，由每位玩家的客户端以自己的语言显示。
+  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] <red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+
+
 scoreboard:
   # 服务器名称。各帧之间只有渐变相位不同，循环播放时高光会从名称上扫过。
   title:
@@ -1233,12 +1302,15 @@ scoreboard:
     plot-nation: "  <gray>国家 <white>%plot_nation%"
     plot-summary: "  <white>%plot_type%<dark_gray> · <gray>%plot_owner%"
     plot-price: "  <gray>出售中 <green>%plot_price%"
-    wilderness: "  <dark_green>荒野"
+    wilderness: "  <dark_green>荒野%danger%"
     coords: "  <gray>区块 <white>%plot_coords%"
     balance: "  <gray>余额 <white>%balance%"
     enemy-warning: "<dark_red>» <bold>敌对领地</bold> «"
     townless-hint: "  <yellow>你还没有城镇"
     townless-action: "  <gray>使用 <white>/tm<gray> 加入一个"
+
+  # 填入 %danger%：玩家所在处的荒野有多危险。
+  danger: "<dark_gray> · <red>☠ Lv {level}"
 
   warning:
     ruined: "已废墟"

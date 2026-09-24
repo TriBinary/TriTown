@@ -23,6 +23,8 @@ command:
     news: "News"
     storage: "Storage"
     protection: "Protection"
+    adventure: "Adventure"
+    mobs: "Mobs"
 
   help:
     header: "TriTown Commands"
@@ -144,6 +146,26 @@ command:
     public: "<gray>Nobody owns that: anyone can use it."
     owner: "That belongs to <white>{name}</white>."
     released: "Released <white>{name}</white>'s claim. Anyone can use it now."
+
+  stats:
+    description: "See your combat stats"
+    players-only: "<red>Stats are shown in a menu, so only players can open them."
+    unavailable: "<red>Combat stats are switched off in this world."
+    not-found: "<red><white>{name}</white> is not online."
+
+  mob:
+    description: "Inspect mob levels and the combat balance"
+    usage: "<red>Usage: <white>/tritown mob <level|balance></white>"
+    players-only: "<red>Stand somewhere in game to read its level."
+    inactive: "<red>Mobs are not levelled in this world."
+    level: "Mobs spawning here are level <white>{level}</white>."
+    level-town: "<gray> · Town claims are always level 1."
+    level-hub: "<gray> · This is the spawn area, which stays at its base level."
+    level-ring: "<gray> · Ring <white>{ring}</white> out from spawn."
+    level-night: "<gray> · It is night, which adds to it."
+    level-deep: "<gray> · Below Y 0, which adds to it."
+    balance-header: "A zombie at each level, against a full diamond kit:"
+    balance-row: "<gray>Lv <white>{level}</white>: <red>{health}❤</red>, hits for <red>{hit}</red> · dies in <white>{hits}</white> swings · each hit takes <white>{percent}%</white> of base health"
 
   trades:
     description: "Open the server's global shop"
@@ -350,6 +372,7 @@ gui:
     profile-rank: "<gray>Leaderboard: <white>#{rank}</white>"
     profile-town: "<gray>Town: <white>{town}</white>"
     profile-nation: "<gray>Nation: <white>{nation}</white>"
+    profile-stats: "<yellow>Click <gray>to see your combat stats"
     town: "<green><bold>Town</bold></green>"
     town-name: "<gray>Town: <white>{town}</white>"
     town-residents: "<gray>Residents: <white>{amount}</white>"
@@ -1116,6 +1139,29 @@ gui:
     cancel-lore: "<gray>Go back without changing anything."
 
 # Messages a shop sends to a player, outside the menus themselves.
+  stats:
+    title: "<dark_gray>Your Stats"
+    title-other: "<dark_gray>{name}'s Stats"
+    profile: "<gold><bold>Your Stats</bold></gold>"
+    profile-other: "<gold><bold>{name}</bold></gold>"
+    profile-health: "<red>❤ {health}<dark_gray>/</dark_gray>{max}</red>"
+    profile-pvp: "<dark_gray>Stats only count against mobs. Players fight each other as in vanilla."
+    stat-name: "{stat} <white>{value}"
+    source-line: "<dark_gray>• <gray>{source}: <white>{value}"
+    defense-reduction: "<gray>Mobs' hits on you are <white>{percent}%</white> weaker."
+    about:
+      health: "<gray>How much a mob has to take off you. It is drawn over your hearts, which are always as full as it is."
+      defense: "<gray>Takes a share off every hit a mob lands. 100 Defense halves it."
+      damage: "<gray>What your weapon adds to every hit on a mob."
+      strength: "<gray>Adds its value in percent to every hit on a mob."
+      crit-chance: "<gray>The chance that a hit on a mob is critical. Jump attacks add to it."
+      crit-damage: "<gray>How much more a critical hit does."
+    source:
+      base: "Base"
+      armor: "Armor"
+      weapon: "Weapon"
+      effects: "Effects"
+
 shop:
   traded: "Traded <white>{amount}x</white> {item} for <gold>{price}</gold>."
   traded-items: "Traded <white>{amount}x</white> {item}."
@@ -1203,6 +1249,30 @@ trade:
     shutdown: "<gray>The server is stopping. The trade was called off and everything you put up is back."
 
 
+# Combat. Each stat is named with the symbol and colour it is shown in everywhere.
+combat:
+  stat:
+    health: "<red>❤ Health"
+    defense: "<green>❈ Defense"
+    damage: "<red>⚔ Damage"
+    strength: "<dark_red>❁ Strength"
+    crit-chance: "<blue>☣ Crit Chance"
+    crit-damage: "<blue>☠ Crit Damage"
+
+  hud:
+    bar: "<red>❤ {health}/{max}</red>      <green>❈ {defense}"
+
+  # Floats up from a mob that was hit. Everyone nearby sees the same one, so it is in the server's language.
+  indicator:
+    hit: "<gray>{amount}"
+    crit: "<gradient:#ffff55:#ffaa00:#ff5555>✧{amount}✧</gradient>"
+
+mob:
+  # A levelled mob's name. Everyone sees the same one, so it is in the server's language. {name} is the kind of mob,
+  # which each player's client writes in its own language.
+  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] <red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+
+
 # The sidebar. Which lines appear, and in what order, is set per board in
 # config.yml; the wording and colours are set here. Values are written as
 # %marker% and are listed in config.yml.
@@ -1237,12 +1307,15 @@ scoreboard:
     plot-nation: "  <gray>Nation <white>%plot_nation%"
     plot-summary: "  <white>%plot_type%<dark_gray> · <gray>%plot_owner%"
     plot-price: "  <gray>For sale <green>%plot_price%"
-    wilderness: "  <dark_green>Wilderness"
+    wilderness: "  <dark_green>Wilderness%danger%"
     coords: "  <gray>Chunk <white>%plot_coords%"
     balance: "  <gray>Balance <white>%balance%"
     enemy-warning: "<dark_red>» <bold>ENEMY LAND</bold> «"
     townless-hint: "  <yellow>You have no town yet"
     townless-action: "  <gray>Open <white>/tm<gray> to join one"
+
+  # Filled into %danger%: how dangerous the wild is where the player stands.
+  danger: "<dark_gray> · <red>☠ Lv {level}"
 
   warning:
     ruined: "Ruined"
