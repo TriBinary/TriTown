@@ -38,10 +38,33 @@
       used. Each player reads their names in their own language.
     + Administrators hand them out with `/tritown item give <player> <id> [amount]` (`tritown.item.admin`), and set
       which mob drops what in `plugins/TriTown/content/mobs.yml`.
++ Added **gear**: ten tiers, each made for mobs up to six times its level, in six rarities from common to mythic.
+    + Six armor sets — Gravewalker, Widowsilk, Emberforged, Ashen Knight, Voidstride and Starfall — and a weapon for
+      every tier, with bows, a crossbow and a trident among them.
+    + A tier is worth about twice the one before, and every piece of a slot and tier is worth the same however its
+      stats are shared out. Gear never wears out.
+    + Between players a piece is exactly the vanilla item it is made of, and its tooltip says which.
+    + Champions sometimes drop a finished piece of their tier.
++ Added **the Forge**, opened with `/tritown forge` or from the main menu. It crafts gear from materials, essence and
+  money at a random rarity, and on the piece in your hand it can:
+    + **Upgrade** it, up to five stars of 4% more stats each;
+    + **Refine** it one step of rarity, up to legendary — mythic only ever drops;
+    + **Reforge** it with a new named bonus such as Sharp or Titanic;
+    + **Salvage** it for essence.
++ Added three stats: **Speed** (capped by `combat.speed-cap`, since it is the one players feel), **Vitality** (more from
+  regeneration and healing potions) and **Magic Find**, which now also helps a champion's gear drop.
++ Server owners tune every piece in `plugins/TriTown/content/gear.yml`, and gear's budget and the Forge's prices in
+  `balance.yml`. A change reaches every piece already out there. `/tritown item give <player> <id> [rarity]` hands out
+  gear, and `/tritown mob balance` now shows each level against a full kit of the gear made for it.
+
 + Server owners tune it all in `plugins/TriTown/content/balance.yml`, and set the rings per kind of world, or per world,
   under `mobs.levels` in `config.yml`. `/tritown mob balance` shows what the numbers make of each level, and
   `/tritown mob level` shows the level where you stand and why (`tritown.mob.admin`).
 + Added the sidebar markers `%health%`, `%max_health%`, `%defense%`, `%mob_level%` and `%danger%`.
+
+#### Economy
+
++ The Forge is a new money sink, listed as **The Forge** in the admin panel's economy breakdown and in `/eco history`.
 
 ## Version 1.4.0
 

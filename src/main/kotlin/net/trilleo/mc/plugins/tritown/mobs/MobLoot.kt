@@ -5,6 +5,9 @@ import net.trilleo.mc.plugins.tritown.combat.PlayerStats
 import net.trilleo.mc.plugins.tritown.combat.Stat
 import net.trilleo.mc.plugins.tritown.content.ContentItems
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
+import net.trilleo.mc.plugins.tritown.gear.Gear
+import net.trilleo.mc.plugins.tritown.gear.GearStats
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.entity.Tameable
@@ -24,8 +27,10 @@ import kotlin.random.Random
  * 4. it is at least the loot table's `min-level`.
  *
  * What it drops is rolled by [LootRoller] against `mobs.yml`, with the
- * killer's Magic Find. The drops go into the death event, so item protection
- * hands them to the killer like the rest of the mob's loot.
+ * killer's Magic Find: materials and essence, and now and then — a champion,
+ * mostly — a finished piece of gear of the tier its level is made for. The
+ * drops go into the death event, so item protection hands them to the killer
+ * like the rest of the mob's loot.
  */
 object MobLoot {
 
@@ -49,8 +54,23 @@ object MobLoot {
         if (!profile.eligible || share * 100.0 < table.rules.playerShare) return emptyList()
 
         val magicFind = PlayerStats.sheet(killer)[Stat.MAGIC_FIND]
-        return LootRoller.roll(table, mob.type.name, profile.rank, profile.level, magicFind, Random)
-            .flatMap { drop -> listOfNotNull(ContentItems.create(drop.item, drop.amount)) }
+        val drops = LootRoller.roll(table, mob.type.name, profile.rank, profile.level, magicFind, Random)
+            .mapNotNull { drop -> ContentItems.create(drop.item, drop.amount) }
+        val gear = if (LootRoller.dropsGear(table, profile.rank, profile.level, magicFind, Random)) gearFor(profile.level) else null
+        return drops + listOfNotNull(gear)
+    }
+
+    /**
+     * A random piece of the tier made for [level], at a rarity drawn from
+     * `drop-odds` — or of the highest tier below it, where the content has no
+     * piece of that tier.
+     */
+    private fun gearFor(level: Int): ItemStack? {
+        val tier = (level + ForgeCosts.LEVELS_PER_TIER - 1) / ForgeCosts.LEVELS_PER_TIER
+        val pieces = ContentRegistry.gear.gear.values.filter { it.tier <= tier }
+        val best = pieces.maxOfOrNull { it.tier } ?: return null
+        val def = pieces.filter { it.tier == best }.random()
+        return Gear.create(def, GearStats.pick(ContentRegistry.balance.gear.dropOdds, Random))
     }
 
     fun forget(mob: UUID) = ledger.forget(mob)

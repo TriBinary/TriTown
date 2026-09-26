@@ -165,8 +165,8 @@ command:
     level-ring: "<gray> · Ring <white>{ring}</white> out from spawn."
     level-night: "<gray> · It is night, which adds to it."
     level-deep: "<gray> · Below Y 0, which adds to it."
-    balance-header: "A zombie at each level, against a full diamond kit:"
-    balance-row: "<gray>Lv <white>{level}</white>: <red>{health}❤</red>, hits for <red>{hit}</red> · dies in <white>{hits}</white> swings · each hit takes <white>{percent}%</white> of base health"
+    balance-header: "A zombie at each level, against a full kit of rare ★★★ gear of the tier made for it:"
+    balance-row: "<gray>Lv <white>{level}</white> <dark_gray>(tier {tier})</dark_gray>: <red>{health}❤</red>, hits for <red>{hit}</red> · dies in <white>{hits}</white> swings · each hit takes <white>{percent}%</white> of health"
 
   item:
     description: "Give out the server's own items"
@@ -175,6 +175,11 @@ command:
     unknown: "<red>There is no item <white>{id}</white>. <gray>/tritown item list</gray> names them all."
     given: "Gave <white>{amount}x {id}</white> to <white>{name}</white>."
     list: "<white>{amount}</white> items: <gray>{ids}"
+
+  forge:
+    description: "Craft and improve gear"
+    players-only: "<red>The Forge is a menu, so only players can open it."
+    unavailable: "<red>The Forge is closed in this world."
 
   trades:
     description: "Open the server's global shop"
@@ -328,12 +333,17 @@ money:
     shop-sell: "Sold at {shop}"
     trade: "Player trade"
     storage-page: "Storage page {page}"
+    gear-craft: "Forged {item}"
+    gear-upgrade: "Upgraded {item}"
+    gear-refine: "Refined {item}"
+    gear-reforge: "Reforged {item}"
 
   # Where money comes from and where it goes, as the admin panel groups it.
   flow:
     starting-balance: "New players"
     shop: "Shops"
     storage: "Storage pages"
+    gear: "The Forge"
     towny: "Towny"
     admin: "Administration"
     payment: "Player payments"
@@ -347,6 +357,7 @@ money:
     towny: "Towny"
     shop: "Shop"
     storage: "Storage"
+    gear: "The Forge"
 
   account-type:
     player: "player"
@@ -382,6 +393,8 @@ gui:
     profile-town: "<gray>Town: <white>{town}</white>"
     profile-nation: "<gray>Nation: <white>{nation}</white>"
     profile-stats: "<yellow>Click <gray>to see your combat stats"
+    forge: "<gold><bold>Forge</bold></gold>"
+    forge-lore: "<gray>Craft gear from what mobs drop, and make it stronger."
     town: "<green><bold>Town</bold></green>"
     town-name: "<gray>Town: <white>{town}</white>"
     town-residents: "<gray>Residents: <white>{amount}</white>"
@@ -629,6 +642,7 @@ gui:
     about-starting-balance: "<dark_gray>Paid once to each new player."
     about-shop: "<dark_gray>The server's own shops selling and buying back."
     about-storage: "<dark_gray>Players buying more pages of storage."
+    about-gear: "<dark_gray>Players crafting, upgrading, refining and reforging gear at the Forge."
     about-towny: "<dark_gray>Upkeep, taxes, plot sales and bank movements."
     about-admin: "<dark_gray>Balances given, taken, set or reset by an administrator."
     about-payment: "<dark_gray>Players paying each other."
@@ -1165,12 +1179,46 @@ gui:
       strength: "<gray>Adds its value in percent to every hit on a mob."
       crit-chance: "<gray>The chance that a hit on a mob is critical. Jump attacks add to it."
       crit-damage: "<gray>How much more a critical hit does."
+      speed: "<gray>Moves you faster. It is the one stat players feel too, so the server caps it."
+      vitality: "<gray>Makes natural regeneration and healing potions give back more."
       magic-find: "<gray>Makes a mob likelier to drop its material. Looting adds to it."
     source:
       base: "Base"
       armor: "Armor"
       weapon: "Weapon"
       effects: "Effects"
+
+  forge:
+    title: "<dark_gray>The Forge"
+    craft: "<gold><bold>Craft</bold></gold>"
+    craft-lore: "<gray>Make new gear from what mobs drop."
+    upgrade: "<yellow><bold>Upgrade</bold></yellow>"
+    upgrade-lore: "<gray>Adds a star: <white>+{bonus}%</white> to its stats. <dark_gray>({stars}/{max})"
+    refine: "<aqua><bold>Refine</bold></aqua>"
+    refine-lore: "<gray>Raises its rarity from {from}<gray> to {to}<gray>."
+    reforge: "<light_purple><bold>Reforge</bold></light_purple>"
+    reforge-lore: "<gray>Gives it a new reforge, picked at random. <dark_gray>Now: {reforge}"
+    salvage: "<red><bold>Salvage</bold></red>"
+    salvage-lore: "<gray>Breaks it down for good into:"
+    salvage-item: "<dark_gray>• <white>{amount}x</white> {name}"
+    click-act: "<yellow>Click <gray>to do it"
+    empty: "<gray>Nothing in hand"
+    empty-lore: "<gray>Hold a piece of gear in your main hand to upgrade, refine, reforge or salvage it."
+    cost-item: "<green>✔ <white>{have}<gray>/{need} {name}"
+    cost-item-missing: "<red>✘ <white>{have}<gray>/{need} {name}"
+    cost-money: "<green>✔ <gold>{amount}"
+    cost-money-missing: "<red>✘ <gold>{amount}"
+    confirm: "<green><bold>Confirm</bold></green>"
+    upgrade-confirm: "<dark_gray>Upgrade this piece?"
+    refine-confirm: "<dark_gray>Refine this piece?"
+    reforge-confirm: "<dark_gray>Reforge this piece?"
+    salvage-confirm: "<dark_gray>Salvage this piece for good?"
+
+  forge-recipes:
+    title: "<dark_gray>The Forge: Craft"
+    tier: "<gray>Tier <white>{tier}"
+    click: "<yellow>Click <gray>to forge it"
+    confirm: "<dark_gray>Forge this piece?"
 
 shop:
   traded: "Traded <white>{amount}x</white> {item} for <gold>{price}</gold>."
@@ -1268,6 +1316,8 @@ combat:
     strength: "<dark_red>❁ Strength"
     crit-chance: "<blue>☣ Crit Chance"
     crit-damage: "<blue>☠ Crit Damage"
+    speed: "<white>✦ Speed"
+    vitality: "<dark_red>♨ Vitality"
     magic-find: "<aqua>✯ Magic Find"
 
   hud:
@@ -1369,6 +1419,148 @@ rarity:
   epic: "<dark_purple><bold>EPIC"
   legendary: "<gold><bold>LEGENDARY"
   mythic: "<light_purple><bold>MYTHIC"
+
+
+# What the Forge tells a player once it has done something, or why it could not.
+forge:
+  crafted: "You forged {name}."
+  upgraded: "{name} now has <gold>{stars}★</gold>."
+  refined: "{name} is now {rarity}<reset>."
+  reforged: "It is now {name}."
+  salvaged: "You broke {name} down into {items}."
+  error:
+    not-gear: "Hold a piece of gear in your main hand."
+    maxed: "It can go no further."
+    missing-items: "You are missing some of what this takes."
+    cannot-afford: "You cannot afford that."
+    unavailable: "The Forge cannot do that right now."
+
+# The gear in plugins/TriTown/content/gear.yml, by id. A name takes the colour of the piece's rarity, so names
+# carry no colour of their own. Keep each lore line short: it is one line of the piece's tooltip.
+gear:
+  # Where it goes, after its rarity at the foot of its tooltip.
+  slot:
+    weapon: "WEAPON"
+    bow: "BOW"
+    helmet: "HELMET"
+    chestplate: "CHESTPLATE"
+    leggings: "LEGGINGS"
+    boots: "BOOTS"
+  # Followed by the vanilla item the piece counts as between players.
+  pvp: "Against players:"
+  reforge:
+    sharp: "Sharp"
+    heroic: "Heroic"
+    fierce: "Fierce"
+    deadly: "Deadly"
+    titanic: "Titanic"
+    sturdy: "Sturdy"
+    hardy: "Hardy"
+    swift: "Swift"
+    lucky: "Lucky"
+  item:
+    gravewalker-blade:
+      name: "Gravewalker Blade"
+      lore: "Sharpened on a headstone."
+    gravewalker-helmet:
+      name: "Gravewalker Helm"
+      lore: "Worn by those who dig where others lie."
+    gravewalker-chestplate:
+      name: "Gravewalker Plate"
+      lore: "Heavy with the soil of a hundred graves."
+    gravewalker-leggings:
+      name: "Gravewalker Greaves"
+      lore: "They never tire of walking."
+    gravewalker-boots:
+      name: "Gravewalker Boots"
+      lore: "Quiet on the stairs of any crypt."
+    bonecaller-bow:
+      name: "Bonecaller Bow"
+      lore: "Its string hums like a rib cage in the wind."
+    frostbite-edge:
+      name: "Frostbite Edge"
+      lore: "Cold enough to burn."
+    widowsilk-helmet:
+      name: "Widowsilk Hood"
+      lore: "Woven in the dark, for the dark."
+    widowsilk-chestplate:
+      name: "Widowsilk Vest"
+      lore: "Light enough to forget you wear it."
+    widowsilk-leggings:
+      name: "Widowsilk Leggings"
+      lore: "Every thread was once a trap."
+    widowsilk-boots:
+      name: "Widowsilk Boots"
+      lore: "Soft as a spider's step."
+    tidecaller-trident:
+      name: "Tidecaller Trident"
+      lore: "It remembers every wave it ever parted."
+    emberbrand:
+      name: "Emberbrand"
+      lore: "Its edge glows long after the fight."
+    emberforged-helmet:
+      name: "Emberforged Helm"
+      lore: "Still warm from the forge that made it."
+    emberforged-chestplate:
+      name: "Emberforged Cuirass"
+      lore: "Hammered on the anvil of a fortress."
+    emberforged-leggings:
+      name: "Emberforged Greaves"
+      lore: "Sparks fly with every stride."
+    emberforged-boots:
+      name: "Emberforged Sabatons"
+      lore: "They leave scorched footprints."
+    wailing-arbalest:
+      name: "Wailing Arbalest"
+      lore: "Each bolt leaves with a scream."
+    ashen-greatsword:
+      name: "Ashen Greatsword"
+      lore: "Too heavy for anyone who has not earned it."
+    ashen-helmet:
+      name: "Ashen Knight's Helm"
+      lore: "A knight wore it once. Only ash is left of him."
+    ashen-chestplate:
+      name: "Ashen Knight's Plate"
+      lore: "Blackened, and all the stronger for it."
+    ashen-leggings:
+      name: "Ashen Knight's Greaves"
+      lore: "They march even when no one wears them."
+    ashen-boots:
+      name: "Ashen Knight's Sabatons"
+      lore: "Soot drifts up from every step."
+    riftpiercer:
+      name: "Riftpiercer"
+      lore: "Its arrows arrive a moment before they leave."
+    voidreaver:
+      name: "Voidreaver"
+      lore: "It cuts the space between things."
+    voidstride-helmet:
+      name: "Voidstride Crown"
+      lore: "It sees what stands behind you."
+    voidstride-chestplate:
+      name: "Voidstride Carapace"
+      lore: "Nothing can keep hold of it for long."
+    voidstride-leggings:
+      name: "Voidstride Greaves"
+      lore: "Every step lands a little further than it should."
+    voidstride-boots:
+      name: "Voidstride Treads"
+      lore: "Walk as the endermen walk."
+    starfall-blade:
+      name: "Starfall Blade"
+      lore: "Where it strikes, the sky follows."
+    starfall-helmet:
+      name: "Starfall Circlet"
+      lore: "A crown for whoever outlasts the End."
+    starfall-chestplate:
+      name: "Starfall Aegis"
+      lore: "Forged from a star that fell too far."
+    starfall-leggings:
+      name: "Starfall Greaves"
+      lore: "They shine even in the void."
+    starfall-boots:
+      name: "Starfall Striders"
+      lore: "The ground is only a suggestion."
 
 
 # The sidebar. Which lines appear, and in what order, is set per board in

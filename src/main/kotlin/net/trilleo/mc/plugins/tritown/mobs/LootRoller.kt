@@ -22,16 +22,11 @@ object LootRoller {
      */
     fun roll(table: LootTable, type: String, rank: MobRank, level: Int, magicFind: Double, random: Random): List<Drop> {
         if (level < table.rules.minLevel) return emptyList()
-        val drop = when (rank) {
-            MobRank.NORMAL -> table.normal
-            MobRank.ELITE -> table.elite
-            MobRank.CHAMPION -> table.champion
-        }
+        val drop = dropFor(table, rank)
         val drops = mutableListOf<Drop>()
 
         table.families[type]?.let { family ->
-            val boost = 1.0 + magicFind.coerceIn(0.0, table.rules.magicFindCap) / 100.0
-            if (random.nextDouble() * 100.0 < drop.chance * boost) {
+            if (random.nextDouble() * 100.0 < drop.chance * boost(table, magicFind)) {
                 val amount = random.nextInt(drop.minAmount, drop.maxAmount + 1)
                 if (amount > 0) drops += Drop(family.material, amount)
             }
@@ -43,4 +38,24 @@ object LootRoller {
         }
         return drops
     }
+
+    /**
+     * Whether a mob of [rank] and [level] drops a finished piece of gear, its
+     * chance multiplied by Magic Find like any other rare drop.
+     */
+    fun dropsGear(table: LootTable, rank: MobRank, level: Int, magicFind: Double, random: Random): Boolean {
+        if (level < table.rules.minLevel) return false
+        val chance = dropFor(table, rank).gearChance
+        if (chance <= 0.0) return false
+        return random.nextDouble() * 100.0 < chance * boost(table, magicFind)
+    }
+
+    private fun dropFor(table: LootTable, rank: MobRank): LootTable.Drop = when (rank) {
+        MobRank.NORMAL -> table.normal
+        MobRank.ELITE -> table.elite
+        MobRank.CHAMPION -> table.champion
+    }
+
+    private fun boost(table: LootTable, magicFind: Double): Double =
+        1.0 + magicFind.coerceIn(0.0, table.rules.magicFindCap) / 100.0
 }

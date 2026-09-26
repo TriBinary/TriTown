@@ -4,6 +4,7 @@ import net.trilleo.mc.plugins.tritown.combat.BalanceSimulator
 import net.trilleo.mc.plugins.tritown.combat.Combat
 import net.trilleo.mc.plugins.tritown.combat.CombatFormat
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
 import net.trilleo.mc.plugins.tritown.mobs.MobZones
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
@@ -58,17 +59,22 @@ class MobCommand : PluginCommand(
         if (reading.deep) player.sendMessage(ComponentUtil.parse(player.tr("command.mob.level-deep")))
     }
 
-    /** A zombie's health and hit at a spread of levels, and how a diamond kit fares against it. */
+    /**
+     * A zombie's health and hit at a spread of levels, and how a player fares
+     * against it in gear of the tier made for that level.
+     */
     private fun balance(sender: CommandSender) {
         val balance = ContentRegistry.balance
         sender.sendPrefixed(sender.tr("command.mob.balance-header"))
         for (level in TABLE_LEVELS) {
-            val row = BalanceSimulator.row(balance, level, BalanceSimulator.Kit.DIAMOND)
+            val tier = (level + ForgeCosts.LEVELS_PER_TIER - 1) / ForgeCosts.LEVELS_PER_TIER
+            val row = BalanceSimulator.gearRow(balance, level, tier)
             sender.sendMessage(
                 ComponentUtil.parse(
                     sender.tr(
                         "command.mob.balance-row",
                         "level" to level,
+                        "tier" to tier,
                         "health" to CombatFormat.number(row.foeHealth),
                         "hit" to CombatFormat.number(row.foeHit),
                         "hits" to row.hitsToKill,

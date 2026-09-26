@@ -17,7 +17,7 @@ run `/tt menu`, for everything TriTown offers in one place. Your profile sits at
 leaderboard rank, town and nation — and below it are your town at a glance with a shortcut into
 [TownyMenu](https://github.com/Trilleo/TownyMenu), your storage, the global shop, a list of the players near enough to trade with
 (anyone waiting for your answer first), a list of players to pay, the richest players as heads, the server's vital signs,
-the server news, a sidebar switch, and the admin panel for those allowed it. Anything switched off on the server, or that you may not
+the Forge, the server news, a sidebar switch, and the admin panel for those allowed it. Anything switched off on the server, or that you may not
 use, is simply left out, and what remains is centred. The item cannot be moved, dropped, stored, crafted with or handed
 to anything, a copy made any other way is deleted within a second, and it is taken off you when you log out, so there
 is nothing to duplicate and nothing left behind if TriTown is ever removed.
@@ -67,10 +67,11 @@ away or disconnects.
 harder, the Nether and the End start higher, and night and the deep add to it. Health and hits are in RPG numbers —
 your 100 health is drawn over your ten hearts, a level-1 zombie has 100 and a level-30 one over 3,000 — and your
 Defense, Damage, Strength and crits come from what you wear and hold. Some mobs spawn as elites and champions, with
-affixes that make them fight differently. `/tt stats` shows your stats and where each comes from, your health and
-Defense sit above your hotbar, and every hit you land floats its damage up from the mob. At level 1 with vanilla gear it
-plays exactly like vanilla. Town claims are always level 1 and mobs from spawners stay vanilla, so farms keep working,
-and players fighting each other are left entirely to vanilla.
+affixes that make them fight differently, and wild mobs drop materials. At the Forge those become gear in ten tiers
+and six rarities, which you upgrade, refine and reforge as you push further out. `/tt stats` shows your stats and where
+each comes from, your health and Defense sit above your hotbar, and every hit you land floats its damage up from the
+mob. At level 1 with vanilla gear it plays exactly like vanilla. Town claims are always level 1 and mobs from spawners
+stay vanilla, so farms keep working, and players fighting each other are left entirely to vanilla.
 
 **Server news.** Update notes, written in game and read from the main menu or with `/tt news`. A post is a title and
 categories of short entries — a line or two about one change each, tagged New, Changed, Fixed, Removed or Note — read
@@ -82,8 +83,8 @@ players will see it, pin it, and publish it when it is ready. Every title and en
 server's languages, and players read their own.
 
 **An admin panel.** `/tt admin` opens a menu that reads the server back to you. The economy section shows how much
-currency exists and who holds it, what created it and what removed it — new players, shops, Towny, administrators or
-storage pages or another plugin — with the net drift per day, how unevenly wealth is spread, how fast money circulates, and a chart of
+currency exists and who holds it, what created it and what removed it — new players, shops, Towny, administrators,
+storage pages, the Forge or another plugin — with the net drift per day, how unevenly wealth is spread, how fast money circulates, and a chart of
 the window drawn as columns. Read any of it over the last day, week or month, or over everything on record. Every
 shop's takings are in there too, next to the economy they act on, and every player's storage — how full it is, how
 many pages were bought — which you can open and look through, online or not.
@@ -158,7 +159,8 @@ itself, are still anyone's.
 | `/tt protection <inspect/release>` | See or clear who owns what you look at (OP only) |
 | `/tt stats [player]`     | See your combat stats, or another player's |
 | `/tt mob <level/balance>` | Inspect mob levels and the balance (OP only) |
-| `/tt item <give/list>`   | Hand out the server's own items (OP only) |
+| `/tt item <give/list>`   | Hand out the server's own items and gear (OP only) |
+| `/tt forge`              | Craft gear, and upgrade, refine, reforge or salvage it |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -190,8 +192,9 @@ from and break anything a player has claimed.
 `/tt stats` opens your combat stats — or, with a name, those of anyone online — each broken down by where it comes
 from. It has no permission node; whether it runs at all is `combat.enabled`. `/tt mob level` says what level mobs
 spawning where you stand would be, and why, and `/tt mob balance` prints what the balance in force makes of each level;
-both need `tritown.mob.admin`. `/tt item give <player> <id> [amount]` hands out a material or essence, and `/tt item
-list` names them all; both need `tritown.item.admin`.
+both need `tritown.mob.admin`. `/tt item give <player> <id> [amount]` hands out a material or essence, `/tt item give
+<player> <id> [rarity]` a piece of gear, and `/tt item list` names them all; both need `tritown.item.admin`. `/tt forge`
+opens the Forge and has no permission node; whether it runs is `combat.enabled`.
 
 `/tt admin` opens the panel itself, and `economy`, `shops` or `storage` opens that section directly. Opening the panel
 needs `tritown.admin`; the sections need `tritown.admin.economy`, `tritown.admin.shops` and `tritown.admin.storage` on
@@ -262,6 +265,7 @@ version stays available as `/tritown:balance` and so on.
 | `combat.hud.action-bar`                   | `true`             | Show each player's health and Defense above the hotbar                          |
 | `combat.hud.damage-indicators`            | `true`             | Float each hit's damage up from the mob it hit                                  |
 | `combat.hud.indicator-limit`              | `64`               | The most damage indicators that may exist at once                               |
+| `combat.speed-cap`                        | `30`               | The most Speed, in percent, that makes a player faster                          |
 | `mobs.levels.night-bonus` / `.depth-bonus` | `2`               | Levels an Overworld mob gains at night, and below Y 0                           |
 | `mobs.levels.<overworld/nether/end>`      | see below          | Each kind of world's `base`, `spawn-radius`, `ring-width`, `per-ring` and `cap` |
 | `mobs.levels.worlds.<name>`               | —                  | Rings of a world's own, by name                                                 |
@@ -387,12 +391,14 @@ Every player and every mob has an RPG health pool drawn over their vanilla heart
 as the hearts are, so potions, regeneration, totems and deaths all work as they always have; only the numbers change.
 Hits between a player and a mob, or between two mobs, are worked out from stats:
 
-- **Health** is your pool, 100 to start. **Defense** takes a share off every mob's hit — 100 halves it — and comes from
-  your armor. **Damage** comes from your weapon, **Strength** adds to every hit in percent (the Strength effect gives
-  some), and **Crit Chance** and **Crit Damage** decide how often a hit lands harder and by how much. Jump attacks add
-  to your crit chance.
+- **Health** is your pool, 100 to start. **Defense** takes a share off every mob's hit — 100 halves it. **Damage**
+  comes from your weapon, **Strength** adds to every hit in percent (the Strength effect gives some), and **Crit
+  Chance** and **Crit Damage** decide how often a hit lands harder and by how much; jump attacks add to your crit
+  chance. **Speed** moves you faster, **Vitality** makes regeneration and healing potions give back more, and **Magic
+  Find** makes rare drops likelier. Vanilla armor and weapons count, and so does gear.
 - None of it applies between players. A hit from one player to another, or from a player's pet, is left to vanilla, and
-  so is everything the world does to you: falling, lava, drowning.
+  so is everything the world does to you: falling, lava, drowning. The one stat players feel is Speed, which is capped
+  (`combat.speed-cap`) short of a Speed II potion.
 
 Mobs are levelled by where they spawn. Each kind of world has a spawn area where mobs stay at its base level, and
 rings around it, each harder than the one inside:
@@ -404,7 +410,8 @@ rings around it, each harder than the one inside:
 | End       | 8    | the main island (1,000) | 500 blocks, +3 levels | 60 |
 
 Night and being below Y 0 each add 2 in the Overworld. A level grows a mob's health and hits, and the experience it
-drops.
+drops. Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working as
+they do in vanilla. Levels are kept with the mob, so they survive restarts.
 
 From level 5 a wild mob can spawn as an **elite** (★), and from level 15 as a **champion** (★★): several times the
 health, harder hits, and one to three affixes, named on the mob and shown by the particles around it — Armored,
@@ -413,18 +420,46 @@ Bosses such as the Warden never spawn ranked (`mobs.ranks.exempt`).
 
 From level 3, wild mobs drop **materials** on top of their usual loot — Grave Dust from zombies, Ember Cores from
 blazes, Void Fragments from endermen, fourteen in all — and elites and champions always do, along with **essence**
-whose grade follows their level. **Magic Find** makes a normal mob's material likelier; Looting gives some. Only a mob
-that spawned in the wild drops any of it, and only when players dealt at least half its damage, so a trap or a lava pit
-earns nothing. What drops is the killer's, like the rest of the mob's loot. Materials are inert: they look like the
-vanilla item they are modelled on, but cannot be crafted with, placed or used. Mobs never drop money. Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms keep working
-as they do in vanilla. Levels are kept with the mob, so they survive restarts.
+whose grade follows their level. A champion now and then drops a finished piece of gear. Magic Find makes the chancier
+drops likelier; Looting gives some. Only a mob that spawned in the wild drops any of it, and only when players dealt at
+least half its damage, so a trap or a lava pit earns nothing. What drops is the killer's, like the rest of the mob's
+loot. Materials are inert: they look like the vanilla item they are modelled on, but cannot be crafted with, placed or
+used. Mobs never drop money.
 
-Which mob drops which material, and how often, is in `plugins/TriTown/content/mobs.yml`, and the items themselves —
-how each looks and how rare it is — in `items.yml` beside it; their names are in the language files under `item`.
-What everything is worth is in `plugins/TriTown/content/balance.yml`: the lens (RPG health per vanilla half-heart, 5),
-your base stats, how much a level grows a mob, and what vanilla armor is worth as Defense. `/tt reload` reads it again,
-and `/tt mob balance` shows what your numbers make of each level before anyone fights. A value it cannot use falls back
-to the bundled default, and the console says which.
+### Gear and the Forge
+
+**Gear** comes in ten tiers, each made for mobs up to six times its level — tier 5 is for level 25 to 30 — and in six
+rarities, common to mythic. A tier is worth about twice the one before; a rarity step is worth far less, so the tier is
+what you climb and the rarity what you chase. Every piece of a slot and tier is worth the same, however its stats are
+shared out. Gear never wears out. Between players, a piece is exactly the vanilla item it is made of — a tier-7 blade
+forged from a netherite sword fights players as a netherite sword — and its tooltip says so.
+
+The starting set is six armor sets (Gravewalker, Widowsilk, Emberforged, Ashen Knight, Voidstride, Starfall) and a
+weapon for every tier, bows and a crossbow and a trident among them.
+
+**The Forge** (`/tt forge`, or the main menu) crafts a piece from materials, essence and money, at a random rarity. Hold
+a piece in your main hand and the Forge can also:
+
+- **Upgrade** it: up to five stars, each worth 4% more stats, each costing more than the last;
+- **Refine** it: one step of rarity, up to legendary — mythic only ever drops;
+- **Reforge** it: a new named reforge, such as Sharp or Titanic, adding a little of its own;
+- **Salvage** it: break it down for good into essence.
+
+Every step asks first. Upgrading and refining take the essence of the piece's tier, so improving gear means fighting at
+its level. The money the Forge takes leaves the economy, and the admin panel shows it under **The Forge**.
+
+Everything is tuned in files of its own in `plugins/TriTown/content/`, which `/tt reload` reads again:
+
+- `balance.yml` — what everything is worth: the lens (RPG health per vanilla half-heart, 5), your base stats, how much
+  a level grows a mob, ranks and affixes, what vanilla gear counts as, gear's budget, and what the Forge charges.
+- `mobs.yml` — which mob drops which material, and how often.
+- `items.yml` — the materials and essence: how each looks and how rare it is.
+- `gear.yml` — every piece of gear: its slot, tier, base item, look, how it shares out its stats, and its recipe; and
+  the reforges. Retuning a piece reaches every copy already out there.
+
+Names are in the language files under `item` and `gear`. `/tt mob balance` shows what your numbers make of each level —
+a zombie against a full kit of the tier made for it — before anyone fights. A value that cannot be used falls back to
+the bundled default, and the console says which.
 
 ### The sidebar
 

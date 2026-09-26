@@ -165,8 +165,8 @@ command:
     level-ring: "<gray> · 距出生点第 <white>{ring}</white> 圈。"
     level-night: "<gray> · 现在是夜晚，等级更高。"
     level-deep: "<gray> · 位于 Y 0 以下，等级更高。"
-    balance-header: "各等级的僵尸对上一整套钻石装备："
-    balance-row: "<gray>Lv <white>{level}</white>：<red>{health}❤</red>，每击 <red>{hit}</red> · <white>{hits}</white> 下击杀 · 每击扣除基础生命的 <white>{percent}%</white>"
+    balance-header: "各等级的僵尸对上一整套为该等级打造的稀有 ★★★ 装备："
+    balance-row: "<gray>Lv <white>{level}</white> <dark_gray>（{tier} 阶）</dark_gray>：<red>{health}❤</red>，每击 <red>{hit}</red> · <white>{hits}</white> 下击杀 · 每击扣除生命的 <white>{percent}%</white>"
 
   item:
     description: "发放服务器自己的物品"
@@ -175,6 +175,11 @@ command:
     unknown: "<red>没有物品 <white>{id}</white>。<gray>/tritown item list</gray> 会列出所有物品。"
     given: "已将 <white>{amount}x {id}</white> 发给 <white>{name}</white>。"
     list: "共 <white>{amount}</white> 种物品：<gray>{ids}"
+
+  forge:
+    description: "打造与强化装备"
+    players-only: "<red>锻造台是菜单，只有玩家能打开。"
+    unavailable: "<red>这个世界的锻造台已关闭。"
 
   trades:
     description: "打开服务器的全局商店"
@@ -327,12 +332,17 @@ money:
     shop-sell: "在 {shop} 出售"
     trade: "玩家交易"
     storage-page: "仓库第 {page} 页"
+    gear-craft: "打造 {item}"
+    gear-upgrade: "升星 {item}"
+    gear-refine: "精炼 {item}"
+    gear-reforge: "重铸 {item}"
 
   # 资金的来源与去向，管理面板按此归类统计。
   flow:
     starting-balance: "新玩家"
     shop: "商店"
     storage: "仓库页"
+    gear: "锻造台"
     towny: "Towny"
     admin: "管理操作"
     payment: "玩家转账"
@@ -346,6 +356,7 @@ money:
     towny: "Towny"
     shop: "商店"
     storage: "仓库"
+    gear: "锻造台"
 
   account-type:
     player: "玩家"
@@ -381,6 +392,8 @@ gui:
     profile-town: "<gray>城镇：<white>{town}</white>"
     profile-nation: "<gray>国家：<white>{nation}</white>"
     profile-stats: "<yellow>点击<gray>查看你的战斗属性"
+    forge: "<gold><bold>锻造台</bold></gold>"
+    forge-lore: "<gray>用怪物的掉落物打造装备，并让它变得更强。"
     town: "<green><bold>城镇</bold></green>"
     town-name: "<gray>城镇：<white>{town}</white>"
     town-residents: "<gray>居民：<white>{amount}</white>"
@@ -628,6 +641,7 @@ gui:
     about-starting-balance: "<dark_gray>每名新玩家只发放一次。"
     about-shop: "<dark_gray>服务器自己的商店卖出与回收。"
     about-storage: "<dark_gray>玩家购买更多仓库页。"
+    about-gear: "<dark_gray>玩家在锻造台打造、升星、精炼和重铸装备。"
     about-towny: "<dark_gray>维护费、税收、地块交易与银行存取。"
     about-admin: "<dark_gray>管理员发放、收回、设定或重置余额。"
     about-payment: "<dark_gray>玩家之间的转账。"
@@ -1165,12 +1179,46 @@ gui:
       strength: "<gray>按其数值的百分比提高你对怪物的每次伤害。"
       crit-chance: "<gray>攻击怪物时触发暴击的几率，跳劈会提高它。"
       crit-damage: "<gray>暴击额外造成的伤害。"
+      speed: "<gray>让你移动得更快。这是唯一一项在玩家之间也生效的属性，所以服务器为它设了上限。"
+      vitality: "<gray>让自然恢复和治疗药水恢复更多生命。"
       magic-find: "<gray>提高怪物掉落其材料的几率。抢夺附魔会提高它。"
     source:
       base: "基础"
       armor: "盔甲"
       weapon: "武器"
       effects: "状态效果"
+
+  forge:
+    title: "<dark_gray>锻造台"
+    craft: "<gold><bold>打造</bold></gold>"
+    craft-lore: "<gray>用怪物的掉落物打造新装备。"
+    upgrade: "<yellow><bold>升星</bold></yellow>"
+    upgrade-lore: "<gray>增加一颗星：属性 <white>+{bonus}%</white>。<dark_gray>（{stars}/{max}）"
+    refine: "<aqua><bold>精炼</bold></aqua>"
+    refine-lore: "<gray>将稀有度从 {from}<gray> 提升到 {to}<gray>。"
+    reforge: "<light_purple><bold>重铸</bold></light_purple>"
+    reforge-lore: "<gray>随机赋予一个新的重铸。<dark_gray>当前：{reforge}"
+    salvage: "<red><bold>分解</bold></red>"
+    salvage-lore: "<gray>将它永久分解为："
+    salvage-item: "<dark_gray>• <white>{amount}x</white> {name}"
+    click-act: "<yellow>点击<gray>执行"
+    empty: "<gray>手中没有装备"
+    empty-lore: "<gray>在主手拿着一件装备，即可对它升星、精炼、重铸或分解。"
+    cost-item: "<green>✔ <white>{have}<gray>/{need} {name}"
+    cost-item-missing: "<red>✘ <white>{have}<gray>/{need} {name}"
+    cost-money: "<green>✔ <gold>{amount}"
+    cost-money-missing: "<red>✘ <gold>{amount}"
+    confirm: "<green><bold>确认</bold></green>"
+    upgrade-confirm: "<dark_gray>为这件装备升星？"
+    refine-confirm: "<dark_gray>精炼这件装备？"
+    reforge-confirm: "<dark_gray>重铸这件装备？"
+    salvage-confirm: "<dark_gray>永久分解这件装备？"
+
+  forge-recipes:
+    title: "<dark_gray>锻造台：打造"
+    tier: "<gray>阶级 <white>{tier}"
+    click: "<yellow>点击<gray>打造"
+    confirm: "<dark_gray>打造这件装备？"
 
 shop:
   traded: "以 <gold>{price}</gold> 成交 <white>{amount}个</white> {item}。"
@@ -1268,6 +1316,8 @@ combat:
     strength: "<dark_red>❁ 力量"
     crit-chance: "<blue>☣ 暴击率"
     crit-damage: "<blue>☠ 暴击伤害"
+    speed: "<white>✦ 速度"
+    vitality: "<dark_red>♨ 活力"
     magic-find: "<aqua>✯ 魔法寻宝"
 
   hud:
@@ -1368,6 +1418,148 @@ rarity:
   epic: "<dark_purple><bold>史诗"
   legendary: "<gold><bold>传说"
   mythic: "<light_purple><bold>神话"
+
+
+# 锻造台完成某项操作后告诉玩家的话，或无法完成的原因。
+forge:
+  crafted: "你打造出了 {name}。"
+  upgraded: "{name} 现在拥有 <gold>{stars}★</gold>。"
+  refined: "{name} 现在是 {rarity}<reset> 品质。"
+  reforged: "它现在是 {name}。"
+  salvaged: "你将 {name} 分解成了 {items}。"
+  error:
+    not-gear: "请在主手拿着一件装备。"
+    maxed: "它已经无法再强化了。"
+    missing-items: "你缺少所需的部分材料。"
+    cannot-afford: "你付不起这笔钱。"
+    unavailable: "锻造台现在无法这么做。"
+
+# plugins/TriTown/content/gear.yml 中的装备，按 id 排列。名称会使用装备稀有度的颜色，所以名称本身不带颜色。
+# 每行描述请保持简短：它是装备提示框中的一行。
+gear:
+  # 它的部位，显示在提示框底部的稀有度之后。
+  slot:
+    weapon: "武器"
+    bow: "弓"
+    helmet: "头盔"
+    chestplate: "胸甲"
+    leggings: "护腿"
+    boots: "靴子"
+  # 后接这件装备在玩家之间视为的原版物品。
+  pvp: "对玩家时："
+  reforge:
+    sharp: "锋利"
+    heroic: "英勇"
+    fierce: "凶猛"
+    deadly: "致命"
+    titanic: "泰坦"
+    sturdy: "坚固"
+    hardy: "强健"
+    swift: "轻捷"
+    lucky: "幸运"
+  item:
+    gravewalker-blade:
+      name: "墓行者之刃"
+      lore: "在墓碑上磨利。"
+    gravewalker-helmet:
+      name: "墓行者头盔"
+      lore: "为在他人长眠之处挖掘者所戴。"
+    gravewalker-chestplate:
+      name: "墓行者胸甲"
+      lore: "沾满了百座坟墓的泥土。"
+    gravewalker-leggings:
+      name: "墓行者护腿"
+      lore: "它们从不厌倦行走。"
+    gravewalker-boots:
+      name: "墓行者靴子"
+      lore: "踏上任何墓穴的台阶都悄无声息。"
+    bonecaller-bow:
+      name: "唤骨长弓"
+      lore: "弓弦在风中嗡鸣，如同一副肋骨。"
+    frostbite-edge:
+      name: "霜咬之刃"
+      lore: "冷到足以灼伤。"
+    widowsilk-helmet:
+      name: "寡妇丝兜帽"
+      lore: "于黑暗中织成，为黑暗而生。"
+    widowsilk-chestplate:
+      name: "寡妇丝背心"
+      lore: "轻得让你忘了自己穿着它。"
+    widowsilk-leggings:
+      name: "寡妇丝护腿"
+      lore: "每一根丝都曾是一张陷阱。"
+    widowsilk-boots:
+      name: "寡妇丝靴子"
+      lore: "如蜘蛛落足般轻柔。"
+    tidecaller-trident:
+      name: "唤潮三叉戟"
+      lore: "它记得自己分开过的每一道浪。"
+    emberbrand:
+      name: "余烬烙刃"
+      lore: "战斗过后，它的刃口仍久久发光。"
+    emberforged-helmet:
+      name: "余烬锻造头盔"
+      lore: "锻造它的熔炉余温未散。"
+    emberforged-chestplate:
+      name: "余烬锻造胸甲"
+      lore: "在要塞的铁砧上锤打而成。"
+    emberforged-leggings:
+      name: "余烬锻造护腿"
+      lore: "每一步都迸出火星。"
+    emberforged-boots:
+      name: "余烬锻造战靴"
+      lore: "它们留下焦黑的脚印。"
+    wailing-arbalest:
+      name: "哀嚎劲弩"
+      lore: "每一支弩箭都伴着尖啸离弦。"
+    ashen-greatsword:
+      name: "灰烬巨剑"
+      lore: "对未曾赢得它的人来说太过沉重。"
+    ashen-helmet:
+      name: "灰烬骑士头盔"
+      lore: "曾有一位骑士戴过它，如今他只剩下灰烬。"
+    ashen-chestplate:
+      name: "灰烬骑士胸甲"
+      lore: "被熏得漆黑，也因此更加坚固。"
+    ashen-leggings:
+      name: "灰烬骑士护腿"
+      lore: "即便无人穿着，它们也在行进。"
+    ashen-boots:
+      name: "灰烬骑士战靴"
+      lore: "每一步都飘起煤灰。"
+    riftpiercer:
+      name: "裂隙穿刺者"
+      lore: "它的箭在离弦之前便已抵达。"
+    voidreaver:
+      name: "虚空收割者"
+      lore: "它斩开万物之间的空隙。"
+    voidstride-helmet:
+      name: "虚空行者之冠"
+      lore: "它能看见站在你身后的东西。"
+    voidstride-chestplate:
+      name: "虚空行者甲壳"
+      lore: "任何东西都无法长久地抓住它。"
+    voidstride-leggings:
+      name: "虚空行者护腿"
+      lore: "每一步都落得比该落的更远一些。"
+    voidstride-boots:
+      name: "虚空行者之履"
+      lore: "如末影人一般行走。"
+    starfall-blade:
+      name: "星陨之刃"
+      lore: "它落在哪里，天空便追随到哪里。"
+    starfall-helmet:
+      name: "星陨头环"
+      lore: "献给在末地坚持到最后之人的王冠。"
+    starfall-chestplate:
+      name: "星陨神铠"
+      lore: "由坠落太远的星辰锻成。"
+    starfall-leggings:
+      name: "星陨护腿"
+      lore: "即使在虚空中也熠熠生辉。"
+    starfall-boots:
+      name: "星陨疾靴"
+      lore: "大地只是一个建议。"
 
 
 scoreboard:

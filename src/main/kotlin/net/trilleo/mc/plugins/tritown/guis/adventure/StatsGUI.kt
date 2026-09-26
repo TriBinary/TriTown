@@ -130,6 +130,8 @@ class StatsGUI : PluginGUI(
         Stat.STRENGTH -> "gui.stats.about.strength"
         Stat.CRIT_CHANCE -> "gui.stats.about.crit-chance"
         Stat.CRIT_DAMAGE -> "gui.stats.about.crit-damage"
+        Stat.SPEED -> "gui.stats.about.speed"
+        Stat.VITALITY -> "gui.stats.about.vitality"
         Stat.MAGIC_FIND -> "gui.stats.about.magic-find"
     }
 
@@ -140,6 +142,8 @@ class StatsGUI : PluginGUI(
         Stat.STRENGTH -> Material.BLAZE_POWDER
         Stat.CRIT_CHANCE -> Material.SPECTRAL_ARROW
         Stat.CRIT_DAMAGE -> Material.FIRE_CHARGE
+        Stat.SPEED -> Material.SUGAR
+        Stat.VITALITY -> Material.GLISTERING_MELON_SLICE
         Stat.MAGIC_FIND -> Material.RABBIT_FOOT
     }
 
@@ -156,11 +160,11 @@ class StatsGUI : PluginGUI(
         private const val FIRST_STAT_ROW = 2
         private const val BACK_SLOT = 49
 
-        /** Staying alive, then hitting hard, then what a fight is worth. */
+        /** Staying alive, then hitting hard, then everything else. */
         private val ROWS = listOf(
             listOf(Stat.HEALTH, Stat.DEFENSE),
             listOf(Stat.DAMAGE, Stat.STRENGTH, Stat.CRIT_CHANCE, Stat.CRIT_DAMAGE),
-            listOf(Stat.MAGIC_FIND),
+            listOf(Stat.SPEED, Stat.VITALITY, Stat.MAGIC_FIND),
         )
 
         /** Opens [target]'s stats for [viewer]. */

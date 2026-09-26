@@ -1,7 +1,9 @@
 package net.trilleo.mc.plugins.tritown.content
 
+import net.trilleo.mc.plugins.tritown.combat.Stat
+
 /**
- * Reads `items.yml` and `mobs.yml` into their models.
+ * Reads `items.yml`, `mobs.yml` and `gear.yml` into their models.
  *
  * Plain Kotlin over what SnakeYAML parses, like [BalanceParser], so the bundled
  * files are checked in tests. An entry that cannot be used is left out and
@@ -84,6 +86,108 @@ object ContentParser {
         return Result(table, reader.warnings)
     }
 
+    /** `gear.yml`, checked against the ids of the [items] a recipe may name. */
+    fun gear(root: Map<*, *>, items: Set<String>): Result<GearCatalog> {
+        val reader = YamlReader(root)
+
+        val reforges = linkedMapOf<String, ReforgeDef>()
+        for (id in reader.keys(listOf("reforges"))) {
+            val path = listOf("reforges", id)
+            if (!ContentItemDef.ID.matches(id)) {
+                reader.warn(path, "an id may only use lower-case letters, digits and dashes; left out")
+                continue
+            }
+            val slots = reader.texts(path + "slots").mapNotNull { name ->
+                GearSlot.of(name) ?: run {
+                    reader.warn(path + "slots", "no slot is called '$name'; left out")
+                    null
+                }
+            }.toSet()
+            val weights = weights(reader, path + "weights") ?: continue
+            if (slots.isEmpty()) {
+                reader.warn(path, "fits no slot; left out")
+                continue
+            }
+            reforges[id] = ReforgeDef(id, slots, weights)
+        }
+
+        val gear = linkedMapOf<String, GearDef>()
+        for (id in reader.keys(listOf("gear"))) {
+            val path = listOf("gear", id)
+            if (!ContentItemDef.ID.matches(id)) {
+                reader.warn(path, "an id may only use lower-case letters, digits and dashes; left out")
+                continue
+            }
+            val slotName = reader.text(path + "slot")
+            val slot = slotName?.let(GearSlot::of) ?: run {
+                reader.warn(path + "slot", "no slot is called '$slotName'; left out")
+                continue
+            }
+            val base = reader.text(path + "base") ?: run {
+                reader.warn(path, "has no base item; left out")
+                continue
+            }
+            val weights = weights(reader, path + "weights") ?: continue
+
+            gear[id] = GearDef(
+                id = id,
+                slot = slot,
+                tier = reader.integer(path + "tier", 1, min = 1),
+                base = base.uppercase(),
+                model = reader.text(path + "model")?.lowercase(),
+                trim = trim(reader, path + "trim"),
+                dye = reader.text(path + "dye")?.let { dye(reader, path + "dye", it) },
+                weights = weights,
+                recipe = recipe(reader, path + "recipe", items),
+            )
+        }
+        return Result(GearCatalog(gear, reforges), reader.warnings)
+    }
+
+    /** Stat weights, scaled to sum to 1, or `null` (and a warning) when there are none to use. */
+    private fun weights(reader: YamlReader, path: List<String>): Map<Stat, Double>? {
+        val raw = reader.keys(path).mapNotNull { name ->
+            val stat = Stat.entries.firstOrNull { BalanceParser.name(it) == name } ?: run {
+                reader.warn(path + name, "no stat is called '$name'; left out")
+                return@mapNotNull null
+            }
+            stat to reader.number(path + name, 0.0, min = 0.0)
+        }.filter { it.second > 0.0 }
+        val total = raw.sumOf { it.second }
+        if (total <= 0.0) {
+            reader.warn(path, "gives no stat any weight; left out")
+            return null
+        }
+        return raw.associate { (stat, weight) -> stat to weight / total }
+    }
+
+    private fun trim(reader: YamlReader, path: List<String>): GearDef.Trim? {
+        val pattern = reader.text(path + "pattern") ?: return null
+        val material = reader.text(path + "material") ?: run {
+            reader.warn(path, "a trim needs both a pattern and a material; left off")
+            return null
+        }
+        return GearDef.Trim(pattern.lowercase(), material.lowercase())
+    }
+
+    private fun dye(reader: YamlReader, path: List<String>, text: String): Int? {
+        val rgb = text.removePrefix("#").toIntOrNull(16)?.takeIf { text.removePrefix("#").length == 6 }
+        if (rgb == null) reader.warn(path, "'$text' is not a colour such as '#3a5f8c'; left undyed")
+        return rgb
+    }
+
+    private fun recipe(reader: YamlReader, path: List<String>, items: Set<String>): GearDef.Recipe? {
+        if (reader.keys(path).isEmpty()) return null
+        val needs = reader.keys(path + "items").mapNotNull { id ->
+            if (id !in items) {
+                reader.warn(path + "items" + id, "'$id' is not an item in items.yml; the recipe is left out")
+                return null
+            }
+            id to reader.integer(path + "items" + id, 1, min = 1)
+        }.toMap()
+        return GearDef.Recipe(needs, reader.number(path + "money", 0.0, min = 0.0))
+    }
+
     private fun drop(reader: YamlReader, rank: String): LootTable.Drop {
         val path = listOf("loot", rank)
         val amount = reader.range(path + "amount", 1..1, min = 0)
@@ -94,6 +198,7 @@ object ContentParser {
             maxAmount = amount.last,
             minEssence = essence.first,
             maxEssence = essence.last,
+            gearChance = reader.number(path + "gear-chance", 0.0, min = 0.0),
         )
     }
 }

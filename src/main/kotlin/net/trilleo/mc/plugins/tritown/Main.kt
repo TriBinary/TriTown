@@ -4,8 +4,10 @@ import com.palmergames.bukkit.towny.TownyEconomyHandler
 import net.milkbowl.vault.economy.Economy
 import net.trilleo.mc.plugins.tritown.combat.DamageIndicators
 import net.trilleo.mc.plugins.tritown.combat.PlayerStats
+import net.trilleo.mc.plugins.tritown.combat.SpeedSync
 import net.trilleo.mc.plugins.tritown.config.*
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.gear.Gear
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 import net.trilleo.mc.plugins.tritown.economy.*
@@ -177,8 +179,10 @@ class Main : JavaPlugin() {
         ContentRegistry.load(this)
         CombatSettings.load(pluginConfig)
         MobSettings.load(pluginConfig)
-        // The balance, or what a stat is worth, may have changed under every cached sheet.
+        // The balance, or what a stat is worth, may have changed under every cached sheet, and
+        // under every piece of gear anyone is carrying.
         PlayerStats.invalidateAll()
+        server.onlinePlayers.forEach { player -> player.inventory.contents.forEach(Gear::refresh) }
 
         // Only the settings, as with the shops: the storage files are never re-read while players hold them open.
         StorageSettings.load(pluginConfig)
@@ -211,6 +215,7 @@ class Main : JavaPlugin() {
         // So no menu item is saved into an inventory and left behind once TriTown is gone.
         MenuItem.stripAll()
         DamageIndicators.clearAll()
+        server.onlinePlayers.forEach(SpeedSync::clear)
         LangTranslator.unregister()
 
         ShopManager.shutdown()

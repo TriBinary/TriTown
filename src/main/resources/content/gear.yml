@@ -1,0 +1,350 @@
+# TriTown - Gear
+#
+# Every piece of gear the Forge crafts and champions drop, and the reforges it can be given. /tritown reload reads this
+# file again, and every piece already out there is redrawn the next time someone looks at it.
+#
+# A piece never lists its stats. It has a slot and a tier, which give it points to spend (balance.yml), and weights,
+# which say how it spends them. So two pieces of a slot and tier are always worth the same, however each is shaped.
+#
+#   slot     weapon, bow, helmet, chestplate, leggings or boots
+#   tier     1 to 10: a tier is made for mobs up to six times its level, so tier 5 is for level 25 to 30
+#   base     the vanilla item it is made of. Between players the piece is exactly that item, enchantments and all
+#   model    optional: a vanilla item whose look it takes instead of its base's
+#   trim     optional, for armor: an armor trim's pattern and material
+#   dye      optional, for leather: a colour such as '#3a5f8c'
+#   weights  how its points are shared between stats. They are scaled to add up, so 60 and 40 mean the same as 3 and 2
+#   recipe   what the Forge takes to craft it: items from items.yml, and money. A piece with none only ever drops
+#
+# The stats are health, defense, damage, strength, crit-chance, crit-damage, speed, vitality and magic-find. A piece's
+# name and description are gear.item.<id>.name and gear.item.<id>.lore in the language files.
+#
+# An id is lower-case letters, digits and dashes, and must never change once players hold the piece.
+gear:
+  gravewalker-blade:
+    slot: weapon
+    tier: 1
+    base: iron_sword
+    weights: {damage: 60, strength: 40}
+    recipe:
+      items: {grave-dust: 12, bone-shard: 6, dim-essence: 1}
+      money: 150
+  gravewalker-helmet:
+    slot: helmet
+    tier: 1
+    base: iron_helmet
+    trim: {pattern: sentry, material: copper}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {grave-dust: 10, dim-essence: 1}
+      money: 150
+  gravewalker-chestplate:
+    slot: chestplate
+    tier: 1
+    base: iron_chestplate
+    trim: {pattern: sentry, material: copper}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {grave-dust: 16, bone-shard: 4, dim-essence: 2}
+      money: 250
+  gravewalker-leggings:
+    slot: leggings
+    tier: 1
+    base: iron_leggings
+    trim: {pattern: sentry, material: copper}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {grave-dust: 14, bone-shard: 4, dim-essence: 2}
+      money: 200
+  gravewalker-boots:
+    slot: boots
+    tier: 1
+    base: iron_boots
+    trim: {pattern: sentry, material: copper}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {grave-dust: 8, dim-essence: 1}
+      money: 120
+  bonecaller-bow:
+    slot: bow
+    tier: 2
+    base: bow
+    weights: {damage: 60, crit-damage: 40}
+    recipe:
+      items: {bone-shard: 20, silk-strand: 8, dim-essence: 2}
+      money: 350
+  frostbite-edge:
+    slot: weapon
+    tier: 3
+    base: diamond_sword
+    weights: {damage: 50, crit-chance: 25, crit-damage: 25}
+    recipe:
+      items: {frost-shard: 16, bone-shard: 10, glowing-essence: 2}
+      money: 600
+  widowsilk-helmet:
+    slot: helmet
+    tier: 3
+    base: chainmail_helmet
+    trim: {pattern: spire, material: quartz}
+    weights: {health: 40, defense: 40, crit-chance: 20}
+    recipe:
+      items: {silk-strand: 14, night-membrane: 4, glowing-essence: 1}
+      money: 450
+  widowsilk-chestplate:
+    slot: chestplate
+    tier: 3
+    base: chainmail_chestplate
+    trim: {pattern: spire, material: quartz}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {silk-strand: 22, night-membrane: 8, glowing-essence: 2}
+      money: 700
+  widowsilk-leggings:
+    slot: leggings
+    tier: 3
+    base: chainmail_leggings
+    trim: {pattern: spire, material: quartz}
+    weights: {health: 45, defense: 45, vitality: 10}
+    recipe:
+      items: {silk-strand: 20, night-membrane: 6, glowing-essence: 2}
+      money: 600
+  widowsilk-boots:
+    slot: boots
+    tier: 3
+    base: chainmail_boots
+    trim: {pattern: spire, material: quartz}
+    weights: {health: 35, defense: 35, speed: 30}
+    recipe:
+      items: {silk-strand: 12, night-membrane: 4, glowing-essence: 1}
+      money: 400
+  tidecaller-trident:
+    slot: weapon
+    tier: 4
+    base: trident
+    weights: {damage: 55, strength: 45}
+    recipe:
+      items: {tidal-pearl: 20, raider-mark: 8, glowing-essence: 3}
+      money: 900
+  emberbrand:
+    slot: weapon
+    tier: 5
+    base: diamond_sword
+    weights: {damage: 55, strength: 30, crit-damage: 15}
+    recipe:
+      items: {ember-core: 20, gilded-tusk: 10, glowing-essence: 4}
+      money: 1800
+  emberforged-helmet:
+    slot: helmet
+    tier: 5
+    base: diamond_helmet
+    trim: {pattern: rib, material: gold}
+    weights: {health: 45, defense: 45, magic-find: 10}
+    recipe:
+      items: {ember-core: 16, gilded-tusk: 6, glowing-essence: 3}
+      money: 1500
+  emberforged-chestplate:
+    slot: chestplate
+    tier: 5
+    base: diamond_chestplate
+    trim: {pattern: rib, material: gold}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {ember-core: 26, gilded-tusk: 10, glowing-essence: 5}
+      money: 2500
+  emberforged-leggings:
+    slot: leggings
+    tier: 5
+    base: diamond_leggings
+    trim: {pattern: rib, material: gold}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {ember-core: 22, gilded-tusk: 8, glowing-essence: 4}
+      money: 2200
+  emberforged-boots:
+    slot: boots
+    tier: 5
+    base: diamond_boots
+    trim: {pattern: rib, material: gold}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {ember-core: 14, gilded-tusk: 6, glowing-essence: 3}
+      money: 1300
+  wailing-arbalest:
+    slot: bow
+    tier: 6
+    base: crossbow
+    weights: {damage: 55, crit-damage: 45}
+    recipe:
+      items: {wailing-tear: 16, gilded-tusk: 12, radiant-essence: 2}
+      money: 3000
+  ashen-greatsword:
+    slot: weapon
+    tier: 7
+    base: netherite_sword
+    weights: {damage: 60, strength: 40}
+    recipe:
+      items: {cinder-ash: 24, wailing-tear: 8, radiant-essence: 4}
+      money: 6000
+  ashen-helmet:
+    slot: helmet
+    tier: 7
+    base: netherite_helmet
+    trim: {pattern: ward, material: redstone}
+    weights: {health: 45, defense: 45, crit-damage: 10}
+    recipe:
+      items: {cinder-ash: 18, wailing-tear: 6, radiant-essence: 3}
+      money: 4500
+  ashen-chestplate:
+    slot: chestplate
+    tier: 7
+    base: netherite_chestplate
+    trim: {pattern: ward, material: redstone}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {cinder-ash: 30, wailing-tear: 10, radiant-essence: 5}
+      money: 7000
+  ashen-leggings:
+    slot: leggings
+    tier: 7
+    base: netherite_leggings
+    trim: {pattern: ward, material: redstone}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {cinder-ash: 26, wailing-tear: 8, radiant-essence: 4}
+      money: 6000
+  ashen-boots:
+    slot: boots
+    tier: 7
+    base: netherite_boots
+    trim: {pattern: ward, material: redstone}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {cinder-ash: 16, wailing-tear: 6, radiant-essence: 3}
+      money: 4000
+  riftpiercer:
+    slot: bow
+    tier: 8
+    base: bow
+    weights: {damage: 50, crit-chance: 20, crit-damage: 30}
+    recipe:
+      items: {rift-shell: 16, void-fragment: 16, astral-essence: 2}
+      money: 10000
+  voidreaver:
+    slot: weapon
+    tier: 9
+    base: netherite_axe
+    weights: {damage: 55, strength: 45}
+    recipe:
+      items: {void-fragment: 30, rift-shell: 10, astral-essence: 4}
+      money: 20000
+  voidstride-helmet:
+    slot: helmet
+    tier: 9
+    base: netherite_helmet
+    trim: {pattern: eye, material: amethyst}
+    weights: {health: 45, defense: 45, magic-find: 10}
+    recipe:
+      items: {void-fragment: 20, rift-shell: 8, astral-essence: 3}
+      money: 15000
+  voidstride-chestplate:
+    slot: chestplate
+    tier: 9
+    base: netherite_chestplate
+    trim: {pattern: eye, material: amethyst}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {void-fragment: 34, rift-shell: 12, astral-essence: 5}
+      money: 25000
+  voidstride-leggings:
+    slot: leggings
+    tier: 9
+    base: netherite_leggings
+    trim: {pattern: eye, material: amethyst}
+    weights: {health: 45, defense: 45, vitality: 10}
+    recipe:
+      items: {void-fragment: 30, rift-shell: 10, astral-essence: 4}
+      money: 22000
+  voidstride-boots:
+    slot: boots
+    tier: 9
+    base: netherite_boots
+    trim: {pattern: eye, material: amethyst}
+    weights: {health: 35, defense: 35, speed: 30}
+    recipe:
+      items: {void-fragment: 18, rift-shell: 8, astral-essence: 3}
+      money: 14000
+  starfall-blade:
+    slot: weapon
+    tier: 10
+    base: netherite_sword
+    weights: {damage: 55, strength: 35, crit-damage: 10}
+    recipe:
+      items: {void-fragment: 40, rift-shell: 20, astral-essence: 8}
+      money: 60000
+  starfall-helmet:
+    slot: helmet
+    tier: 10
+    base: netherite_helmet
+    trim: {pattern: silence, material: diamond}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {void-fragment: 30, rift-shell: 14, astral-essence: 6}
+      money: 40000
+  starfall-chestplate:
+    slot: chestplate
+    tier: 10
+    base: netherite_chestplate
+    trim: {pattern: silence, material: diamond}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {void-fragment: 48, rift-shell: 20, astral-essence: 10}
+      money: 60000
+  starfall-leggings:
+    slot: leggings
+    tier: 10
+    base: netherite_leggings
+    trim: {pattern: silence, material: diamond}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {void-fragment: 42, rift-shell: 18, astral-essence: 8}
+      money: 55000
+  starfall-boots:
+    slot: boots
+    tier: 10
+    base: netherite_boots
+    trim: {pattern: silence, material: diamond}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {void-fragment: 26, rift-shell: 12, astral-essence: 6}
+      money: 38000
+
+# A reforge is a small named extra the Forge can give a piece: worth reforge-share percent of its points (balance.yml),
+# spent by the reforge's own weights, on the slots it fits. Its name goes before the piece's, and is
+# gear.reforge.<id> in the language files.
+reforges:
+  sharp:
+    slots: [weapon, bow]
+    weights: {crit-chance: 50, crit-damage: 50}
+  heroic:
+    slots: [weapon]
+    weights: {strength: 70, damage: 30}
+  fierce:
+    slots: [weapon, bow]
+    weights: {strength: 50, crit-damage: 50}
+  deadly:
+    slots: [bow]
+    weights: {damage: 60, crit-chance: 40}
+  titanic:
+    slots: [helmet, chestplate, leggings, boots]
+    weights: {health: 70, defense: 30}
+  sturdy:
+    slots: [helmet, chestplate, leggings, boots]
+    weights: {defense: 100}
+  hardy:
+    slots: [helmet, chestplate, leggings, boots]
+    weights: {vitality: 50, health: 50}
+  swift:
+    slots: [leggings, boots]
+    weights: {speed: 100}
+  lucky:
+    slots: [weapon, bow, helmet]
+    weights: {magic-find: 100}

@@ -30,8 +30,9 @@ data class LootTable(
 
     /**
      * What a mob of one rank drops: its family's material [chance] percent of
-     * the time, and essence. Amounts are inclusive ranges; an essence range of
-     * zero drops none.
+     * the time, and essence; and a finished piece of gear [gearChance] percent
+     * of the time. Amounts are inclusive ranges; an essence range of zero drops
+     * none.
      */
     data class Drop(
         val chance: Double,
@@ -39,6 +40,7 @@ data class LootTable(
         val maxAmount: Int,
         val minEssence: Int,
         val maxEssence: Int,
+        val gearChance: Double,
     )
 
     data class EssenceGrade(val item: String, val maxLevel: Int)
@@ -50,9 +52,9 @@ data class LootTable(
         val EMPTY = LootTable(
             families = emptyMap(),
             rules = Rules(minLevel = 1, playerShare = 50.0, magicFindCap = 100.0),
-            normal = Drop(0.0, 0, 0, 0, 0),
-            elite = Drop(0.0, 0, 0, 0, 0),
-            champion = Drop(0.0, 0, 0, 0, 0),
+            normal = Drop(0.0, 0, 0, 0, 0, 0.0),
+            elite = Drop(0.0, 0, 0, 0, 0, 0.0),
+            champion = Drop(0.0, 0, 0, 0, 0, 0.0),
             essence = emptyList(),
         )
     }

@@ -50,16 +50,35 @@ object DamageMath {
         return if (vanillaCrit) share / VANILLA_CRIT else share
     }
 
-    /** A player's melee hit on a mob, before the mob's Defense. */
-    fun meleeHit(sheet: StatSheet, balance: Balance, vanillaShare: Double, crit: Boolean): Double =
-        (balance.lens + sheet[Stat.DAMAGE]) * strengthMultiplier(sheet) * vanillaShare * critMultiplier(sheet, crit)
+    /**
+     * A player's melee hit on a mob, before the mob's Defense. [weaponDamage] is
+     * the held weapon's Damage: a bow's only counts for what it shoots.
+     */
+    fun meleeHit(
+        sheet: StatSheet,
+        balance: Balance,
+        vanillaShare: Double,
+        crit: Boolean,
+        weaponDamage: Double = sheet[Stat.DAMAGE],
+    ): Double = (balance.lens + weaponDamage) * strengthMultiplier(sheet) * vanillaShare * critMultiplier(sheet, crit)
+
+    /**
+     * What a shot is worth for each point of vanilla damage it lands: the
+     * weapon's Damage, with the lens's worth for the bare hand, measured
+     * against [reference] — the vanilla damage of the shot a weapon of no
+     * Damage makes. A vanilla bow comes out at the lens, so vanilla stays
+     * vanilla.
+     */
+    fun shotMultiplier(weaponDamage: Double, reference: Double, balance: Balance): Double =
+        (balance.lens + weaponDamage) / reference.coerceAtLeast(0.1)
 
     /**
      * A player's arrow or trident hitting a mob. Vanilla's hit already carries
-     * the draw, the arrow's speed and Power, so the lens scales it as it is.
+     * the draw, the arrow's speed and Power, so [multiplier] — what the weapon
+     * made each point of it worth — scales it as it is.
      */
-    fun shotHit(vanillaHit: Double, shooter: StatSheet, balance: Balance, crit: Boolean): Double =
-        vanillaHit * balance.lens * strengthMultiplier(shooter) * critMultiplier(shooter, crit)
+    fun shotHit(vanillaHit: Double, shooter: StatSheet, multiplier: Double, crit: Boolean): Double =
+        vanillaHit * multiplier * strengthMultiplier(shooter) * critMultiplier(shooter, crit)
 
     /**
      * A mob's hit on a player or another mob, before the target's Defense.

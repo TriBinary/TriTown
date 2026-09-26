@@ -29,6 +29,10 @@ object TransactionReason {
     const val SHOP_SELL = "money.reason.shop-sell"
     const val TRADE = "money.reason.trade"
     const val STORAGE_PAGE = "money.reason.storage-page"
+    const val GEAR_CRAFT = "money.reason.gear-craft"
+    const val GEAR_UPGRADE = "money.reason.gear-upgrade"
+    const val GEAR_REFINE = "money.reason.gear-refine"
+    const val GEAR_REFORGE = "money.reason.gear-reforge"
 
     /** Encodes [key] and its [args] into the single string that is stored with the transaction. */
     fun of(key: String, vararg args: Pair<String, Any?>): String =

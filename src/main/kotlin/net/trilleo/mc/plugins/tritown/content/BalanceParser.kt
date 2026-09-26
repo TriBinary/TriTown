@@ -1,5 +1,7 @@
 package net.trilleo.mc.plugins.tritown.content
 
+import net.trilleo.mc.plugins.tritown.combat.Stat
+
 /**
  * Reads [Balance] out of the parsed YAML of `balance.yml`.
  *
@@ -53,15 +55,88 @@ object BalanceParser {
                     default.vanilla.lootingMagicFind,
                     min = 0.0
                 ),
+                bowAttack = reader.number(listOf("vanilla", "bow-attack"), default.vanilla.bowAttack, min = 0.0),
+                arrowReference = reader.number(
+                    listOf("vanilla", "arrow-reference"),
+                    default.vanilla.arrowReference,
+                    min = 0.1
+                ),
             ),
             ranks = Balance.Ranks(
                 elite = rank(reader, "elite", default.ranks.elite),
                 champion = rank(reader, "champion", default.ranks.champion),
             ),
             affixes = affixes(reader, default.affixes),
+            gear = gear(reader, default.gear),
+            forge = forge(reader, default.forge),
         )
         return Result(balance, reader.warnings)
     }
+
+    private fun gear(reader: YamlReader, default: GearTuning): GearTuning {
+        val root = listOf("gear")
+        val roll = reader.range(root + "roll", default.rollMin..default.rollMax, min = 1)
+        return GearTuning(
+            slotPoints = GearSlot.entries.associateWith { slot ->
+                reader.number(root + "slot-points" + slot.name.lowercase(), default.points(slot), min = 0.0)
+            },
+            stats = Stat.entries.associateWith { stat ->
+                val path = root + "stats" + name(stat)
+                GearTuning.StatCurve(
+                    per100 = reader.number(path + "per-100", default.curve(stat).per100, min = 0.0),
+                    growth = reader.number(path + "growth", default.curve(stat).growth, min = 1.0),
+                )
+            },
+            rarity = Rarity.entries.associateWith { rarity ->
+                reader.number(root + "rarity" + rarity.name.lowercase(), default.rarityMultiplier(rarity), min = 0.0)
+            },
+            starBonus = reader.number(root + "star-bonus", default.starBonus, min = 0.0),
+            maxStars = reader.integer(root + "max-stars", default.maxStars, min = 0),
+            rollMin = roll.first,
+            rollMax = roll.last,
+            reforgeShare = reader.number(root + "reforge-share", default.reforgeShare, min = 0.0),
+            craftOdds = odds(reader, root + "craft-odds", default.craftOdds),
+            dropOdds = odds(reader, root + "drop-odds", default.dropOdds),
+        )
+    }
+
+    /** Rarities with their weights; a section left out keeps the default, and a rarity it leaves out is never picked. */
+    private fun odds(reader: YamlReader, path: List<String>, default: Map<Rarity, Double>): Map<Rarity, Double> {
+        val names = reader.keys(path)
+        if (names.isEmpty()) return default
+        return names.mapNotNull { name ->
+            val rarity = Rarity.of(name) ?: run {
+                reader.warn(path + name, "no rarity is called '$name'; left out")
+                return@mapNotNull null
+            }
+            rarity to reader.number(path + name, 0.0, min = 0.0)
+        }.toMap()
+    }
+
+    private fun forge(reader: YamlReader, default: ForgeTuning): ForgeTuning {
+        val root = listOf("forge")
+        val capName = reader.text(root + "refine-cap")
+        val cap = capName?.let { name ->
+            Rarity.of(name) ?: run {
+                reader.warn(root + "refine-cap", "no rarity is called '$name'; using ${default.refineCap.name.lowercase()}")
+                null
+            }
+        } ?: default.refineCap
+        return ForgeTuning(
+            moneyGrowth = reader.number(root + "money-growth", default.moneyGrowth, min = 1.0),
+            upgradeEssence = reader.integer(root + "upgrade" + "essence", default.upgradeEssence, min = 0),
+            upgradeMoney = reader.number(root + "upgrade" + "money", default.upgradeMoney, min = 0.0),
+            refineEssence = reader.integer(root + "refine" + "essence", default.refineEssence, min = 0),
+            refineMoney = reader.number(root + "refine" + "money", default.refineMoney, min = 0.0),
+            refineCap = cap,
+            reforgeEssence = reader.integer(root + "reforge" + "essence", default.reforgeEssence, min = 0),
+            reforgeMoney = reader.number(root + "reforge" + "money", default.reforgeMoney, min = 0.0),
+            salvageEssence = reader.integer(root + "salvage-essence", default.salvageEssence, min = 0),
+        )
+    }
+
+    /** A stat's name as the content files write it: `crit-chance`. */
+    fun name(stat: Stat): String = stat.name.lowercase().replace('_', '-')
 
     private fun rank(reader: YamlReader, name: String, default: Balance.Rank): Balance.Rank {
         val path = listOf("ranks", name)

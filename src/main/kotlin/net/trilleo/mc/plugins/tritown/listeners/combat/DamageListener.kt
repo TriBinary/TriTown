@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.listeners.combat
 import net.trilleo.mc.plugins.tritown.combat.*
 import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.gear.Gear
 import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
 import net.trilleo.mc.plugins.tritown.mobs.MobLoot
 import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
@@ -111,13 +112,15 @@ class DamageListener : Listener {
                 val jumpAttack = (event as? EntityDamageByEntityEvent)?.isCritical == true
                 crit = roll(DamageMath.critChance(sheet, jumpAttack, balance))
                 val share = DamageMath.vanillaShare(event.damage, attackDamage(attacker), jumpAttack)
-                DamageMath.meleeHit(sheet, balance, share, crit)
+                val weaponDamage = if (Gear.isRanged(attacker.inventory.itemInMainHand)) 0.0 else sheet[Stat.DAMAGE]
+                DamageMath.meleeHit(sheet, balance, share, crit, weaponDamage)
             }
 
             attacker is Player && direct is AbstractArrow -> {
-                val sheet = ShotStats.read(direct) ?: PlayerStats.sheet(attacker)
+                val shot = ShotStats.read(direct)
+                val sheet = shot?.stats ?: PlayerStats.sheet(attacker)
                 crit = roll(DamageMath.critChance(sheet, false, balance))
-                DamageMath.shotHit(event.damage, sheet, balance, crit)
+                DamageMath.shotHit(event.damage, sheet, shot?.multiplier ?: balance.lens, crit)
             }
 
             attacker != null && attacker !is Player -> {

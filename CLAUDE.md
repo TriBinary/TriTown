@@ -77,8 +77,10 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
 │                            # storage (not scanned)
 ├── enums/                   # AccountType, FlowCategory, StatsWindow, TransactionType, FillMode, …
+├── gear/                    # Gear: its data, stats, drawing and refreshing, the Forge and its costs (not scanned)
 ├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI); admin/ is the panel,
-│                            # menu/ the main menu, news/ the news; ConfirmGUI asks before the irreversible
+│                            # menu/ the main menu, news/ the news, forge/ the Forge; ConfirmGUI asks before the
+│                            # irreversible
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
@@ -97,7 +99,8 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
                              # ChatPrompt, CountdownUtil, TeamUtil, TagUtil, PDCUtil, GameRuleUtil, AtomicFile
 src/main/resources/
 ├── config.yml  plugin.yml
-├── content/                 # balance.yml, items.yml, mobs.yml — what the combat layer is made of and tuned with
+├── content/                 # balance.yml, items.yml, mobs.yml, gear.yml — what the combat layer is made of and
+│                            # tuned with
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
 ```
 
@@ -141,7 +144,8 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
   per menu. Reuse an existing key before adding one.
 - Key names must appear as whole string literals (`tr(if (credit) "a.credit" else "a.debit")`, not `"a.$state"`) so
   `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list), `money.source.*`, and
-  `item.*` for content items, which `ContentFilesTest` holds to `items.yml` instead.
+  `item.*`, `gear.item.*` and `gear.reforge.*` for content, which `ContentFilesTest` holds to the content files
+  instead.
 - Placeholder names are lowercase letters only (`{name}`, `{balance}`), which is what the test checks for.
 - A GUI declares `titleKey` and its title is translated for the viewer; override `title(player)` when the title carries
   live data.
@@ -380,6 +384,25 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
   both language files, and must never let a player's hit on a player change.
 - **A mob's nameplate is shared by every viewer**, so its frame is rendered in the configured language (`Lang.tr(null,
   …)`) and a mob's kind is a `<lang:…>` tag the client fills in. Setting a name must never make a mob persistent.
+
+## Working with Gear
+
+**A piece of gear is what it is, never what it is worth.** See [Gear](docs/DEVELOPER_GUIDE.md#gear) and
+[The Forge](docs/DEVELOPER_GUIDE.md#the-forge).
+
+- **Gear stores its identity, never its stats.** `GearData` is an id, a rarity, stars, rolls and a reforge;
+  `GearStats.of` works the stats out every time, so retuning reaches every piece already out there. Never write a
+  stat onto an item.
+- **Every piece of a slot and tier is worth the same.** A definition gives weights, never numbers, and the budget in
+  `balance.yml` does the rest. `GearStatsTest` and `BalanceSimulationTest` hold the budget to the design.
+- **Go through `Gear`** to make, read, save or refresh a piece, and through `Forge` for anything a player pays for.
+  `Forge` asks everything that can refuse first, charges, and only then takes and changes — the `ShopTrade` order.
+- **Draw gear with `GearRender`**, which writes only `LangTranslator` keys and plain numbers and leaves enchantments
+  and anvil names alone. A redraw must never lose what a player gave a piece.
+- **Between players a piece is its base item.** Its own vanilla armor and attack damage never count as RPG stats, and
+  nothing new may make a piece stronger against a player than the vanilla item it is made of.
+- **Mythic only ever drops.** The Forge refines no higher than `refine-cap`, and `craft-odds` never lists mythic.
+- **Money moves as `SOURCE_GEAR`** with a `money.reason.gear-*` reason, filed under `FlowCategory.GEAR`.
 
 ## Versioning & Releases
 

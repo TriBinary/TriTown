@@ -17,6 +17,10 @@ import kotlin.test.assertTrue
  */
 class BalanceSimulationTest {
 
+    private companion object {
+        const val LEVELS_PER_TIER = 6
+    }
+
     private val balance = Balance.DEFAULT
     private val kits = mapOf("iron" to Kit.IRON, "diamond" to Kit.DIAMOND, "netherite" to Kit.NETHERITE)
 
@@ -67,6 +71,54 @@ class BalanceSimulationTest {
         val row = BalanceSimulator.row(balance, 30, Kit.DIAMOND)
         assertTrue(row.hitsToKill >= 50, "a level-30 zombie dies in ${row.hitsToKill} diamond swings")
         assertTrue(row.shareTaken >= 0.5, "a level-30 zombie takes only ${row.shareTaken} a hit through diamond")
+    }
+
+    /**
+     * The heart of the design: a player in a rare, three-star kit of the tier
+     * made for a level kills a mob of that level in three to five swings, and
+     * each of its hits takes three to eight percent of their health.
+     */
+    @Test
+    fun `on-level gear fights on-level mobs in the target band`() {
+        for (tier in 1..10) {
+            val row = BalanceSimulator.gearRow(balance, tier * LEVELS_PER_TIER, tier)
+            assertTrue(row.hitsToKill in 3..5, "tier $tier kills its level in ${row.hitsToKill} swings")
+            assertTrue(row.shareTaken in 0.03..0.08, "tier $tier takes ${row.shareTaken} of its health a hit")
+        }
+    }
+
+    @Test
+    fun `an elite of your level is a real fight`() {
+        val elite = Foe(Foe.ZOMBIE.health * balance.ranks.elite.health, Foe.ZOMBIE.hit * balance.ranks.elite.damage)
+        for (tier in 1..10) {
+            val row = BalanceSimulator.gearRow(balance, tier * LEVELS_PER_TIER, tier, foe = elite)
+            assertTrue(row.hitsToKill in 12..20, "a tier-$tier elite takes ${row.hitsToKill} swings")
+        }
+    }
+
+    /**
+     * A mob's health about doubles every six levels (`health-growth^6`), so a
+     * tier of gear is worth about twice the damage, and a player a tier behind
+     * needs about twice the swings — a little more, once swings are counted
+     * whole. Harder, but still a fight worth taking.
+     */
+    @Test
+    fun `a tier behind is harder but still a fight`() {
+        for (tier in 2..10) {
+            val level = tier * LEVELS_PER_TIER
+            val onLevel = BalanceSimulator.gearRow(balance, level, tier)
+            val behind = BalanceSimulator.gearRow(balance, level, tier - 1)
+            assertTrue(behind.hitsToKill <= onLevel.hitsToKill * 2.5, "a tier behind at $level needs ${behind.hitsToKill} swings")
+            assertTrue(behind.shareTaken <= 0.12, "a tier behind at $level takes ${behind.shareTaken} a hit")
+        }
+    }
+
+    @Test
+    fun `two tiers ahead makes a mob trivial`() {
+        for (tier in 1..8) {
+            val row = BalanceSimulator.gearRow(balance, tier * LEVELS_PER_TIER, tier + 2)
+            assertTrue(row.hitsToKill <= 2, "two tiers ahead at tier $tier still needs ${row.hitsToKill} swings")
+        }
     }
 
     /** Vanilla's own armor formula, for a hit of [damage] on a player wearing [kit]. */

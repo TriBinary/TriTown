@@ -3,11 +3,12 @@ package net.trilleo.mc.plugins.tritown.content
 import org.yaml.snakeyaml.Yaml
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Guards the bundled content files: they parse without a warning, and every
- * item they define is named and described in every language — and nothing is
- * translated that no item uses.
+ * item, piece of gear and reforge they define is named in every language — and
+ * nothing is translated that none of them uses.
  *
  * Content ids come from YAML rather than Kotlin, so `LangFilesTest`'s source
  * scan cannot see their keys; this is what holds them instead.
@@ -16,6 +17,11 @@ class ContentFilesTest {
 
     private val languages = listOf("en_US", "zh_CN").associateWith { flatten(load("lang/$it.yml")) }
     private val items = ContentParser.items(load("content/items.yml"))
+    private val gear = ContentParser.gear(load("content/gear.yml"), items.value.keys)
+
+    /** Every key a piece of gear or a reforge is named by. */
+    private val gearKeys = gear.value.gear.values.flatMap { listOf(it.nameKey, it.loreKey) }.toSet() +
+            gear.value.reforges.values.map { it.key }
 
     @Test
     fun `the bundled items parse without a warning`() {
@@ -41,6 +47,36 @@ class ContentFilesTest {
         languages.forEach { (id, values) ->
             val orphans = values.keys.filter { it.startsWith(ContentItemDef.KEY_PREFIX) } - wanted
             assertEquals(emptySet(), orphans.toSet(), "Item keys in $id.yml that no item uses")
+        }
+    }
+
+    @Test
+    fun `the bundled gear parses without a warning`() {
+        assertEquals(emptyList(), gear.warnings)
+    }
+
+    @Test
+    fun `every piece of gear and reforge is named in every language`() {
+        languages.forEach { (id, values) ->
+            assertEquals(emptySet(), gearKeys - values.keys, "Gear keys missing from $id.yml")
+        }
+    }
+
+    @Test
+    fun `no language translates gear that does not exist`() {
+        languages.forEach { (id, values) ->
+            val orphans = values.keys.filter {
+                it.startsWith(GearDef.KEY_PREFIX) || it.startsWith(ReforgeDef.KEY_PREFIX)
+            } - gearKeys
+            assertEquals(emptySet(), orphans.toSet(), "Gear keys in $id.yml that no gear uses")
+        }
+    }
+
+    @Test
+    fun `every piece has a recipe and a tier from 1 to 10`() {
+        gear.value.gear.values.forEach { def ->
+            assertTrue(def.recipe != null, "${def.id} has no recipe")
+            assertTrue(def.tier in 1..10, "${def.id} is tier ${def.tier}")
         }
     }
 

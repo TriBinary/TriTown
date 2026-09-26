@@ -54,7 +54,7 @@ class MainMenuGUI : PluginGUI(
     fillMode = FillMode.NONE,
 ) {
 
-    private enum class Button { PROFILE, TOWN, STORAGE, SHOP, TRADE, PAY, LEADERBOARD, SERVER, NEWS, SIDEBAR, ADMIN, CLOSE }
+    private enum class Button { PROFILE, TOWN, STORAGE, SHOP, TRADE, PAY, LEADERBOARD, SERVER, FORGE, NEWS, SIDEBAR, ADMIN, CLOSE }
 
     /** Which button each slot holds, per viewer, since the buttons shown depend on who is looking. */
     private val layouts = ConcurrentHashMap<UUID, Map<Int, Button>>()
@@ -80,6 +80,7 @@ class MainMenuGUI : PluginGUI(
             Button.PAY -> MenuRender.later(player) { PlayerPickerGUI.show(player, PlayerPickerGUI.Mode.PAY) }
             Button.LEADERBOARD -> MenuRender.later(player) { LeaderboardGUI.show(player) }
             Button.NEWS -> MenuRender.later(player) { CommandRegistrar.run(player, "news") }
+            Button.FORGE -> MenuRender.later(player) { CommandRegistrar.run(player, "forge") }
             Button.ADMIN -> MenuRender.later(player) { GUIManager.open(player, AdminPanelGUI.ID) }
             Button.CLOSE -> MenuRender.later(player) { player.closeInventory() }
             Button.SIDEBAR -> {
@@ -120,6 +121,7 @@ class MainMenuGUI : PluginGUI(
                 Button.PAY.takeIf { hasEconomy() && CommandRegistrar.canRun(player, "pay") },
                 Button.LEADERBOARD.takeIf { hasEconomy() && CommandRegistrar.canRun(player, "baltop") },
                 Button.SERVER,
+                Button.FORGE.takeIf { Combat.isActive(player.world) },
             ),
             listOfNotNull(
                 Button.NEWS.takeIf { NewsManager.isAvailable },
@@ -162,6 +164,7 @@ class MainMenuGUI : PluginGUI(
         Button.NEWS -> news(player)
         Button.SIDEBAR -> sidebar(player)
         Button.ADMIN -> card(player, Material.COMMAND_BLOCK, "gui.menu.admin", "gui.menu.admin-lore")
+        Button.FORGE -> card(player, Material.SMITHING_TABLE, "gui.menu.forge", "gui.menu.forge-lore")
         Button.CLOSE -> itemStack(Material.BARRIER) { name(player.tr("gui.menu.close")) }
     }
 

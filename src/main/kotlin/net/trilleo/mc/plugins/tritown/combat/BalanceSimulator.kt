@@ -1,6 +1,11 @@
 package net.trilleo.mc.plugins.tritown.combat
 
 import net.trilleo.mc.plugins.tritown.content.Balance
+import net.trilleo.mc.plugins.tritown.content.GearDef
+import net.trilleo.mc.plugins.tritown.content.GearSlot
+import net.trilleo.mc.plugins.tritown.content.Rarity
+import net.trilleo.mc.plugins.tritown.gear.GearData
+import net.trilleo.mc.plugins.tritown.gear.GearStats
 import kotlin.math.ceil
 
 /**
@@ -35,7 +40,7 @@ object BalanceSimulator {
      * One level of the table.
      *
      * @param hitsToKill uncritical swings the kit's sword needs to kill the foe
-     * @param shareTaken the part of a player's base health one of the foe's hits takes through the kit's armor
+     * @param shareTaken the part of the player's health one of the foe's hits takes through the kit's armor
      */
     data class Row(val level: Int, val foeHealth: Double, val foeHit: Double, val hitsToKill: Int, val shareTaken: Double)
 
@@ -45,6 +50,40 @@ object BalanceSimulator {
             Stat.DAMAGE to kit.attackDamage * balance.lens,
             Stat.DEFENSE to kit.armor * balance.vanilla.armorPoint + kit.toughness * balance.vanilla.toughnessPoint,
         )
+        return fight(balance, level, sheet, foe)
+    }
+
+    /**
+     * The same table for a player in a full kit of TriTown gear of [tier]: a
+     * weapon spending its points on Damage and Strength, and armor spending
+     * its on Health and Defense — the plainest shape gear takes, at [rarity]
+     * and [stars], every stat at its average roll.
+     */
+    fun gearRow(
+        balance: Balance,
+        level: Int,
+        tier: Int,
+        rarity: Rarity = Rarity.RARE,
+        stars: Int = 3,
+        foe: Foe = Foe.ZOMBIE,
+    ): Row {
+        val gear = listOf(
+            reference(GearSlot.WEAPON, tier, Stat.DAMAGE to 0.6, Stat.STRENGTH to 0.4),
+            reference(GearSlot.HELMET, tier, Stat.HEALTH to 0.5, Stat.DEFENSE to 0.5),
+            reference(GearSlot.CHESTPLATE, tier, Stat.HEALTH to 0.5, Stat.DEFENSE to 0.5),
+            reference(GearSlot.LEGGINGS, tier, Stat.HEALTH to 0.5, Stat.DEFENSE to 0.5),
+            reference(GearSlot.BOOTS, tier, Stat.HEALTH to 0.5, Stat.DEFENSE to 0.5),
+        ).map { def ->
+            GearStats.of(def, GearData(def.id, rarity, stars, emptyMap(), null, 0), balance.gear, null)
+        }
+        val sheet = gear.fold(StatSheet.of(Stat.HEALTH to balance.player.health), StatSheet::plus)
+        return fight(balance, level, sheet, foe)
+    }
+
+    private fun reference(slot: GearSlot, tier: Int, vararg weights: Pair<Stat, Double>): GearDef =
+        GearDef("reference", slot, tier, "", null, null, null, weights.toMap(), null)
+
+    private fun fight(balance: Balance, level: Int, sheet: StatSheet, foe: Foe): Row {
         val foeHealth = DamageMath.mobMaxHealth(foe.health, balance, level)
         val foeHit = DamageMath.mobHit(foe.hit, balance, level)
         val swing = DamageMath.meleeHit(sheet, balance, vanillaShare = 1.0, crit = false)

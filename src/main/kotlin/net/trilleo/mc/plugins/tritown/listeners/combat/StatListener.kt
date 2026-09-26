@@ -1,9 +1,9 @@
 package net.trilleo.mc.plugins.tritown.listeners.combat
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent
-import net.trilleo.mc.plugins.tritown.combat.Combat
-import net.trilleo.mc.plugins.tritown.combat.PlayerStats
-import net.trilleo.mc.plugins.tritown.combat.ShotStats
+import net.trilleo.mc.plugins.tritown.combat.*
+import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.gear.Gear
 import org.bukkit.entity.Player
 import org.bukkit.entity.Projectile
 import org.bukkit.entity.Trident
@@ -57,18 +57,38 @@ class StatListener : Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     fun onQuit(event: PlayerQuitEvent) = PlayerStats.invalidate(event.player)
 
+    /**
+     * An arrow is worth what its bow makes it: the bow's Damage if it is gear,
+     * or what `vanilla.bow-attack` says a vanilla bow counts as.
+     */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     fun onShoot(event: EntityShootBowEvent) {
         val shooter = event.entity as? Player ?: return
         val projectile = event.projectile as? Projectile ?: return
-        if (Combat.isActive(shooter.world)) ShotStats.write(projectile, PlayerStats.sheet(shooter))
+        if (!Combat.isActive(shooter.world)) return
+
+        val balance = ContentRegistry.balance
+        val damage = Gear.stats(event.bow)?.get(Stat.DAMAGE) ?: (balance.vanilla.bowAttack * balance.lens)
+        val multiplier = DamageMath.shotMultiplier(damage, balance.vanilla.arrowReference, balance)
+        ShotStats.write(projectile, PlayerStats.sheet(shooter), multiplier)
     }
 
-    /** Tridents are thrown, not shot, so they come through here instead. */
+    /**
+     * Tridents are thrown, not shot, so they come through here instead. A
+     * thrown trident is measured against its own melee hit, so it lands for
+     * what it would have struck for.
+     */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     fun onThrow(event: ProjectileLaunchEvent) {
         val trident = event.entity as? Trident ?: return
         val thrower = trident.shooter as? Player ?: return
-        if (Combat.isActive(thrower.world)) ShotStats.write(trident, PlayerStats.sheet(thrower))
+        if (!Combat.isActive(thrower.world)) return
+
+        val balance = ContentRegistry.balance
+        val item = trident.itemStack
+        val vanilla = StatSources.attackDamage(item)
+        val damage = Gear.stats(item)?.get(Stat.DAMAGE) ?: (vanilla * balance.lens)
+        val multiplier = DamageMath.shotMultiplier(damage, 1.0 + vanilla, balance)
+        ShotStats.write(trident, PlayerStats.sheet(thrower), multiplier)
     }
 }

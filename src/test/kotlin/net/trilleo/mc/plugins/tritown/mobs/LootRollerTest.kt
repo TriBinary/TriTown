@@ -12,9 +12,9 @@ class LootRollerTest {
     private val table = LootTable(
         families = mapOf("ZOMBIE" to LootTable.Family("zombie", "grave-dust")),
         rules = LootTable.Rules(minLevel = 3, playerShare = 50.0, magicFindCap = 100.0),
-        normal = LootTable.Drop(chance = 4.0, minAmount = 1, maxAmount = 1, minEssence = 0, maxEssence = 0),
-        elite = LootTable.Drop(chance = 100.0, minAmount = 1, maxAmount = 3, minEssence = 1, maxEssence = 2),
-        champion = LootTable.Drop(chance = 100.0, minAmount = 3, maxAmount = 6, minEssence = 3, maxEssence = 5),
+        normal = LootTable.Drop(chance = 4.0, minAmount = 1, maxAmount = 1, minEssence = 0, maxEssence = 0, gearChance = 0.0),
+        elite = LootTable.Drop(chance = 100.0, minAmount = 1, maxAmount = 3, minEssence = 1, maxEssence = 2, gearChance = 0.0),
+        champion = LootTable.Drop(chance = 100.0, minAmount = 3, maxAmount = 6, minEssence = 3, maxEssence = 5, gearChance = 1.0),
         essence = listOf(
             LootTable.EssenceGrade("dim-essence", 15),
             LootTable.EssenceGrade("glowing-essence", 30),
@@ -61,6 +61,26 @@ class LootRollerTest {
         val drops = LootRoller.roll(table, "COW", MobRank.CHAMPION, 10, 0.0, Random(3)).map { it.item }
         assertEquals(listOf("dim-essence"), drops)
         assertEquals(emptyList(), LootRoller.roll(table, "COW", MobRank.NORMAL, 10, 0.0, Random(3)))
+    }
+
+    @Test
+    fun `champions drop gear as often as tuned, and magic find helps`() {
+        assertClose(1.0, gearRate(magicFind = 0.0))
+        assertClose(2.0, gearRate(magicFind = 100.0))
+    }
+
+    @Test
+    fun `nothing below a champion drops gear here, and nothing below the minimum level`() {
+        repeat(1_000) {
+            assertTrue(!LootRoller.dropsGear(table, MobRank.ELITE, 30, 100.0, Random(it)))
+            assertTrue(!LootRoller.dropsGear(table, MobRank.CHAMPION, 2, 100.0, Random(it)))
+        }
+    }
+
+    private fun gearRate(magicFind: Double): Double {
+        val random = Random(7)
+        val rolls = 200_000
+        return (1..rolls).count { LootRoller.dropsGear(table, MobRank.CHAMPION, 30, magicFind, random) } * 100.0 / rolls
     }
 
     private fun materialRate(magicFind: Double): Double {

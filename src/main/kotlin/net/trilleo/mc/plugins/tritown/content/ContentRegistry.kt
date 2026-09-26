@@ -2,6 +2,7 @@ package net.trilleo.mc.plugins.tritown.content
 
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
+import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.plugin.java.JavaPlugin
 import org.yaml.snakeyaml.Yaml
 import java.io.File
@@ -14,6 +15,7 @@ import java.io.File
  * | `balance.yml` | [Balance]: the numbers every fight is worked out with   |
  * | `items.yml`   | [ContentItemDef]s: materials, essence                    |
  * | `mobs.yml`    | [LootTable]: which mob drops what                        |
+ * | `gear.yml`    | [GearCatalog]: gear, its recipes, and reforges           |
  *
  * They live in `plugins/TriTown/content/`, copied from the jar on first start
  * the way the language files are, and `/tritown reload` reads them again. What
@@ -29,6 +31,7 @@ object ContentRegistry {
     private const val BALANCE = "balance.yml"
     private const val ITEMS = "items.yml"
     private const val MOBS = "mobs.yml"
+    private const val GEAR = "gear.yml"
 
     @Volatile
     private var currentBalance: Balance? = null
@@ -45,9 +48,13 @@ object ContentRegistry {
     var loot: LootTable = LootTable.EMPTY
         private set
 
+    @Volatile
+    var gear: GearCatalog = GearCatalog.EMPTY
+        private set
+
     fun load(plugin: JavaPlugin) {
         val folder = File(plugin.dataFolder, FOLDER)
-        listOf(BALANCE, ITEMS, MOBS).forEach {
+        listOf(BALANCE, ITEMS, MOBS, GEAR).forEach {
             if (!File(folder, it).exists()) plugin.saveResource("$FOLDER/$it", false)
         }
 
@@ -75,6 +82,37 @@ object ContentRegistry {
             report(plugin, MOBS, result.warnings + unknownMobs)
             loot = result.value
         }
+
+        read(plugin, File(folder, GEAR))?.let { root ->
+            val result = ContentParser.gear(root, items.keys)
+            val usable = result.value.gear.filterValues { def -> baseProblem(def) == null }
+            val problems = result.value.gear.values.mapNotNull { def ->
+                baseProblem(def)?.let { "gear.${def.id}.base: $it; left out" }
+            } + result.value.gear.values.mapNotNull { def ->
+                def.model?.takeIf { Material.matchMaterial(it) == null }
+                    ?.let { "gear.${def.id}.model: '$it' is not a vanilla item, so it will look broken" }
+            }
+            report(plugin, GEAR, result.warnings + problems)
+            gear = result.value.copy(gear = usable)
+        }
+    }
+
+    /** Why [def]'s base item cannot be worn or held where its slot says, or `null` if it can. */
+    private fun baseProblem(def: GearDef): String? {
+        val base = Material.matchMaterial(def.base)?.takeIf { it.isItem }
+            ?: return "'${def.base}' is not a vanilla item"
+        val wanted = when (def.slot) {
+            GearSlot.WEAPON, GearSlot.BOW -> EquipmentSlot.HAND
+            GearSlot.HELMET -> EquipmentSlot.HEAD
+            GearSlot.CHESTPLATE -> EquipmentSlot.CHEST
+            GearSlot.LEGGINGS -> EquipmentSlot.LEGS
+            GearSlot.BOOTS -> EquipmentSlot.FEET
+        }
+        if (base.equipmentSlot != wanted) return "${base.name} is not worn as ${def.slot.name.lowercase()}"
+        if (def.slot == GearSlot.BOW && base != Material.BOW && base != Material.CROSSBOW) {
+            return "${base.name} is not a bow or crossbow"
+        }
+        return null
     }
 
     private fun report(plugin: JavaPlugin, file: String, warnings: List<String>) {

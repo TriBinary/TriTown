@@ -3420,15 +3420,20 @@ the damage source's *causing* entity, which covers arrows, fangs, explosions and
 | player → player, or a pet → a player  | **left alone**                                                                  |
 | the world → a player                  | left alone, so falls, lava and drowning take vanilla's share                    |
 | player → mob, melee                   | `DamageMath.meleeHit`: `(lens + Damage) × (1 + Strength/100) × share × crit`    |
-| player → mob, arrow or trident        | `DamageMath.shotHit`: vanilla's hit × lens × Strength × crit                    |
+| player → mob, arrow or trident        | `DamageMath.shotHit`: vanilla's hit × the weapon's shot multiplier × Strength × crit |
 | mob → player, mob → mob               | `DamageMath.mobHit`: vanilla's hit × lens × `damage-growth^(level−1)`, then Defense |
 | the world, or a player's potion or TNT → mob | `DamageMath.environmentHit`: vanilla × lens, i.e. level-1 units          |
 
 - **The share** is vanilla's own melee hit divided by the player's attack damage (`DamageMath.vanillaShare`). It carries
   everything *but* the weapon — attack cooldown, sweeping, Sharpness, Smite, a mace's fall — so those keep working as
   vanilla meant them. Vanilla's jump-crit ×1.5 is divided back out; a jump attack adds `jump-crit-chance` instead.
-- **Arrows and tridents** carry the shooter's Strength and crit stats in their own data (`ShotStats`), written by
-  `StatListener` at `EntityShootBowEvent` / `ProjectileLaunchEvent`, so a shot lands with the stats it was fired with.
+- **A bow's Damage is only for what it shoots**: a player swinging with a bow or crossbow in hand hits with the bare
+  hand's worth.
+- **Arrows and tridents** carry the shooter's Strength and crit stats in their own data (`ShotStats`), with what the
+  weapon makes each point of the shot worth (`DamageMath.shotMultiplier`: the weapon's Damage, with the lens's worth for
+  the bare hand, over the vanilla damage of a shot from a weapon of no Damage). `StatListener` writes it at
+  `EntityShootBowEvent` / `ProjectileLaunchEvent`, so a shot lands with what it was fired with. A vanilla bow comes out
+  at the lens, so vanilla stays vanilla.
 - **Environment hits on mobs** are level-1 units whatever the mob's level, so a lava pit, fall trap or fire aspect is
   only ever as strong as it is against a level-1 mob. That is what stops traps from farming the wild.
 
@@ -3447,14 +3452,17 @@ the mob's nameplate to redraw.
 
 ### Stats
 
-`Stat` is Health, Defense, Damage, Strength, Crit Chance and Crit Damage. **None of them apply between players.**
-`StatSheet` is an immutable value per stat, and `StatSources` is the only place one is built:
+`Stat` is Health, Defense, Damage, Strength, Crit Chance, Crit Damage, Speed, Vitality and Magic Find. **None of
+them apply between players but Speed**, which is movement and cannot tell who is chasing whom, so `SpeedSync` caps it
+at `combat.speed-cap` and applies it as a transient modifier twice a second (`tasks/combat/SpeedTask`). Vitality
+scales natural regeneration and healing potions (`VitalityListener`), and Magic Find the rare loot rolls. `StatSheet` is
+an immutable value per stat, and `StatSources` is the only place one is built:
 
 | Source    | Gives                                                                                            |
 |:----------|:-------------------------------------------------------------------------------------------------|
 | `BASE`    | `balance.yml`'s `player` block: Health, Crit Chance, Crit Damage                                 |
-| `ARMOR`   | Defense for each worn piece: its armor × `armor-point` + its toughness × `toughness-point`        |
-| `WEAPON`  | Damage for the held item: its attack damage × the lens                                           |
+| `ARMOR`   | Each worn piece: its gear stats, or for vanilla armor, its armor × `armor-point` + its toughness × `toughness-point` as Defense |
+| `WEAPON`  | The held item: its gear stats, or for a vanilla item its attack damage × the lens as Damage; and Magic Find for Looting |
 | `EFFECTS` | Strength for the Strength effect, less for Weakness, per level                                    |
 
 Items are read through their `ATTRIBUTE_MODIFIERS` component, so a material's defaults and any custom modifiers both
@@ -3510,6 +3518,13 @@ one with a player within 32 blocks its turn twice a second: particles, and blink
 
 A slime's children keep its level but not its rank, or one champion would split into a crowd of them.
 
+**Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] ★ Vampiric Zombie 1,820/2,400❤` — redrawn a
+tick after it is hurt or healed. A ranked mob's is always visible, so nobody walks into a champion unwarned. A name is
+shared by every viewer, so its frame is rendered in the configured language, and the kind of mob is a
+`<lang:entity.minecraft.…>` tag that each client fills in itself. A normal mob's shows on the crosshair, the way a
+named mob's does. Setting a name never makes a mob persistent (only a name tag does), and a mob a player names keeps
+their name: `PlayerNameEntityEvent` drops the nameplate.
+
 ### Loot
 
 A wild mob drops the materials and essence `mobs.yml` gives it (see [Content Files](#content-files)) on top of vanilla's
@@ -3524,8 +3539,10 @@ loot, through `MobLoot.dropsFor`, when all of these hold:
 4. it is at least `min-level`.
 
 `LootRoller` rolls the drops: the family's material at the rank's chance — a normal mob's multiplied by the killer's
-Magic Find, up to `magic-find-cap` — and, for a ranked mob, essence of the grade its level falls in. It is plain Kotlin
-over a seeded `Random`, tested in `LootRollerTest`; the ledger is tested in `DamageLedgerTest`.
+Magic Find, up to `magic-find-cap` — and, for a ranked mob, essence of the grade its level falls in. A champion also has
+a `gear-chance` of a finished piece of gear (`LootRoller.dropsGear`, Magic Find helping), of the tier its level is made
+for and a rarity from `drop-odds` — the one way to a mythic before bosses. It is plain Kotlin over a seeded `Random`,
+tested in `LootRollerTest`; the ledger is tested in `DamageLedgerTest`.
 
 The drops go into `EntityDeathEvent.getDrops()`, so item protection's death window hands them to the killer like the
 rest of the mob's loot, and nothing new had to be taught to it. **Mobs never drop money**: materials are sold to the
@@ -3547,11 +3564,66 @@ recognises one even after its definition is gone, so it stays as inert as the da
 `/tritown item give <player> <id> [amount]` and `item list` (`tritown.item.admin`, `commands/items/ItemCommand`) hand
 them out.
 
-**Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] ★ Vampiric Zombie 1,820/2,400❤` — redrawn a tick after it is
-hurt or healed. A ranked mob's is always visible, so nobody walks into a champion unwarned. A name is shared by every viewer, so its frame is rendered in the configured language, and the kind of
-mob is a `<lang:entity.minecraft.…>` tag that each client fills in itself. It shows on the crosshair, the way a named
-mob's does. Setting a name never makes a mob persistent (only a name tag does), and a mob a player names keeps their
-name: `PlayerNameEntityEvent` drops the nameplate.
+### Gear
+
+Gear is defined in `gear.yml` (see [Content Files](#content-files)) and lives in `gear/`, outside the scan. A piece is a
+stack of its definition's `base` item carrying a `GearData` under `tritown:gear` (`GearCodec`): its id, rarity, stars,
+the quality each stat rolled, its reforge, and the content stamp it was drawn with. **Never its stats.**
+
+- **Stats are worked out, never stored.** `GearStats.of` turns a definition and its data into a `StatSheet` every
+  time: the slot's points (`gear.slot-points`), shared by the definition's weights, each through its stat's curve
+  (`per-100 × growth^(tier−1)`), then scaled by rarity, stars and roll, plus a reforge's share. So retuning
+  `gear.yml` or `balance.yml` reaches every piece already out there.
+- **Every piece of a slot and tier is worth the same.** A definition lists weights, not numbers, and the budget does the
+  rest, so no author can make a piece stronger than its tier. `GearStatsTest` holds this, and holds a mythic piece of
+  a tier weaker than a rare one of the next: the tier is the progression, rarity the chase.
+- **Drawn in each viewer's language.** `GearRender` writes the name (reforge first), a line per stat, the flavour line,
+  what the piece is between players, and its stars, rarity and slot — every word a `LangTranslator` key, every number
+  plain text. It also sets the look (`item_model`, trim, dye), the glint from epic up, and unbreakable: gear never
+  wears out, so the sinks are the Forge's.
+- **Redrawn when stale.** `GearData.revision` stamps the content a piece was drawn from (`GearCatalog.revision`, built
+  from text so it is the same from one start to the next). `Gear.refresh` redraws a piece whose stamp is out of date,
+  and costs one read when it is not; `GearRefreshListener` calls it as a player joins, opens an inventory, picks
+  something up, takes a piece in hand or puts one on, and `/tritown reload` refreshes everyone online. Drawing works on
+  the stack in place and leaves enchantments and anvil names alone.
+- **Between players, a piece is its base item.** Its own vanilla armor and attack damage never count as Defense or
+  Damage — `StatSources` uses its gear stats instead — so they only matter in PvP, where the piece is exactly the
+  vanilla item it is made of.
+
+`Gear` is the one entry point: `create` (fresh rolls), `preview` (common, average rolls, for the Forge's list),
+`read`, `stats`, `save` and `refresh`. Bows and crossbows are the `bow` slot: their Damage only counts for what they
+shoot (`Gear.isRanged`), and an arrow's worth is `DamageMath.shotMultiplier` of the bow's Damage — a vanilla bow counts
+as `vanilla.bow-attack`, so it shoots like an iron sword swings. A thrown trident is measured against its own melee
+hit.
+
+`/tritown item give <player> <id> [rarity]` hands out a piece of gear as well as an item (`commands/items/ItemCommand`).
+
+### The Forge
+
+`/tritown forge` (`commands/adventure/ForgeCommand`, no permission node) and the main menu's **Forge** button open
+`guis/forge/ForgeGUI`. With nothing in hand it offers crafting; with a piece in the main hand it offers what that piece
+can still take — an action it cannot, a sixth star, a rarity above the cap, is left out rather than greyed.
+
+| Action  | What it does                                               | Costs                                                   |
+|:--------|:-----------------------------------------------------------|:--------------------------------------------------------|
+| Craft   | Makes a piece from its recipe, at a rarity from `craft-odds` | The recipe's items and money                          |
+| Upgrade | Adds a star: `star-bonus` percent more base stats           | Essence × the star's number, money × the star's number |
+| Refine  | Raises its rarity one step, no higher than `refine-cap`    | Essence and money × the step's number                   |
+| Reforge | Gives it a new reforge, never the one it has if another fits | Essence and money                                     |
+| Salvage | Breaks it down for good                                     | Nothing; gives back essence for its rarity and stars   |
+
+`gear/Forge` does all of it, and nothing else makes or changes gear. It keeps `ShopTrade`'s order: **everything that
+can refuse is asked first** (the items are counted, the economy is there), then the money is charged, and only once it
+has gone are the items taken and the piece made or changed — all in one tick, so nothing can vanish in between. The
+piece being changed is re-read from the main hand at that moment; no TriTown menu lets the hand change underneath it.
+Every action asks first through `ConfirmGUI` and reports through `ForgeRender.announce`.
+
+`ForgeCosts` works out every cost, plain Kotlin tested in `ForgeCostsTest`. Money grows by `money-growth` per tier.
+Essence is the grade a mob of the piece's tier drops (`essenceFor(6 × tier)`), so upgrading gear means fighting at its
+tier. **Mythic is never crafted or refined**: it only ever drops.
+
+Money moves as `EconomyContext.SOURCE_GEAR` with the reasons `money.reason.gear-craft`, `-upgrade`, `-refine` and
+`-reforge`, all filed under `FlowCategory.GEAR`, so the admin panel shows the Forge as the sink it is.
 
 ### Balance
 
@@ -3564,9 +3636,13 @@ and the result back into vanilla damage — so the whole model runs in tests:
   or netherite, a zombie dies in vanilla's number of swings and hits for vanilla's share, ±15%), the default crits
   adding no more than 15% to an average swing, every level being harder than the last, and vanilla diamond being
   outclassed by the Overworld's cap.
+- It holds gear to the same design through `BalanceSimulator.gearRow`, a rare three-star kit of the plainest shape:
+  **on level** (tier T against level 6T) a zombie dies in 3–5 swings and each of its hits takes 3–8% of health, an
+  elite takes 12–20 swings, **a tier behind** needs no more than 2.5 times the swings (a mob's health about doubles
+  every tier, so a tier of gear is worth about double), and **two tiers ahead** a zombie dies in two.
 
-`BalanceSimulator` is the same model as a table, and `/tritown mob balance` prints it so an owner can see what an edit
-does before anyone fights. A change that breaks `BalanceSimulationTest` changes how the game feels, and has to be a
+`BalanceSimulator` is the same model as a table, and `/tritown mob balance` prints the on-level gear table so an owner
+can see what an edit does before anyone fights. A change that breaks `BalanceSimulationTest` changes how the game feels, and has to be a
 decision.
 
 ### The HUD
@@ -3589,6 +3665,7 @@ wilderness line can end with it and still read naturally without it.
 | `combat.enabled`             | Everything above                                                      |
 | `combat.disabled-worlds`     | Worlds, by name, where hits stay vanilla and mobs are not levelled    |
 | `combat.hud.*`               | The action bar, the damage indicators and their limit                 |
+| `combat.speed-cap`           | The most Speed, in percent, that makes a player faster                |
 | `mobs.levels.*`              | Night and depth bonuses, each kind of world's rings, and per-world ones |
 | `mobs.xp-per-level`          | Extra experience per level above 1                                    |
 | `mobs.nameplates`            | Whether levelled mobs wear a nameplate                                |
@@ -3603,9 +3680,10 @@ content files say what it is worth. They live in `src/main/resources/content/`, 
 
 | File          | Holds                                                                                     |
 |:--------------|:------------------------------------------------------------------------------------------|
-| `balance.yml` | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks and affixes |
+| `balance.yml` | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks and affixes, gear's budget and the Forge's costs |
 | `items.yml`   | Content items: each id's look (`model`), `rarity` and `glint`                              |
 | `mobs.yml`    | Mob families and their material, the loot rules per rank, and the essence grades           |
+| `gear.yml`    | Gear: each piece's slot, tier, base, look, weights and recipe; and reforges                |
 
 `ContentRegistry` loads them with SnakeYAML into immutable snapshots and swaps each in whole. Parsing is plain Kotlin
 over the parsed map (`BalanceParser`, `ContentParser`, both reading through `YamlReader`), so the bundled files are
@@ -3613,8 +3691,11 @@ checked in tests:
 
 - `BalanceParserTest` requires `balance.yml` to parse to exactly `Balance.DEFAULT` with no warnings, so the defaults in
   Kotlin and the file can never disagree.
-- `ContentFilesTest` requires `items.yml` and `mobs.yml` to parse without a warning, every item to have its name and
-  lore in every language, and no language to translate an item that does not exist.
+- `ContentFilesTest` requires `items.yml`, `mobs.yml` and `gear.yml` to parse without a warning, every item, piece of
+  gear and reforge to be named in every language, no language to translate one that does not exist, and every piece to
+  have a recipe and a tier from 1 to 10.
+
+What only the server can check — that a piece's `base` is worn where its slot says — leaves the piece out and says so.
 
 What only the server can check — that a `model` is a real item, that a family's mob is a real kind — is checked as the
 files load, and warned about in the console.

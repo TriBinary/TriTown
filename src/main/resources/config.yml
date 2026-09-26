@@ -272,6 +272,9 @@ combat:
     damage-indicators: true
     # The most damage indicators that may exist at once, across the server.
     indicator-limit: 64
+  # The most Speed, in percent, that makes a player faster. Speed is the one
+  # stat that shows between players, so it stays short of a Speed II potion.
+  speed-cap: 30
 
 # ── Mobs ────────────────────────────────────────────────────────────────────
 # Wild hostile mobs are levelled by where they spawn. The further from a world's

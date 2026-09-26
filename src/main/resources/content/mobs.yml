@@ -59,9 +59,11 @@ loot:
   min-level: 3
   # Percent of a mob's health players must have dealt between them.
   player-share: 50
-  # Magic Find makes a normal mob's material likelier, by its value in percent, up to this much.
+  # Magic Find makes the chances below that fall short of certain likelier — a normal mob's material, a champion's
+  # gear — by its value in percent, up to this much.
   magic-find-cap: 100
-  # For each rank: the percent chance of the family's material, how many drop ([fewest, most]), and how much essence.
+  # For each rank: the percent chance of the family's material, how many drop ([fewest, most]), how much essence, and
+  # the percent chance of a finished piece of gear of the tier the mob's level is made for.
   normal:
     chance: 4
     amount: [1, 1]
@@ -73,6 +75,7 @@ loot:
     chance: 100
     amount: [3, 6]
     essence: [3, 5]
+    gear-chance: 1
 
 # Which essence a ranked mob drops: the first grade whose max-level its level is within.
 essence:

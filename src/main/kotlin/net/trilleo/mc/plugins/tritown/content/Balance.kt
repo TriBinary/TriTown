@@ -25,6 +25,8 @@ data class Balance(
     val vanilla: VanillaMapping,
     val ranks: Ranks,
     val affixes: AffixTuning,
+    val gear: GearTuning,
+    val forge: ForgeTuning,
 ) {
 
     /** What every player has before any gear. Crit values are percentages. */
@@ -44,8 +46,19 @@ data class Balance(
     /**
      * What vanilla gear is worth: Defense for a point of armor or toughness on a
      * worn piece, and Magic Find for a level of Looting on the held weapon.
+     *
+     * @param bowAttack the attack damage a vanilla bow or crossbow counts as for
+     *   what it shoots, as though it were a sword
+     * @param arrowReference the vanilla damage of a fully drawn arrow, which a
+     *   shot is measured against
      */
-    data class VanillaMapping(val armorPoint: Double, val toughnessPoint: Double, val lootingMagicFind: Double)
+    data class VanillaMapping(
+        val armorPoint: Double,
+        val toughnessPoint: Double,
+        val lootingMagicFind: Double,
+        val bowAttack: Double,
+        val arrowReference: Double,
+    )
 
     data class Ranks(val elite: Rank, val champion: Rank)
 
@@ -95,7 +108,13 @@ data class Balance(
             jumpCritChance = 25.0,
             effects = EffectBonuses(strengthPerLevel = 40.0, weaknessPerLevel = 40.0),
             mobs = MobCurves(healthGrowth = 1.13, damageGrowth = 1.10),
-            vanilla = VanillaMapping(armorPoint = 8.0, toughnessPoint = 20.0, lootingMagicFind = 10.0),
+            vanilla = VanillaMapping(
+                armorPoint = 8.0,
+                toughnessPoint = 20.0,
+                lootingMagicFind = 10.0,
+                bowAttack = 5.0,
+                arrowReference = 6.0,
+            ),
             ranks = Ranks(
                 elite = Rank(chance = 3.0, minLevel = 5, health = 4.0, damage = 1.5, minAffixes = 1, maxAffixes = 2),
                 champion = Rank(chance = 0.4, minLevel = 15, health = 12.0, damage = 2.0, minAffixes = 2, maxAffixes = 3),
@@ -116,6 +135,8 @@ data class Balance(
                 blinkingRange = 6.0,
                 blinkingCooldownTicks = 100,
             ),
+            gear = GearTuning.DEFAULT,
+            forge = ForgeTuning.DEFAULT,
         )
     }
 }
