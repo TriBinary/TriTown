@@ -1446,6 +1446,18 @@ item:
   rift-shell:
     name: "Rift Shell"
     lore: "It opens onto somewhere else."
+  hollow-marrow:
+    name: "Hollow Marrow"
+    lore: "The last of a sentry's strength, still humming."
+  abyssal-scale:
+    name: "Abyssal Scale"
+    lore: "Shed by something that lives far deeper than you."
+  warhog-hide:
+    name: "Warhog Hide"
+    lore: "Tough enough to turn a sword. Mostly."
+  null-shard:
+    name: "Null Shard"
+    lore: "It weighs nothing, and takes the light with it."
   dim-essence:
     name: "Dim Essence"
     lore: "Power drawn from the strong."
@@ -1525,6 +1537,18 @@ gear:
     bonecaller-bow:
       name: "Bonecaller Bow"
       lore: "Its string hums like a rib cage in the wind."
+    bonecaller-helmet:
+      name: "Bonecaller Helm"
+      lore: "It rattles when the dead are near."
+    bonecaller-chestplate:
+      name: "Bonecaller Hauberk"
+      lore: "Ribbed like the last thing that wore it."
+    bonecaller-leggings:
+      name: "Bonecaller Greaves"
+      lore: "Joints that never tire."
+    bonecaller-boots:
+      name: "Bonecaller Boots"
+      lore: "They leave no footprints, only dust."
     frostbite-edge:
       name: "Frostbite Edge"
       lore: "Cold enough to burn."
@@ -1543,6 +1567,18 @@ gear:
     tidecaller-trident:
       name: "Tidecaller Trident"
       lore: "It remembers every wave it ever parted."
+    tidecaller-helmet:
+      name: "Tidecaller Helm"
+      lore: "The sea still roars inside it."
+    tidecaller-chestplate:
+      name: "Tidecaller Mail"
+      lore: "Scales that never rust."
+    tidecaller-leggings:
+      name: "Tidecaller Greaves"
+      lore: "Made for wading, not for running."
+    tidecaller-boots:
+      name: "Tidecaller Boots"
+      lore: "Always a little damp."
     emberbrand:
       name: "Emberbrand"
       lore: "Its edge glows long after the fight."
@@ -1561,6 +1597,18 @@ gear:
     wailing-arbalest:
       name: "Wailing Arbalest"
       lore: "Each bolt leaves with a scream."
+    warhide-helmet:
+      name: "Warhide Helm"
+      lore: "Tusks included."
+    warhide-chestplate:
+      name: "Warhide Cuirass"
+      lore: "Stitched from a hide that did not want to be taken."
+    warhide-leggings:
+      name: "Warhide Leggings"
+      lore: "The crimson forest still clings to them."
+    warhide-boots:
+      name: "Warhide Stompers"
+      lore: "The ground knows when you walk."
     ashen-greatsword:
       name: "Ashen Greatsword"
       lore: "Too heavy for anyone who has not earned it."
@@ -1579,6 +1627,18 @@ gear:
     riftpiercer:
       name: "Riftpiercer"
       lore: "Its arrows arrive a moment before they leave."
+    riftwalker-helmet:
+      name: "Riftwalker Hood"
+      lore: "It sees a moment before you do."
+    riftwalker-chestplate:
+      name: "Riftwalker Plate"
+      lore: "Heavier on one side of the rift than the other."
+    riftwalker-leggings:
+      name: "Riftwalker Greaves"
+      lore: "Each step lands a little further than it should."
+    riftwalker-boots:
+      name: "Riftwalker Treads"
+      lore: "They have walked where there was no ground."
     voidreaver:
       name: "Voidreaver"
       lore: "It cuts the space between things."

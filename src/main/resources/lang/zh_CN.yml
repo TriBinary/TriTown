@@ -1445,6 +1445,18 @@ item:
   rift-shell:
     name: "裂隙之壳"
     lore: "打开它，里面是别处。"
+  hollow-marrow:
+    name: "空洞骨髓"
+    lore: "哨兵最后的力量，至今仍在嗡鸣。"
+  abyssal-scale:
+    name: "深渊之鳞"
+    lore: "来自某个比你潜得深得多的东西。"
+  warhog-hide:
+    name: "战猪皮"
+    lore: "硬到能挡开剑刃——大多数时候。"
+  null-shard:
+    name: "虚无碎片"
+    lore: "它毫无重量，却会把光一并带走。"
   dim-essence:
     name: "黯淡精华"
     lore: "从强者身上汲取的力量。"
@@ -1524,6 +1536,18 @@ gear:
     bonecaller-bow:
       name: "唤骨长弓"
       lore: "弓弦在风中嗡鸣，如同一副肋骨。"
+    bonecaller-helmet:
+      name: "唤骨头盔"
+      lore: "亡者靠近时，它会咯咯作响。"
+    bonecaller-chestplate:
+      name: "唤骨锁甲"
+      lore: "肋骨般的纹路，一如它的上一位主人。"
+    bonecaller-leggings:
+      name: "唤骨护腿"
+      lore: "永不疲倦的关节。"
+    bonecaller-boots:
+      name: "唤骨靴子"
+      lore: "只留下尘土，不留下脚印。"
     frostbite-edge:
       name: "霜咬之刃"
       lore: "冷到足以灼伤。"
@@ -1542,6 +1566,18 @@ gear:
     tidecaller-trident:
       name: "唤潮三叉戟"
       lore: "它记得自己分开过的每一道浪。"
+    tidecaller-helmet:
+      name: "唤潮头盔"
+      lore: "大海仍在其中咆哮。"
+    tidecaller-chestplate:
+      name: "唤潮鳞甲"
+      lore: "永不生锈的鳞片。"
+    tidecaller-leggings:
+      name: "唤潮护腿"
+      lore: "为涉水而生，而非奔跑。"
+    tidecaller-boots:
+      name: "唤潮靴子"
+      lore: "总是有点潮湿。"
     emberbrand:
       name: "余烬烙刃"
       lore: "战斗过后，它的刃口仍久久发光。"
@@ -1560,6 +1596,18 @@ gear:
     wailing-arbalest:
       name: "哀嚎劲弩"
       lore: "每一支弩箭都伴着尖啸离弦。"
+    warhide-helmet:
+      name: "战皮头盔"
+      lore: "獠牙附赠。"
+    warhide-chestplate:
+      name: "战皮胸甲"
+      lore: "缝自一张不甘被剥下的皮。"
+    warhide-leggings:
+      name: "战皮护腿"
+      lore: "绯红森林的气息仍附着其上。"
+    warhide-boots:
+      name: "战皮重靴"
+      lore: "你每走一步，大地都知道。"
     ashen-greatsword:
       name: "灰烬巨剑"
       lore: "对未曾赢得它的人来说太过沉重。"
@@ -1578,6 +1626,18 @@ gear:
     riftpiercer:
       name: "裂隙穿刺者"
       lore: "它的箭在离弦之前便已抵达。"
+    riftwalker-helmet:
+      name: "裂隙行者兜帽"
+      lore: "它总比你早一刻看见。"
+    riftwalker-chestplate:
+      name: "裂隙行者胸甲"
+      lore: "在裂隙的一侧比另一侧更重。"
+    riftwalker-leggings:
+      name: "裂隙行者护腿"
+      lore: "每一步都比应有的更远一点。"
+    riftwalker-boots:
+      name: "裂隙行者战靴"
+      lore: "它们走过没有地面的地方。"
     voidreaver:
       name: "虚空收割者"
       lore: "它斩开万物之间的空隙。"

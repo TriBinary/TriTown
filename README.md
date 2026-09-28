@@ -429,6 +429,37 @@ least half its damage, so a trap or a lava pit earns nothing. What drops is the 
 loot. Materials are inert: they look like the vanilla item they are modelled on, but cannot be crafted with, placed or
 used. Mobs never drop money.
 
+### Custom mobs
+
+The server has mobs of its own, defined in `plugins/TriTown/content/bestiary.yml`. Now and then one takes the place of
+a wild mob of its kind — only ever a wild one, so never in a town, from a spawner or from an egg:
+
+| Mob               | Is a            | Lives                          | Fights with                       |
+|:------------------|:----------------|:-------------------------------|:----------------------------------|
+| Gravewalker       | zombie          | the Overworld, levels 3–14     | Leap; wears the Gravewalker set   |
+| Crypt Ghoul       | husk            | deserts, 6–16                  | Leap; small, fast and Vampiric    |
+| Bonecaller Sentry | skeleton        | the Overworld, 6–16            | Volley; wears the Bonecaller set  |
+| Frost Revenant    | stray           | the cold, 10–22                | Frost Nova; a Frostbite Edge      |
+| Widow Stalker     | spider          | above Y 40, 12–24              | Ensnare, Leap                     |
+| Silkweaver        | spider          | below Y 0, 14–26               | Miasma; Venomous                  |
+| Hexbinder         | witch           | swamps, 12–30                  | Drain, Ensnare                    |
+| Tidecaller        | drowned         | the seas, 16–30                | Hook; a Tidecaller Trident        |
+| Crimson Warhog    | hoglin          | the Nether, 18–36              | Charge                            |
+| Pyromancer        | blaze           | the Nether, 22–40              | Fireball, Meteor; Molten          |
+| Ashen Legionnaire | wither skeleton | the Nether, 30–45              | Charge, Slam; the Ashen set       |
+| Voidstalker       | enderman        | the End, 30–60                 | Hook, Drain; Blinking             |
+| Starborn Sentinel | enderman        | the outer End, 48–60           | Storm, Bulwark; Warded            |
+
+Each wears its own name on its nameplate, is tougher than its kind, and may still be an elite or a champion. Its
+abilities always warn you with particles and sound before they land, break no blocks, and only ever hurt players. Its
+costume is only a look: what it wears gives it no armor and never drops, though some drop a finished piece of the gear
+they wear now and then. They drop more of their kind's materials, and four drop **trophies** — Hollow Marrow, Abyssal
+Scales, Warhog Hide and Null Shards — that the armor of tiers 2, 4, 6 and 8 is forged from. Voidstalkers and Starborn
+Sentinels are where Rift Shells come from.
+
+`mobs.custom.enabled` turns them off. `/tt mob spawn <kind> [level]` calls one up to look at (it drops nothing extra),
+and `/tt mob kinds` lists them.
+
 ### Gear and the Forge
 
 **Gear** comes in ten tiers, each made for mobs up to six times its level — tier 5 is for level 25 to 30 — and in six
@@ -437,8 +468,9 @@ what you climb and the rarity what you chase. Every piece of a slot and tier is 
 shared out. Gear never wears out. Between players, a piece is exactly the vanilla item it is made of — a tier-7 blade
 forged from a netherite sword fights players as a netherite sword — and its tooltip says so.
 
-The starting set is six armor sets (Gravewalker, Widowsilk, Emberforged, Ashen Knight, Voidstride, Starfall) and a
-weapon for every tier, bows and a crossbow and a trident among them.
+The starting set is an armor set for every tier — Gravewalker, Bonecaller, Widowsilk, Tidecaller, Emberforged,
+Warhide, Ashen Knight, Riftwalker, Voidstride and Starfall — and a weapon for every tier, bows and a crossbow and a
+trident among them. The Bonecaller, Tidecaller, Warhide and Riftwalker sets take trophies that only custom mobs drop.
 
 **The Forge** (`/tt forge`, or the main menu) crafts a piece from materials, essence and money, at a random rarity. Hold
 a piece in your main hand and the Forge can also:
@@ -459,6 +491,9 @@ Everything is tuned in files of its own in `plugins/TriTown/content/`, which `/t
 - `items.yml` — the materials and essence: how each looks and how rare it is.
 - `gear.yml` — every piece of gear: its slot, tier, base item, look, how it shares out its stats, and its recipe; and
   the reforges. Retuning a piece reaches every copy already out there.
+- `bestiary.yml` — the custom mobs: what each is, where it lives, how much tougher than its kind, its affixes and
+  abilities, what it wears and what it drops. Retuning one reaches every one already out there. What each ability does
+  is in `balance.yml`.
 
 Names are in the language files under `item` and `gear`. `/tt mob balance` shows what your numbers make of each level —
 a zombie against a full kit of the tier made for it — before anyone fights. A value that cannot be used falls back to

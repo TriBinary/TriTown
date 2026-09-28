@@ -39,8 +39,9 @@
     + Administrators hand them out with `/tritown item give <player> <id> [amount]` (`tritown.item.admin`), and set
       which mob drops what in `plugins/TriTown/content/mobs.yml`.
 + Added **gear**: ten tiers, each made for mobs up to six times its level, in six rarities from common to mythic.
-    + Six armor sets — Gravewalker, Widowsilk, Emberforged, Ashen Knight, Voidstride and Starfall — and a weapon for
-      every tier, with bows, a crossbow and a trident among them.
+    + An armor set for every tier — Gravewalker, Bonecaller, Widowsilk, Tidecaller, Emberforged, Warhide, Ashen
+      Knight, Riftwalker, Voidstride and Starfall — and a weapon for every tier, with bows, a crossbow and a trident
+      among them.
     + A tier is worth about twice the one before, and every piece of a slot and tier is worth the same however its
       stats are shared out. Gear never wears out.
     + Between players a piece is exactly the vanilla item it is made of, and its tooltip says which.
@@ -59,6 +60,9 @@
       many wear the gear of their region, which they sometimes drop.
     + They are tougher than their kind and drop more of its materials besides. Voidstalkers and Starborn Sentinels
       drop **Rift Shells**, which until now no mob could.
+    + Bonecaller Sentries, Tidecallers, Crimson Warhogs and Voidstalkers drop **trophies** — Hollow Marrow, Abyssal
+      Scales, Warhog Hide and Null Shards — which the Bonecaller, Tidecaller, Warhide and Riftwalker armor of tiers
+      2, 4, 6 and 8 is forged from.
     + Each fights with **abilities** of its own: Leap, Slam, Charge, Volley, Fireball, Meteor, Storm, Ensnare, Hook,
       Summon, Bulwark, Frost Nova, Miasma and Drain. Every one is warned of with particles and sound before it lands,
       breaks no blocks, and only ever hurts players.

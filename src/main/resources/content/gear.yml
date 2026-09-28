@@ -72,6 +72,42 @@ gear:
     recipe:
       items: {bone-shard: 20, silk-strand: 8, dim-essence: 2}
       money: 350
+  bonecaller-helmet:
+    slot: helmet
+    tier: 2
+    base: iron_helmet
+    trim: {pattern: rib, material: quartz}
+    weights: {health: 45, defense: 45, crit-damage: 10}
+    recipe:
+      items: {bone-shard: 12, hollow-marrow: 3, dim-essence: 1}
+      money: 250
+  bonecaller-chestplate:
+    slot: chestplate
+    tier: 2
+    base: iron_chestplate
+    trim: {pattern: rib, material: quartz}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {bone-shard: 18, hollow-marrow: 6, dim-essence: 2}
+      money: 400
+  bonecaller-leggings:
+    slot: leggings
+    tier: 2
+    base: iron_leggings
+    trim: {pattern: rib, material: quartz}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {bone-shard: 16, hollow-marrow: 5, dim-essence: 2}
+      money: 350
+  bonecaller-boots:
+    slot: boots
+    tier: 2
+    base: iron_boots
+    trim: {pattern: rib, material: quartz}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {bone-shard: 10, hollow-marrow: 3, dim-essence: 1}
+      money: 220
   frostbite-edge:
     slot: weapon
     tier: 3
@@ -124,6 +160,42 @@ gear:
     recipe:
       items: {tidal-pearl: 20, raider-mark: 8, glowing-essence: 3}
       money: 900
+  tidecaller-helmet:
+    slot: helmet
+    tier: 4
+    base: diamond_helmet
+    trim: {pattern: tide, material: lapis}
+    weights: {health: 40, defense: 40, vitality: 20}
+    recipe:
+      items: {tidal-pearl: 14, abyssal-scale: 4, glowing-essence: 2}
+      money: 800
+  tidecaller-chestplate:
+    slot: chestplate
+    tier: 4
+    base: diamond_chestplate
+    trim: {pattern: tide, material: lapis}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {tidal-pearl: 22, abyssal-scale: 8, glowing-essence: 3}
+      money: 1300
+  tidecaller-leggings:
+    slot: leggings
+    tier: 4
+    base: diamond_leggings
+    trim: {pattern: tide, material: lapis}
+    weights: {health: 45, defense: 45, vitality: 10}
+    recipe:
+      items: {tidal-pearl: 20, abyssal-scale: 6, glowing-essence: 3}
+      money: 1100
+  tidecaller-boots:
+    slot: boots
+    tier: 4
+    base: diamond_boots
+    trim: {pattern: tide, material: lapis}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {tidal-pearl: 12, abyssal-scale: 4, glowing-essence: 2}
+      money: 700
   emberbrand:
     slot: weapon
     tier: 5
@@ -176,6 +248,42 @@ gear:
     recipe:
       items: {wailing-tear: 16, gilded-tusk: 12, radiant-essence: 2}
       money: 3000
+  warhide-helmet:
+    slot: helmet
+    tier: 6
+    base: diamond_helmet
+    trim: {pattern: snout, material: netherite}
+    weights: {health: 45, defense: 45, strength: 10}
+    recipe:
+      items: {gilded-tusk: 16, warhog-hide: 5, radiant-essence: 2}
+      money: 2800
+  warhide-chestplate:
+    slot: chestplate
+    tier: 6
+    base: diamond_chestplate
+    trim: {pattern: snout, material: netherite}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {gilded-tusk: 24, warhog-hide: 9, radiant-essence: 3}
+      money: 4500
+  warhide-leggings:
+    slot: leggings
+    tier: 6
+    base: diamond_leggings
+    trim: {pattern: snout, material: netherite}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {gilded-tusk: 20, warhog-hide: 7, radiant-essence: 3}
+      money: 3800
+  warhide-boots:
+    slot: boots
+    tier: 6
+    base: diamond_boots
+    trim: {pattern: snout, material: netherite}
+    weights: {health: 40, defense: 40, speed: 20}
+    recipe:
+      items: {gilded-tusk: 14, warhog-hide: 5, radiant-essence: 2}
+      money: 2500
   ashen-greatsword:
     slot: weapon
     tier: 7
@@ -228,6 +336,42 @@ gear:
     recipe:
       items: {rift-shell: 16, void-fragment: 16, astral-essence: 2}
       money: 10000
+  riftwalker-helmet:
+    slot: helmet
+    tier: 8
+    base: netherite_helmet
+    trim: {pattern: vex, material: emerald}
+    weights: {health: 45, defense: 45, crit-chance: 10}
+    recipe:
+      items: {void-fragment: 16, null-shard: 5, rift-shell: 4, astral-essence: 2}
+      money: 9000
+  riftwalker-chestplate:
+    slot: chestplate
+    tier: 8
+    base: netherite_chestplate
+    trim: {pattern: vex, material: emerald}
+    weights: {health: 50, defense: 50}
+    recipe:
+      items: {void-fragment: 26, null-shard: 9, rift-shell: 6, astral-essence: 3}
+      money: 14000
+  riftwalker-leggings:
+    slot: leggings
+    tier: 8
+    base: netherite_leggings
+    trim: {pattern: vex, material: emerald}
+    weights: {health: 45, defense: 45, vitality: 10}
+    recipe:
+      items: {void-fragment: 22, null-shard: 7, rift-shell: 5, astral-essence: 3}
+      money: 12000
+  riftwalker-boots:
+    slot: boots
+    tier: 8
+    base: netherite_boots
+    trim: {pattern: vex, material: emerald}
+    weights: {health: 35, defense: 35, speed: 30}
+    recipe:
+      items: {void-fragment: 14, null-shard: 5, rift-shell: 4, astral-essence: 2}
+      money: 8000
   voidreaver:
     slot: weapon
     tier: 9

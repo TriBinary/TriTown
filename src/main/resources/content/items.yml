@@ -58,6 +58,20 @@ items:
     model: shulker_shell
     rarity: epic
 
+  # Trophies, from the server's own mobs (bestiary.yml).
+  hollow-marrow:
+    model: bone
+    rarity: uncommon
+  abyssal-scale:
+    model: turtle_scute
+    rarity: rare
+  warhog-hide:
+    model: leather
+    rarity: rare
+  null-shard:
+    model: echo_shard
+    rarity: epic
+
   # Essence, from elites and champions. Its grade follows the mob's level.
   dim-essence:
     model: glowstone_dust

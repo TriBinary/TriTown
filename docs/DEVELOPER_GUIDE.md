@@ -3623,7 +3623,7 @@ server's shops, so every faucet stays one the owner prices.
 
 ### Content items
 
-Materials and essence are *content items*, defined in `items.yml` and made by `ContentItems.create`. Every one is an
+Materials, essence and trophies are *content items*, defined in `items.yml` and made by `ContentItems.create`. Every one is an
 **echo shard** wearing another vanilla item's look through the `item_model` component, and carrying its id under
 `PluginItem.ITEM_ID_KEY`. An echo shard's only use is crafting a recovery compass, which
 `listeners/items/ContentItemListener` refuses in a crafting grid and a crafter — so a content item can't be placed,
