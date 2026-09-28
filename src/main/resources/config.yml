@@ -8,6 +8,12 @@ message-prefix: "<click:run_command:/tritown help><gradient:yellow:gold>[TriTown
 # Translations live in plugins/TriTown/lang/ and can be edited or extended with new <id>.yml files.
 language: auto
 
+# The one language every TriTown item is written in: gear, materials, essence and sigils. The server cannot show an
+# item's text to each player in their own language, so items share one, which also keeps every copy identical so they
+# stack. "auto" follows `language`, or en_US when that is "auto" too. Items already out there are redrawn in the new
+# language the next time a player looks at them.
+item-language: auto
+
 # ── Main Menu ───────────────────────────────────────────────────────────────
 # The menu players reach everything TriTown offers from: their balance, town and
 # storage, the global shop, trading and paying other players, the leaderboard,

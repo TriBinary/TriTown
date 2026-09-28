@@ -133,8 +133,12 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
 - **Never write a player-facing string in Kotlin.** Every message, item name, lore line and menu title comes from
   `sender.tr("key")` / `player.tr("key", "name" to value)`. A hardcoded sentence is a bug, even a short one.
-- **Text on an item is a `LangTranslator.component(key)`**, never rendered text: the item is seen by many players, and
-  only a translatable key reads in each one's language and keeps every copy identical so it stacks.
+- **Text on an item is written in the item language** with `Lang.item(key)`, never a player's `tr`. Paper translates
+  chat, titles and entity names per player but never anything inside an item, so an item is written once, in the
+  language `item-language` names, which keeps every copy identical so it stacks. Stamp what you drew with
+  `Lang.itemRevision` and redraw through `ItemRedraw` when it changes; anything that keeps its own copy of a TriTown
+  item (as the shops do) redraws it too. Text one player reads *about* an item — a price, a message — names it in their
+  language through `GearText`.
 - `Lang` loads `plugins/TriTown/lang/<id>.yml` (copied from `src/main/resources/lang/` on first start). With
   `language: auto` in `config.yml` each player gets the file matching their client locale (`zh_tw` → `zh_CN` by prefix),
   falling back to `en_US`. The console, and anything without a player behind it, uses the configured language.
@@ -425,7 +429,7 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
   `balance.yml` does the rest. `GearStatsTest` and `BalanceSimulationTest` hold the budget to the design.
 - **Go through `Gear`** to make, read, save or refresh a piece, and through `Forge` for anything a player pays for.
   `Forge` asks everything that can refuse first, charges, and only then takes and changes — the `ShopTrade` order.
-- **Draw gear with `GearRender`**, which writes only `LangTranslator` keys and plain numbers and leaves enchantments
+- **Draw gear with `GearRender`**, which writes only item-language text and plain numbers and leaves enchantments
   and anvil names alone. A redraw must never lose what a player gave a piece.
 - **Between players a piece is its base item.** Its own vanilla armor and attack damage never count as RPG stats, and
   nothing new may make a piece stronger against a player than the vanilla item it is made of.
@@ -476,6 +480,5 @@ or `Fix` commit carries its own changelog entry. See [docs/COMMIT_STRUCTURE.md](
   with `sendPrefixed(sender.tr("key"))`.
 - **Escape player-written text** — town names, boards, and other player input must be escaped
   (`MiniMessage.miniMessage().escapeTags(...)`) before being embedded in MiniMessage.
-- **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.
-- **No manual registration** — never edit `plugin.yml` commands/listeners. The auto-registration system handles
+- **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.- **No manual registration** — never edit `plugin.yml` commands/listeners. The auto-registration system handles
   everything.

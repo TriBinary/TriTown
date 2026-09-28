@@ -7,7 +7,7 @@ import net.trilleo.mc.plugins.tritown.combat.PlayerStats
 import net.trilleo.mc.plugins.tritown.combat.SpeedSync
 import net.trilleo.mc.plugins.tritown.config.*
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
-import net.trilleo.mc.plugins.tritown.gear.Gear
+import net.trilleo.mc.plugins.tritown.content.ItemRedraw
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 import net.trilleo.mc.plugins.tritown.economy.*
@@ -31,7 +31,6 @@ import net.trilleo.mc.plugins.tritown.storage.storage.JsonStorageStore
 import net.trilleo.mc.plugins.tritown.trades.TradeManager
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
 import net.trilleo.mc.plugins.tritown.utils.Lang
-import net.trilleo.mc.plugins.tritown.utils.LangTranslator
 import net.trilleo.mc.plugins.tritown.utils.MessageUtil
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.logging.Level
@@ -58,7 +57,7 @@ class Main : JavaPlugin() {
     override fun onLoad() {
         instance = this
         pluginConfig = PluginConfig(this)
-        Lang.load(this, pluginConfig.language)
+        Lang.load(this, pluginConfig.language, pluginConfig.itemLanguage)
 
         val settings = EconomySettings.load(pluginConfig)
         if (!settings.enabled) {
@@ -123,7 +122,8 @@ class Main : JavaPlugin() {
         ContentRegistry.load(this)
         CombatSettings.load(pluginConfig)
         MobSettings.load(pluginConfig)
-        LangTranslator.register()
+        // Once the content is loaded, since a shop's copy of an item is redrawn from it.
+        ShopManager.redrawItems()
 
         // Before the registrars, like the shops: the main menu reads a player's storage as it is drawn.
         StorageSettings.load(pluginConfig)
@@ -155,7 +155,7 @@ class Main : JavaPlugin() {
     fun reload() {
         pluginConfig.reload()
         MessageUtil.init(pluginConfig.messagePrefix)
-        Lang.load(this, pluginConfig.language)
+        Lang.load(this, pluginConfig.language, pluginConfig.itemLanguage)
 
         val settings = EconomySettings.load(pluginConfig)
         if (settings.enabled) {
@@ -182,9 +182,11 @@ class Main : JavaPlugin() {
         CombatSettings.load(pluginConfig)
         MobSettings.load(pluginConfig)
         // The balance, or what a stat is worth, may have changed under every cached sheet, and
-        // under every piece of gear anyone is carrying.
+        // under every piece of gear anyone is carrying; the content or the item language, under
+        // every item TriTown drew.
         PlayerStats.invalidateAll()
-        server.onlinePlayers.forEach { player -> player.inventory.contents.forEach(Gear::refresh) }
+        server.onlinePlayers.forEach { player -> ItemRedraw.refreshAll(player.inventory) }
+        ShopManager.redrawItems()
         // A custom mob's size and speed are attribute modifiers, which only change when they are put on again.
         ActiveMobs.all().filter { it.isValid }.forEach(MobKinds::refresh)
 
@@ -220,7 +222,6 @@ class Main : JavaPlugin() {
         MenuItem.stripAll()
         DamageIndicators.clearAll()
         server.onlinePlayers.forEach(SpeedSync::clear)
-        LangTranslator.unregister()
 
         ShopManager.shutdown()
 

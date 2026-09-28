@@ -5,7 +5,6 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
-import java.util.*
 
 /**
  * Translations for every player-facing string.
@@ -22,6 +21,10 @@ import java.util.*
  * ```kotlin
  * sender.sendPrefixed(sender.tr("command.reload.done"))
  * ```
+ *
+ * Items are the exception to reading in your own language: the server cannot
+ * show an item's text to each player differently, so everything drawn on an
+ * item is in the one item language ([item]).
  *
  * Loaded translations are read from Towny's threads through the Vault economy,
  * so [load] publishes an immutable snapshot rather than mutating one in place.
@@ -43,8 +46,23 @@ object Lang {
     @Volatile
     private var configured = AUTO
 
-    /** Loads every language file; [language] is `auto` (client locale) or a language id that everyone sees. */
-    fun load(plugin: JavaPlugin, language: String) {
+    @Volatile
+    private var itemLanguage = fallback
+
+    /**
+     * A stamp of the item language's text, the same from one start to the next,
+     * which changes whenever anything drawn on an item could read differently.
+     */
+    @Volatile
+    var itemRevision: Int = 0
+        private set
+
+    /**
+     * Loads every language file. [language] is `auto` (client locale) or a
+     * language id that everyone sees; [items] is the language items are written
+     * in, or `auto` for [language]'s, and English when that is `auto` too.
+     */
+    fun load(plugin: JavaPlugin, language: String, items: String) {
         val folder = File(plugin.dataFolder, "lang")
         BUNDLED.forEach { if (!File(folder, "$it.yml").exists()) plugin.saveResource("lang/$it.yml", false) }
 
@@ -61,6 +79,14 @@ object Lang {
         if (!language.equals(AUTO, ignoreCase = true) && match(language) == null) {
             plugin.logger.warning("Unknown language '$language' in config.yml; using $DEFAULT.")
         }
+
+        if (!items.equals(AUTO, ignoreCase = true) && match(items) == null) {
+            plugin.logger.warning("Unknown item-language '$items' in config.yml; items follow language instead.")
+        }
+        itemLanguage = listOf(items, language).firstNotNullOfOrNull { id ->
+            id.takeUnless { it.equals(AUTO, ignoreCase = true) }?.let(::match)
+        } ?: fallback
+        itemRevision = 31 * itemLanguage.id.hashCode() + itemLanguage.values.hashCode()
     }
 
     /** Ids of every loaded language file, such as `en_US`, sorted by file name. */
@@ -77,11 +103,11 @@ object Lang {
     fun find(sender: CommandSender?, key: String): String? = language(sender).values[key]
 
     /**
-     * The translation of [key] for a client set to [locale], or `null` when no
-     * language defines it. Follows `language` in `config.yml` the way [tr]
-     * does, so a server set to one language shows it on items too.
+     * The translation of [key] in the item language, for text drawn on an item.
+     * An item is one object seen by everyone, so it is written once, in one
+     * language, and every copy stays identical.
      */
-    fun find(locale: Locale, key: String): String? = language(locale.toString()).values[key]
+    fun item(key: String): String = itemLanguage.values[key] ?: key
 
     /**
      * The id of the language [sender] reads, such as `zh_CN` — the same one [tr]

@@ -3,6 +3,7 @@ package net.trilleo.mc.plugins.tritown.guis.storage
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 import net.trilleo.mc.plugins.tritown.economy.Money
+import net.trilleo.mc.plugins.tritown.gear.GearText
 import net.trilleo.mc.plugins.tritown.guis.admin.PanelRender
 import net.trilleo.mc.plugins.tritown.storage.PlayerStorage
 import net.trilleo.mc.plugins.tritown.storage.StorageManager
@@ -43,8 +44,13 @@ object StorageRender {
     fun icon(page: StoragePage?): Material =
         page?.icon?.let(Material::matchMaterial)?.takeIf { it.isItem && !it.isAir } ?: DEFAULT_ICON
 
-    /** An item's name in the viewer's own language, whatever language the server runs in. */
-    fun itemName(material: Material): String = "<lang:${material.translationKey()}>"
+    /**
+     * What [stack] is called in [viewer]'s own language, whatever language the
+     * server runs in: gear and content items by their own names, anything else
+     * by its material's.
+     */
+    fun itemName(viewer: Player, stack: ItemStack): String =
+        GearText.label(viewer, stack) ?: "<lang:${stack.type.translationKey()}>"
 
     /**
      * [page] as a card for the overview: its name, how full it is, and what
@@ -57,15 +63,15 @@ object StorageRender {
         )
 
         val top = page?.slots?.filterNotNull()
-            ?.groupBy { it.type }
+            ?.groupBy { itemName(viewer, it) }
             ?.mapValues { (_, stacks) -> stacks.sumOf { it.amount } }
             ?.entries?.sortedByDescending { it.value }
             ?.take(PREVIEW_SIZE)
             .orEmpty()
         if (top.isNotEmpty()) {
             lines += ""
-            top.forEach { (material, amount) ->
-                lines += viewer.tr("gui.storage.overview-item", "amount" to amount, "name" to itemName(material))
+            top.forEach { (name, amount) ->
+                lines += viewer.tr("gui.storage.overview-item", "amount" to amount, "name" to name)
             }
         }
 

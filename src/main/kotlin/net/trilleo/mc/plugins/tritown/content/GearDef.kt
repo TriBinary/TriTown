@@ -64,7 +64,8 @@ data class GearCatalog(val gear: Map<String, GearDef>, val reforges: Map<String,
     fun reforgesFor(slot: GearSlot): List<ReforgeDef> = reforges.values.filter { slot in it.slots }
 
     /**
-     * A stamp of everything a piece's tooltip is drawn from, so a piece drawn
+     * A stamp of the content a piece's tooltip is drawn from — its words come
+     * from the item language, which `Gear` stamps alongside — so a piece drawn
      * before an edit can tell it is stale. Built from text, which is the same
      * from one start to the next, where an enum's hash is not.
      */

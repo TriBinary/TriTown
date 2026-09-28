@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.shops
 
 import net.trilleo.mc.plugins.tritown.config.ShopSettings
+import net.trilleo.mc.plugins.tritown.content.ItemRedraw
 import net.trilleo.mc.plugins.tritown.enums.LimitPeriod
 import net.trilleo.mc.plugins.tritown.enums.MatchMode
 import net.trilleo.mc.plugins.tritown.enums.TownyRequirement
@@ -70,6 +71,24 @@ object ShopManager {
         flush()
         isReady = false
         shops.clear()
+    }
+
+    /**
+     * Redraws every item a shop keeps a copy of — its goods and the items its
+     * prices ask for — that was drawn from older content or another item
+     * language, and saves if any was.
+     *
+     * Otherwise a shop would hand out stale copies that do not stack with fresh
+     * ones, and stop recognising the fresh ones it buys back.
+     */
+    fun redrawItems() {
+        if (!isReady) return
+        var redrawn = false
+        for (entry in shops.values.flatMap { it.entries }) {
+            val items = listOf(entry.item) + listOfNotNull(entry.buy, entry.sell).flatMap { it.items }
+            items.forEach { if (ItemRedraw.refresh(it)) redrawn = true }
+        }
+        if (redrawn) save()
     }
 
     // ── Reading ─────────────────────────────────────────────────────────

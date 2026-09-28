@@ -97,7 +97,9 @@ many pages were bought — which you can open and look through, online or not.
 **English and Simplified Chinese.** Every message, menu and item TriTown shows is translated. By default each player
 sees whichever of the two their Minecraft client is set to, and everyone else sees English. Set `language` in
 `config.yml` to `en_US` or `zh_CN` to pick one for the whole server, or edit the files in `plugins/TriTown/lang/` to
-reword anything — including adding a language of your own.
+reword anything — including adding a language of your own. Items are the one exception: the server cannot show an
+item's text to each player differently, so gear and materials are written in one language for everyone, set by
+`item-language` (by default the same as `language`, or English when that is `auto`).
 
 Alongside it, TriTown provides the plugin framework and Towny integration that the server's custom town features are
 built on.
@@ -216,6 +218,7 @@ version stays available as `/tritown:balance` and so on.
 |:------------------------------------------|:-------------------|:--------------------------------------------------------------------------------|
 | `message-prefix`                          | —                  | MiniMessage prefix shown before plugin messages                                 |
 | `language`                                | `auto`             | `auto` follows each player's client, or a language id such as `zh_CN`           |
+| `item-language`                           | `auto`             | The one language gear and materials are written in; `auto` follows `language`   |
 | `main-menu.item.enabled`                  | `true`             | Keep the menu item in the last hotbar slot of every player                      |
 | `main-menu.item.material`                 | `NETHER_STAR`      | What the menu item is; any item works                                           |
 | `economy.enabled`                         | `true`             | Turn the economy off entirely                                                   |

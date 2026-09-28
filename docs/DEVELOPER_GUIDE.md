@@ -1136,8 +1136,10 @@ list's command descriptions and a transaction's recorded source.
   `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list),
   `money.source.*` and `item.*` (content items, held to `items.yml` by `ContentFilesTest`) are the only runtime-built
   keys.
-- **Text on an item goes through `LangTranslator`**, so each viewer reads it in their own language and every copy
-  stacks. See [LangTranslator](UTILITY_GUIDE.md#langtranslator).
+- **Text on an item is written in the item language** with `Lang.item(key)`, and the item carries a stamp so
+  `ItemRedraw` can redraw it when the language changes. Paper does not translate anything inside an item for each
+  player (it does for chat, titles and entity names), so an item is written once, in the language `item-language`
+  names, and every copy stays identical and stacks. See [Lang](UTILITY_GUIDE.md#lang).
 - **Placeholder names are lowercase letters only** — `{name}`, `{balance}`, `{pages}`.
 - **Server-log messages stay English.** `logger.info`/`warning`/`severe` are for the owner, not the player.
 - Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
@@ -3687,9 +3689,12 @@ id under `PluginItem.ITEM_ID_KEY`. The one use TriTown gives any of them is a si
 eaten, smelted, brewed, traded to a villager or used as what it looks like. Pick nothing else as the base without
 re-checking every use it has.
 
-Its name and lore are `LangTranslator` components (`item.<id>.name`, `item.<id>.lore`), and its name takes its
-`Rarity`'s colour, so every copy is identical and each player reads it in their own language. `ContentItems.idOf`
-recognises one even after its definition is gone, so it stays as inert as the day it dropped.
+Its name and lore (`item.<id>.name`, `item.<id>.lore`) are written in the item language with `Lang.item`, and its name
+takes its `Rarity`'s colour, so every copy is identical and stacks. It carries a stamp of its definition and the item
+language under `tritown:revision`, and `ContentItems.refresh` redraws a copy drawn from older ones (see
+[Item redraws](#item-redraws)). Text a single player reads about one — a price, a salvage line — names it in *their*
+language through `GearText.item`. `ContentItems.idOf` recognises one even after its definition is gone, so it stays as
+inert as the day it dropped.
 
 `/tritown item give <player> <id> [amount]` and `item list` (`tritown.item.admin`, `commands/items/ItemCommand`) hand
 them out.
@@ -3707,15 +3712,15 @@ the quality each stat rolled, its reforge, and the content stamp it was drawn wi
 - **Every piece of a slot and tier is worth the same.** A definition lists weights, not numbers, and the budget does the
   rest, so no author can make a piece stronger than its tier. `GearStatsTest` holds this, and holds a mythic piece of
   a tier weaker than a rare one of the next: the tier is the progression, rarity the chase.
-- **Drawn in each viewer's language.** `GearRender` writes the name (reforge first), a line per stat, the flavour line,
-  what the piece is between players, and its stars, rarity and slot — every word a `LangTranslator` key, every number
-  plain text. It also sets the look (`item_model`, trim, dye), the glint from epic up, and unbreakable: gear never
-  wears out, so the sinks are the Forge's.
+- **Drawn in the item language.** `GearRender` writes the name (reforge first), a line per stat, the flavour line,
+  what the piece is between players, and its stars, rarity and slot — every word from `Lang.item`, every number plain
+  text, and only the base item's name a vanilla translation key the client fills in. It also sets the look
+  (`item_model`, trim, dye), the glint from epic up, and unbreakable: gear never wears out, so the sinks are the
+  Forge's.
 - **Redrawn when stale.** `GearData.revision` stamps the content a piece was drawn from (`GearCatalog.revision`, built
-  from text so it is the same from one start to the next). `Gear.refresh` redraws a piece whose stamp is out of date,
-  and costs one read when it is not; `GearRefreshListener` calls it as a player joins, opens an inventory, picks
-  something up, takes a piece in hand or puts one on, and `/tritown reload` refreshes everyone online. Drawing works on
-  the stack in place and leaves enchantments and anvil names alone.
+  from text so it is the same from one start to the next) together with `Lang.itemRevision`. `Gear.refresh` redraws a
+  piece whose stamp is out of date, and costs one read when it is not (see [Item redraws](#item-redraws)). Drawing
+  works on the stack in place and leaves enchantments and anvil names alone.
 - **Between players, a piece is its base item.** Its own vanilla armor and attack damage never count as Defense or
   Damage — `StatSources` uses its gear stats instead — so they only matter in PvP, where the piece is exactly the
   vanilla item it is made of.
@@ -3727,6 +3732,26 @@ as `vanilla.bow-attack`, so it shoots like an iron sword swings. A thrown triden
 hit.
 
 `/tritown item give <player> <id> [rarity]` hands out a piece of gear as well as an item (`commands/items/ItemCommand`).
+
+### Item redraws
+
+Paper renders server-side translations for each player in chat, titles, boss bars and entity names, but **never inside
+an item**: an item's network encoding switches it off. So gear and content items are written in one language — the
+item language, `item-language` in `config.yml`, which follows `language` when `auto` and is English when that is `auto`
+too — and read with `Lang.item(key)`. `Lang.itemRevision` stamps that language's text, and each item stamps it along
+with its own content, so an edit to a content file, a language file or either setting leaves every copy out there
+stale.
+
+`content/ItemRedraw` is the one place that brings them back into step: `refresh(stack)` asks `Gear.refresh`, then
+`ContentItems.refresh`, and costs one read when nothing changed. It runs:
+
+- from `listeners/items/ItemRefreshListener` as a player joins, opens an inventory (the one they open and their own),
+  picks something up, takes a piece in hand or puts one on;
+- on `/tritown reload`, over everyone online;
+- from `ShopManager.redrawItems`, over every shop's goods and price items, on enable and on reload — otherwise a shop
+  would hand out stale copies that do not stack with fresh ones, and stop recognising the fresh ones it buys back.
+
+Anything new that keeps its own copy of a TriTown item, as the shops do, redraws it the same way.
 
 ### The Forge
 

@@ -159,7 +159,7 @@ class ShopAmountGUI : PluginGUI(
         val name = player.tr(
             if (refusal == null) "gui.shop-amount.option" else "gui.shop-amount.option-locked",
             "amount" to amount,
-            "item" to ShopRender.itemName(entry.item),
+            "item" to ShopRender.itemName(player, entry.item),
         )
 
         val closing = refusal

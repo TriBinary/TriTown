@@ -15,7 +15,8 @@ import net.trilleo.mc.plugins.tritown.combat.StatSheet
 import net.trilleo.mc.plugins.tritown.content.GearDef
 import net.trilleo.mc.plugins.tritown.content.Rarity
 import net.trilleo.mc.plugins.tritown.content.ReforgeDef
-import net.trilleo.mc.plugins.tritown.utils.LangTranslator
+import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
+import net.trilleo.mc.plugins.tritown.utils.Lang
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -26,10 +27,12 @@ import org.bukkit.inventory.meta.trim.ArmorTrim
 /**
  * Draws a piece of gear: its name, its tooltip and its look.
  *
- * Every word is a [LangTranslator] key, so each player reads the piece in
- * their own language, and numbers are plain text beside them. Drawing works
- * on the stack in place and leaves alone what a player gave it — enchantments,
- * an anvil name — so a redraw after a content edit loses nothing.
+ * Every word is written in the item language ([Lang.item]), the one language
+ * all items share, and numbers are plain text beside them; only the base
+ * item's name is the game's own key, which each client fills in itself.
+ * Drawing works on the stack in place and leaves alone what a player gave it —
+ * enchantments, an anvil name — so a redraw after a content or language edit
+ * loses nothing.
  */
 object GearRender {
 
@@ -77,23 +80,23 @@ object GearRender {
 
     /** The piece's name, after its reforge's if it has one, in its rarity's colour. */
     private fun name(def: GearDef, data: GearData, reforge: ReforgeDef?): Component {
-        val name = LangTranslator.component(def.nameKey)
-        val full = if (reforge == null) name else LangTranslator.component(reforge.key).append(Component.space()).append(name)
-        return full.color(data.rarity.color).decoration(TextDecoration.ITALIC, false)
+        val name = text(def.nameKey)
+        val full = if (reforge == null) name else text(reforge.key).append(Component.space()).append(name)
+        return full.applyFallbackStyle(data.rarity.color).decoration(TextDecoration.ITALIC, false)
     }
 
     private fun lore(def: GearDef, data: GearData, stats: StatSheet): List<Component> = buildList {
         Stat.entries.filter { stats[it] != 0.0 }.forEach { stat ->
             add(
-                LangTranslator.component(stat.key)
+                text(stat.key)
                     .append(Component.text(" +" + CombatFormat.stat(stat, stats[stat]), NamedTextColor.WHITE))
             )
         }
         add(Component.empty())
-        add(LangTranslator.component(def.loreKey).color(NamedTextColor.GRAY))
+        add(text(def.loreKey).applyFallbackStyle(NamedTextColor.GRAY))
         add(Component.empty())
         add(
-            LangTranslator.component("gear.pvp").color(NamedTextColor.DARK_GRAY)
+            text("gear.pvp").applyFallbackStyle(NamedTextColor.DARK_GRAY)
                 .append(Component.space())
                 .append(Component.translatable(baseTranslationKey(def), NamedTextColor.DARK_GRAY))
         )
@@ -104,9 +107,9 @@ object GearRender {
     private fun footer(def: GearDef, data: GearData): Component {
         val stars = if (data.stars > 0) Component.text("★".repeat(data.stars) + " ", NamedTextColor.GOLD) else Component.empty()
         return stars
-            .append(LangTranslator.component(data.rarity.key))
+            .append(text(data.rarity.key))
             .append(Component.space())
-            .append(LangTranslator.component(def.slot.key).color(data.rarity.color).decorate(TextDecoration.BOLD))
+            .append(text(def.slot.key).applyFallbackStyle(data.rarity.color, TextDecoration.BOLD))
     }
 
     /** The game's own key for the base item's name, which each client fills in itself. */
@@ -118,6 +121,8 @@ object GearRender {
         val pattern = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft(trim.pattern)) ?: return null
         return ArmorTrim(material, pattern)
     }
+
+    private fun text(key: String): Component = ComponentUtil.parse(Lang.item(key))
 
     private fun plain(line: Component): Component = line.decoration(TextDecoration.ITALIC, false)
 }

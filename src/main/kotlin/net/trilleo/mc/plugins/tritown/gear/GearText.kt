@@ -30,6 +30,12 @@ object GearText {
 
     fun rarity(reader: CommandSender, rarity: Rarity): String = reader.tr(rarity.key)
 
+    /** What [stack] is called — a piece of gear by its full name, a content item by its own — or `null` if it is neither. */
+    fun label(reader: CommandSender, stack: ItemStack): String? {
+        Gear.read(stack)?.let { return name(reader, it) }
+        return ContentItems.idOf(stack)?.let { item(reader, it) }
+    }
+
     /** What [stack] is — `3x Grave Dust`, or a piece of gear by its name — or `null` if it is neither. */
     fun stack(reader: CommandSender, stack: ItemStack): String? {
         Gear.read(stack)?.let { return name(reader, it) }

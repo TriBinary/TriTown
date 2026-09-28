@@ -5,6 +5,7 @@ import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.content.GearDef
 import net.trilleo.mc.plugins.tritown.content.GearSlot
 import net.trilleo.mc.plugins.tritown.content.Rarity
+import net.trilleo.mc.plugins.tritown.utils.Lang
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
@@ -16,7 +17,8 @@ import kotlin.random.Random
  * A piece is a stack of its definition's base item with a [GearData] on it.
  * Its stats are never stored: [stats] works them out from the content in
  * force, and [refresh] redraws a piece whose tooltip was drawn from older
- * content, so an edit to `gear.yml` or `balance.yml` reaches every piece.
+ * content or another item language, so an edit to `gear.yml`, `balance.yml`
+ * or the language files reaches every piece.
  */
 object Gear {
 
@@ -90,7 +92,8 @@ object Gear {
         return true
     }
 
-    private fun revision(def: GearDef): Int = ContentRegistry.gear.revision(def.id, ContentRegistry.balance.gear)
+    private fun revision(def: GearDef): Int =
+        31 * ContentRegistry.gear.revision(def.id, ContentRegistry.balance.gear) + Lang.itemRevision
 
     private fun reforge(data: GearData) = data.reforge?.let { ContentRegistry.gear.reforges[it] }
 

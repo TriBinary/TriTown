@@ -53,6 +53,13 @@ class PluginConfig(private val plugin: JavaPlugin) {
     val language: String
         get() = getString("language", "auto")
 
+    /**
+     * The one language every item is written in, or `auto` to follow
+     * [language]. Taken from the `item-language` key in `config.yml`.
+     */
+    val itemLanguage: String
+        get() = getString("item-language", "auto")
+
     // ── Typed Getters ───────────────────────────────────────────────────
 
     /**

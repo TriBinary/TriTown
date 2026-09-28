@@ -35,7 +35,9 @@
     + Only a mob that spawned in the wild drops any of it, and only when players dealt at least half its damage, so traps
       and lava pits earn nothing. The drops are the killer's.
     + Materials look like the vanilla item they are modelled on but are inert: they cannot be crafted with, placed or
-      used. Each player reads their names in their own language.
+      used. They and gear are written in one language for everyone, set by the new `item-language` in `config.yml`
+      (by default the same as `language`); shop prices, messages and the storage overview still name them in each
+      player's own.
     + Administrators hand them out with `/tritown item give <player> <id> [amount]` (`tritown.item.admin`), and set
       which mob drops what in `plugins/TriTown/content/mobs.yml`.
 + Added **gear**: ten tiers, each made for mobs up to six times its level, in six rarities from common to mythic.
@@ -102,6 +104,14 @@
 #### Economy
 
 + The Forge is a new money sink, listed as **The Forge** in the admin panel's economy breakdown and in `/eco history`.
+
+### Technical Details
+
+#### Misc
+
++ Removed `LangTranslator`. Paper never translates anything inside an item for each player, so gear and content items
+  are written in the item language through `Lang.item`, stamped with `Lang.itemRevision`, and redrawn by `ItemRedraw`
+  from `ItemRefreshListener` (formerly `GearRefreshListener`), on reload, and over every shop's items.
 
 ## Version 1.4.0
 
