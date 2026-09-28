@@ -5,6 +5,7 @@ import net.trilleo.mc.plugins.tritown.combat.PlayerStats
 import net.trilleo.mc.plugins.tritown.combat.Stat
 import net.trilleo.mc.plugins.tritown.content.ContentItems
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.content.LootEntry
 import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
 import net.trilleo.mc.plugins.tritown.gear.Gear
 import net.trilleo.mc.plugins.tritown.gear.GearStats
@@ -28,7 +29,8 @@ import kotlin.random.Random
  *
  * What it drops is rolled by [LootRoller] against `mobs.yml`, with the
  * killer's Magic Find: materials and essence, and now and then — a champion,
- * mostly — a finished piece of gear of the tier its level is made for. The
+ * mostly — a finished piece of gear of the tier its level is made for. A
+ * custom mob drops its own loot from `bestiary.yml` besides. The
  * drops go into the death event, so item protection hands them to the killer
  * like the rest of the mob's loot.
  */
@@ -57,20 +59,32 @@ object MobLoot {
         val drops = LootRoller.roll(table, mob.type.name, profile.rank, profile.level, magicFind, Random)
             .mapNotNull { drop -> ContentItems.create(drop.item, drop.amount) }
         val gear = if (LootRoller.dropsGear(table, profile.rank, profile.level, magicFind, Random)) gearFor(profile.level) else null
-        return drops + listOfNotNull(gear)
+        val own = MobKinds.def(profile)?.let { kind ->
+            LootRoller.rollEntries(table, kind.loot, profile.level, magicFind, Random).mapNotNull(::stack)
+        }.orEmpty()
+        return drops + listOfNotNull(gear) + own
     }
 
     /**
      * A random piece of the tier made for [level], at a rarity drawn from
      * `drop-odds` — or of the highest tier below it, where the content has no
-     * piece of that tier.
+     * piece of that tier. Only a piece the Forge can craft drops this way: one
+     * with no recipe is a custom mob's own, and only its loot drops it.
      */
     private fun gearFor(level: Int): ItemStack? {
         val tier = (level + ForgeCosts.LEVELS_PER_TIER - 1) / ForgeCosts.LEVELS_PER_TIER
-        val pieces = ContentRegistry.gear.gear.values.filter { it.tier <= tier }
+        val pieces = ContentRegistry.gear.gear.values.filter { it.tier <= tier && it.recipe != null }
         val best = pieces.maxOfOrNull { it.tier } ?: return null
         val def = pieces.filter { it.tier == best }.random()
         return Gear.create(def, GearStats.pick(ContentRegistry.balance.gear.dropOdds, Random))
+    }
+
+    /** What a line of a custom mob's own loot that came up is, as an item. */
+    private fun stack(won: LootRoller.Won): ItemStack? = when (val entry = won.entry) {
+        is LootEntry.Item -> ContentItems.create(entry.id, won.amount)
+        is LootEntry.Gear -> ContentRegistry.gear.gear[entry.id]?.let { def ->
+            Gear.create(def, GearStats.pick(ContentRegistry.balance.gear.dropOdds, Random))
+        }
     }
 
     fun forget(mob: UUID) = ledger.forget(mob)

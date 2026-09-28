@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.mobs
 
+import net.trilleo.mc.plugins.tritown.content.LootEntry
 import net.trilleo.mc.plugins.tritown.content.LootTable
 import kotlin.random.Random
 
@@ -14,6 +15,9 @@ import kotlin.random.Random
 object LootRoller {
 
     data class Drop(val item: String, val amount: Int)
+
+    /** A line of a custom mob's own loot that came up, and how many of it: always one piece of gear. */
+    data class Won(val entry: LootEntry, val amount: Int)
 
     /**
      * The drops of a mob of [type] (its `EntityType` name), [rank] and
@@ -48,6 +52,24 @@ object LootRoller {
         val chance = dropFor(table, rank).gearChance
         if (chance <= 0.0) return false
         return random.nextDouble() * 100.0 < chance * boost(table, magicFind)
+    }
+
+    /**
+     * What a custom mob's own [entries] give, each rolled on its own and each
+     * chance multiplied by Magic Find like any other. Nothing below the table's
+     * minimum level.
+     */
+    fun rollEntries(table: LootTable, entries: List<LootEntry>, level: Int, magicFind: Double, random: Random): List<Won> {
+        if (level < table.rules.minLevel) return emptyList()
+        val boost = boost(table, magicFind)
+        return entries.mapNotNull { entry ->
+            if (random.nextDouble() * 100.0 >= entry.chance * boost) return@mapNotNull null
+            val amount = when (entry) {
+                is LootEntry.Item -> random.nextInt(entry.min, entry.max + 1)
+                is LootEntry.Gear -> 1
+            }
+            Won(entry, amount)
+        }
     }
 
     private fun dropFor(table: LootTable, rank: MobRank): LootTable.Drop = when (rank) {

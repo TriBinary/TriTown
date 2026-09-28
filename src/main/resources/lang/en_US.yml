@@ -156,7 +156,7 @@ command:
 
   mob:
     description: "Inspect mob levels and the combat balance"
-    usage: "<red>Usage: <white>/tritown mob <level|balance></white>"
+    usage: "<red>Usage: <white>/tritown mob <level|balance|kinds|spawn <kind> [level]></white>"
     players-only: "<red>Stand somewhere in game to read its level."
     inactive: "<red>Mobs are not levelled in this world."
     level: "Mobs spawning here are level <white>{level}</white>."
@@ -167,6 +167,9 @@ command:
     level-deep: "<gray> · Below Y 0, which adds to it."
     balance-header: "A zombie at each level, against a full kit of rare ★★★ gear of the tier made for it:"
     balance-row: "<gray>Lv <white>{level}</white> <dark_gray>(tier {tier})</dark_gray>: <red>{health}❤</red>, hits for <red>{hit}</red> · dies in <white>{hits}</white> swings · each hit takes <white>{percent}%</white> of health"
+    kinds: "<white>{amount}</white> custom mobs: <gray>{ids}"
+    unknown-kind: "<red>There is no custom mob <white>{id}</white>. <gray>/tritown mob kinds</gray> names them all."
+    spawned: "Called up a <white>{name}</white> at level <white>{level}</white>. It drops nothing beyond vanilla's loot."
 
   item:
     description: "Give out the server's own items"
@@ -1334,6 +1337,8 @@ mob:
   # affix-name writes it.
   nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] {badge}{affixes}<red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
   affix-name: "<yellow>{name} "
+  # A custom mob's own name, in place of its kind's.
+  kind-name: "<#f0c060>{name}"
 
   rank:
     elite: "<gold>★ "
@@ -1351,6 +1356,49 @@ mob:
     summoner: "Summoner"
     blinking: "Blinking"
     warded: "Warded"
+
+  # The custom mobs in plugins/TriTown/content/bestiary.yml, by id. The name is on the mob's nameplate, in the server's
+  # language like the rest of it; the description is what the bestiary says of it.
+  kind:
+    gravewalker:
+      name: "Gravewalker"
+      lore: "It climbed out in the armor it was buried in."
+    crypt-ghoul:
+      name: "Crypt Ghoul"
+      lore: "It feeds on whatever the desert leaves behind."
+    bonecaller-sentry:
+      name: "Bonecaller Sentry"
+      lore: "It still keeps watch for a lord long dead."
+    frost-revenant:
+      name: "Frost Revenant"
+      lore: "It carries the cold of the grave into every fight."
+    widow-stalker:
+      name: "Widow Stalker"
+      lore: "It was watching you long before you saw it."
+    silkweaver:
+      name: "Silkweaver"
+      lore: "Small, quick, and never alone for long."
+    hexbinder:
+      name: "Hexbinder"
+      lore: "Her brews are the least of your worries."
+    tidecaller:
+      name: "Tidecaller"
+      lore: "When it calls, the sea answers."
+    crimson-warhog:
+      name: "Crimson Warhog"
+      lore: "The oldest and angriest of the crimson forest."
+    pyromancer:
+      name: "Pyromancer"
+      lore: "A blaze that learned to aim."
+    ashen-legionnaire:
+      name: "Ashen Legionnaire"
+      lore: "One of the fortress's last loyal soldiers."
+    voidstalker:
+      name: "Voidstalker"
+      lore: "Look away, and it is already behind you."
+    starborn-sentinel:
+      name: "Starborn Sentinel"
+      lore: "It guards the edge of the world. From you."
 
 
 # The items in plugins/TriTown/content/items.yml, by id. A name takes the colour of the item's rarity, so

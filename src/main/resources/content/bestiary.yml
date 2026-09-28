@@ -1,0 +1,210 @@
+# TriTown - Bestiary
+#
+# The server's own mobs. /tritown reload reads this file again, and a change reaches every one already out there: a
+# custom mob only remembers which one it is. Turn them off with mobs.custom.enabled in config.yml.
+#
+# A variant is a vanilla kind of mob with a name, a look and loot of its own. Now and then one takes the place of a wild
+# spawn of its kind: only a mob that spawned in the wild, so never one in a town, from a spawner, an egg or a command.
+#
+#   base       the vanilla kind it is, such as zombie. It only ever takes the place of a spawn of that kind
+#   spawn      where it lives, and how often it appears there:
+#                worlds    kinds of world (normal, nether, the_end) or world names; left out for any
+#                biomes    biomes such as desert or minecraft:swamp; left out for any
+#                levels    [lowest, highest] level it spawns at
+#                time      any, day or night (the Overworld's)
+#                min-y     the lowest height it spawns at, and max-y the highest; left out for any
+#                chance    percent of the wild spawns of its kind that fit all of the above and become it. Each variant
+#                          of a kind rolls in the order this file lists them, and the first to succeed takes the spawn
+#   rankable   whether it may still spawn as an elite or a champion; true when left out
+#   health     what it multiplies the health its level gives its kind by; 1 when left out
+#   damage     what it multiplies its hits by; 1 when left out
+#   defense    Defense it has, as a player's armor works against mobs: 100 halves each hit
+#   speed      percent faster it moves; below 0 is slower
+#   scale      its size, where 1 is its kind's. It is bigger to hit, too
+#   knockback  percent of knockback it shrugs off, up to 100
+#   affixes    affixes it always has (see balance.yml), on top of any its rank rolls
+#   equipment  what it wears and holds, by slot (head, chest, legs, feet, hand, off-hand): gear:<id> for a piece of gear's
+#              look, or a vanilla item such as golden_helmet. Only ever a look: it gives the mob no armor or damage and
+#              never drops. Illagers, witches, spiders and endermen show none of it
+#   loot       what it drops on top of its family's material (mobs.yml) and its rank's essence, each line rolled on its
+#              own, chance percent of the time, with the killer's Magic Find:
+#                {item: <id>, chance: 25, amount: [1, 2]}    an item from items.yml
+#                {gear: <id>, chance: 0.5}                   a piece of gear, at a rarity from drop-odds in balance.yml
+#
+# Its drops follow the same rules as every wild mob's (mobs.yml): players must have dealt enough of its damage. Its name
+# and description are mob.kind.<id>.name and mob.kind.<id>.lore in the language files. An id is lower-case letters,
+# digits and dashes, and must never change once the mob is out there.
+variants:
+  # ── The Overworld ─────────────────────────────────────────────────────────────────────────────────────────────────
+  gravewalker:
+    base: zombie
+    spawn: {worlds: [normal], levels: [3, 14], chance: 6}
+    health: 1.8
+    damage: 1.2
+    defense: 40
+    scale: 1.05
+    knockback: 20
+    equipment:
+      head: gear:gravewalker-helmet
+      chest: gear:gravewalker-chestplate
+      feet: gear:gravewalker-boots
+      hand: gear:gravewalker-blade
+    loot:
+      - {item: grave-dust, chance: 25, amount: [1, 2]}
+      - {gear: gravewalker-blade, chance: 0.5}
+
+  crypt-ghoul:
+    base: husk
+    spawn: {worlds: [normal], levels: [6, 16], chance: 10}
+    health: 1.4
+    damage: 1.15
+    speed: 25
+    scale: 0.85
+    affixes: [vampiric]
+    loot:
+      - {item: grave-dust, chance: 30, amount: [1, 2]}
+
+  bonecaller-sentry:
+    base: skeleton
+    spawn: {worlds: [normal], levels: [6, 16], chance: 6}
+    health: 1.6
+    damage: 1.2
+    defense: 30
+    equipment:
+      head: chainmail_helmet
+      hand: gear:bonecaller-bow
+    loot:
+      - {item: bone-shard, chance: 30, amount: [1, 2]}
+      - {gear: bonecaller-bow, chance: 0.5}
+
+  frost-revenant:
+    base: stray
+    spawn: {worlds: [normal], levels: [10, 22], chance: 10}
+    health: 1.8
+    damage: 1.25
+    defense: 30
+    speed: 10
+    scale: 1.1
+    knockback: 20
+    affixes: [frostbound]
+    equipment:
+      hand: gear:frostbite-edge
+    loot:
+      - {item: frost-shard, chance: 35, amount: [1, 2]}
+      - {gear: frostbite-edge, chance: 0.4}
+
+  widow-stalker:
+    base: spider
+    spawn: {worlds: [normal], levels: [12, 24], chance: 5, min-y: 40}
+    health: 2.0
+    damage: 1.25
+    defense: 20
+    speed: 15
+    scale: 1.35
+    knockback: 30
+    loot:
+      - {item: silk-strand, chance: 35, amount: [1, 3]}
+      - {item: night-membrane, chance: 10}
+
+  silkweaver:
+    base: spider
+    spawn: {worlds: [normal], levels: [14, 26], chance: 8, max-y: 0}
+    health: 1.4
+    damage: 1.2
+    speed: 20
+    scale: 0.7
+    affixes: [venomous]
+    loot:
+      - {item: silk-strand, chance: 30, amount: [1, 2]}
+
+  hexbinder:
+    base: witch
+    spawn: {worlds: [normal], biomes: [swamp, mangrove_swamp], levels: [12, 30], chance: 15}
+    health: 1.8
+    damage: 1.2
+    defense: 40
+    loot:
+      - {item: raider-mark, chance: 30, amount: [1, 2]}
+
+  tidecaller:
+    base: drowned
+    spawn: {worlds: [normal], levels: [16, 30], chance: 8}
+    health: 2.0
+    damage: 1.25
+    defense: 40
+    scale: 1.1
+    knockback: 20
+    equipment:
+      hand: gear:tidecaller-trident
+    loot:
+      - {item: tidal-pearl, chance: 30, amount: [1, 2]}
+      - {gear: tidecaller-trident, chance: 0.4}
+
+  # ── The Nether ────────────────────────────────────────────────────────────────────────────────────────────────────
+  crimson-warhog:
+    base: hoglin
+    spawn: {worlds: [nether], levels: [18, 36], chance: 8}
+    health: 2.2
+    damage: 1.3
+    defense: 60
+    speed: 10
+    scale: 1.3
+    knockback: 60
+    loot:
+      - {item: gilded-tusk, chance: 35, amount: [1, 3]}
+
+  pyromancer:
+    base: blaze
+    spawn: {worlds: [nether], levels: [22, 40], chance: 8}
+    health: 1.8
+    damage: 1.3
+    defense: 30
+    scale: 1.2
+    knockback: 30
+    affixes: [molten]
+    loot:
+      - {item: ember-core, chance: 35, amount: [1, 2]}
+
+  ashen-legionnaire:
+    base: wither_skeleton
+    spawn: {worlds: [nether], levels: [30, 45], chance: 8}
+    health: 2.2
+    damage: 1.3
+    defense: 50
+    scale: 1.15
+    knockback: 40
+    affixes: [armored]
+    equipment:
+      head: gear:ashen-helmet
+      chest: gear:ashen-chestplate
+      hand: gear:ashen-greatsword
+    loot:
+      - {item: cinder-ash, chance: 35, amount: [1, 2]}
+      - {gear: ashen-greatsword, chance: 0.3}
+
+  # ── The End ───────────────────────────────────────────────────────────────────────────────────────────────────────
+  voidstalker:
+    base: enderman
+    spawn: {worlds: [the_end], levels: [30, 60], chance: 5}
+    health: 2.0
+    damage: 1.3
+    defense: 40
+    scale: 1.05
+    knockback: 30
+    affixes: [blinking]
+    loot:
+      - {item: void-fragment, chance: 30, amount: [1, 2]}
+      - {item: rift-shell, chance: 20}
+
+  starborn-sentinel:
+    base: enderman
+    spawn: {worlds: [the_end], levels: [48, 60], chance: 6}
+    health: 2.5
+    damage: 1.35
+    defense: 60
+    scale: 1.2
+    knockback: 50
+    affixes: [warded]
+    loot:
+      - {item: rift-shell, chance: 30, amount: [1, 2]}
+      - {item: void-fragment, chance: 30, amount: [1, 2]}

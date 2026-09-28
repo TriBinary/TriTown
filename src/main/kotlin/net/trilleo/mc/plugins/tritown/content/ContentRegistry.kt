@@ -1,7 +1,11 @@
 package net.trilleo.mc.plugins.tritown.content
 
+import io.papermc.paper.registry.RegistryAccess
+import io.papermc.paper.registry.RegistryKey
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.Mob
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.plugin.java.JavaPlugin
 import org.yaml.snakeyaml.Yaml
@@ -10,12 +14,13 @@ import java.io.File
 /**
  * The content files: what the combat layer is made of and tuned with.
  *
- * | File          | Holds                                                   |
- * |:--------------|:--------------------------------------------------------|
- * | `balance.yml` | [Balance]: the numbers every fight is worked out with   |
- * | `items.yml`   | [ContentItemDef]s: materials, essence                    |
- * | `mobs.yml`    | [LootTable]: which mob drops what                        |
- * | `gear.yml`    | [GearCatalog]: gear, its recipes, and reforges           |
+ * | File           | Holds                                                   |
+ * |:---------------|:--------------------------------------------------------|
+ * | `balance.yml`  | [Balance]: the numbers every fight is worked out with   |
+ * | `items.yml`    | [ContentItemDef]s: materials, essence                   |
+ * | `mobs.yml`     | [LootTable]: which mob drops what                       |
+ * | `gear.yml`     | [GearCatalog]: gear, its recipes, and reforges          |
+ * | `bestiary.yml` | [BestiaryCatalog]: custom mobs                          |
  *
  * They live in `plugins/TriTown/content/`, copied from the jar on first start
  * the way the language files are, and `/tritown reload` reads them again. What
@@ -32,6 +37,7 @@ object ContentRegistry {
     private const val ITEMS = "items.yml"
     private const val MOBS = "mobs.yml"
     private const val GEAR = "gear.yml"
+    private const val BESTIARY = "bestiary.yml"
 
     @Volatile
     private var currentBalance: Balance? = null
@@ -52,9 +58,13 @@ object ContentRegistry {
     var gear: GearCatalog = GearCatalog.EMPTY
         private set
 
+    @Volatile
+    var bestiary: BestiaryCatalog = BestiaryCatalog.EMPTY
+        private set
+
     fun load(plugin: JavaPlugin) {
         val folder = File(plugin.dataFolder, FOLDER)
-        listOf(BALANCE, ITEMS, MOBS, GEAR).forEach {
+        listOf(BALANCE, ITEMS, MOBS, GEAR, BESTIARY).forEach {
             if (!File(folder, it).exists()) plugin.saveResource("$FOLDER/$it", false)
         }
 
@@ -95,6 +105,35 @@ object ContentRegistry {
             report(plugin, GEAR, result.warnings + problems)
             gear = result.value.copy(gear = usable)
         }
+
+        read(plugin, File(folder, BESTIARY))?.let { root ->
+            val result = ContentParser.bestiary(root, items.keys, gear.gear.keys)
+            val kinds = result.value.kinds.values
+            val usable = kinds.filter { baseProblem(it) == null }.associateBy { it.id }
+            val problems = kinds.mapNotNull { def -> baseProblem(def)?.let { "${def.id}.base: $it; left out" } } +
+                    kinds.flatMap(::lookProblems)
+            report(plugin, BESTIARY, result.warnings + problems)
+            bestiary = BestiaryCatalog(usable)
+        }
+    }
+
+    /** Why [def]'s base cannot be a custom mob, or `null` if it can. */
+    private fun baseProblem(def: MobKindDef): String? {
+        val type = EntityType.entries.firstOrNull { it.name == def.base } ?: return "'${def.base}' is not a kind of mob"
+        val mob = type.entityClass?.let { Mob::class.java.isAssignableFrom(it) } == true
+        return if (!mob || !type.isSpawnable) "${type.name} is not a mob that can be spawned" else null
+    }
+
+    /** Biomes that do not exist and costume items that are not items, which only look wrong. */
+    private fun lookProblems(def: MobKindDef): List<String> {
+        val biomes = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME)
+        val unknownBiomes = def.spawn?.biomes.orEmpty()
+            .filter { key -> NamespacedKey.fromString(key)?.let(biomes::get) == null }
+            .map { "${def.id}.spawn.biomes: '$it' is not a biome, so it never matches" }
+        val unknownItems = def.equipment.values.filterIsInstance<Costume.Vanilla>()
+            .filter { Material.matchMaterial(it.material)?.isItem != true }
+            .map { "${def.id}.equipment: '${it.material.lowercase()}' is not a vanilla item; left bare" }
+        return unknownBiomes + unknownItems
     }
 
     /** Why [def]'s base item cannot be worn or held where its slot says, or `null` if it can. */

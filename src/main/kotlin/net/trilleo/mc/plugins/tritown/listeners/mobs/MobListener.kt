@@ -15,6 +15,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
+import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.EntityTransformEvent
@@ -22,8 +23,8 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
- * Gives a hostile mob its level, and perhaps a rank, as it spawns, and keeps
- * them with the mob.
+ * Gives a hostile mob its level, and perhaps a custom kind and a rank, as it
+ * spawns, and keeps them with the mob.
  *
  * Only mobs that spawn the way wild ones do are levelled — naturally, as
  * reinforcements, on patrol, or riding or being ridden. Everything else stays
@@ -42,45 +43,65 @@ class MobListener : Listener {
         val balance = ContentRegistry.balance
         val settings = MobSettings.snapshot
         val level = MobZones.levelAt(event.location)
-        val rank = if (entity.type in settings.rankExempt) MobRank.NORMAL else MobRoll.rank(level, balance, Random)
-        val affixes = MobRoll.affixes(rank, balance, Random).toSet()
-        val profile = MobProfile(level, rank, affixes, settings.nameplates, eligible = true)
+        val kind = if (settings.customMobs) {
+            MobRoll.kind(ContentRegistry.bestiary, entity.type.name, level, MobZones.place(event.location), Random)
+        } else null
+        val rank = if (entity.type in settings.rankExempt || kind?.rankable == false) MobRank.NORMAL
+        else MobRoll.rank(level, balance, Random)
+        val affixes = kind?.affixes.orEmpty() + MobRoll.affixes(rank, balance, Random)
+        val profile = MobProfile(level, rank, affixes, settings.nameplates, eligible = true, kind = kind?.id)
 
         MobProfiles.assign(entity, profile)
-        settle(entity, profile)
+        MobSetup.settle(entity, profile)
     }
 
     /**
      * A zombie that drowns, a skeleton that freezes: what it becomes is the
      * same mob, at the same level and rank. A slime's children keep its level
-     * but not its rank, or one champion would split into a crowd of them.
+     * but not its rank, or one champion would split into a crowd of them. A
+     * custom mob only stays one if it is still its kind of mob: a drowned
+     * Gravewalker is an ordinary drowned.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     fun onTransform(event: EntityTransformEvent) {
         val from = event.entity as? LivingEntity ?: return
         val profile = MobProfiles.of(from).takeIf { it != MobProfile.VANILLA } ?: return
-        val inherited = if (event.transformReason == EntityTransformEvent.TransformReason.SPLIT) {
-            profile.copy(rank = MobRank.NORMAL, affixes = emptySet())
-        } else profile
+        val split = event.transformReason == EntityTransformEvent.TransformReason.SPLIT
 
         event.transformedEntities.filterIsInstance<LivingEntity>().forEach { into ->
+            val inherited = when {
+                split -> profile.copy(rank = MobRank.NORMAL, affixes = emptySet(), kind = null)
+                MobKinds.def(profile)?.base != into.type.name -> profile.copy(kind = null)
+                else -> profile
+            }
             MobProfiles.assign(into, inherited)
-            settle(into, inherited)
+            MobSetup.settle(into, inherited)
         }
     }
 
-    /** A ranked mob coming back with its chunk rejoins the affix task. */
+    /** An active mob coming back with its chunk rejoins the mob task, as its kind now is. */
     @EventHandler
     fun onLoad(event: EntityAddToWorldEvent) {
         val entity = event.entity as? LivingEntity ?: return
-        if (entity is Enemy && MobProfiles.of(entity).rank != MobRank.NORMAL) RankedMobs.track(entity)
+        if (entity is Player) return
+        val profile = MobProfiles.of(entity)
+        if (!profile.isActive) return
+        ActiveMobs.track(entity)
+        if (profile.kind != null) MobKinds.refresh(entity)
     }
 
     @EventHandler
     fun onUnload(event: EntityRemoveFromWorldEvent) {
-        RankedMobs.untrack(event.entity.uniqueId)
+        ActiveMobs.untrack(event.entity.uniqueId)
         AffixEffects.forget(event.entity.uniqueId)
         MobLoot.forget(event.entity.uniqueId)
+    }
+
+    /** A custom mob changes no blocks: an enderman of the bestiary carries nothing off. */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    fun onChangeBlock(event: EntityChangeBlockEvent) {
+        val entity = event.entity as? LivingEntity ?: return
+        if (entity !is Player && MobProfiles.of(entity).kind != null) event.isCancelled = true
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
@@ -103,15 +124,6 @@ class MobListener : Listener {
             event.droppedExp =
                 (event.droppedExp * (1.0 + MobSettings.snapshot.xpPerLevel * (profile.level - 1))).roundToInt()
         }
-    }
-
-    /** Everything a mob with a fresh [profile] needs besides the profile itself. */
-    private fun settle(mob: LivingEntity, profile: MobProfile) {
-        if (profile.rank != MobRank.NORMAL) {
-            AffixEffects.onSpawn(mob, profile)
-            RankedMobs.track(mob)
-        }
-        if (profile.nameplate) MobNameplate.updateLater(mob)
     }
 
     private companion object {

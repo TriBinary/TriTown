@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.mobs
 
+import net.trilleo.mc.plugins.tritown.content.LootEntry
 import net.trilleo.mc.plugins.tritown.content.LootTable
 import kotlin.math.abs
 import kotlin.random.Random
@@ -75,6 +76,38 @@ class LootRollerTest {
             assertTrue(!LootRoller.dropsGear(table, MobRank.ELITE, 30, 100.0, Random(it)))
             assertTrue(!LootRoller.dropsGear(table, MobRank.CHAMPION, 2, 100.0, Random(it)))
         }
+    }
+
+    @Test
+    fun `a custom mob's own loot rolls each line on its own, in its amounts`() {
+        val entries = listOf(
+            LootEntry.Item("grave-dust", chance = 100.0, min = 2, max = 4),
+            LootEntry.Gear("gravewalker-blade", chance = 100.0),
+        )
+        repeat(1_000) {
+            val won = LootRoller.rollEntries(table, entries, 10, 0.0, Random(it))
+            assertEquals(2, won.size)
+            assertTrue(won[0].amount in 2..4)
+            assertEquals(1, won[1].amount)
+        }
+    }
+
+    @Test
+    fun `a custom mob's own loot is as likely as tuned, and magic find helps`() {
+        val entries = listOf(LootEntry.Item("bone-shard", chance = 1.5, min = 1, max = 1))
+        val rate = { magicFind: Double ->
+            val random = Random(11)
+            val rolls = 200_000
+            (1..rolls).count { LootRoller.rollEntries(table, entries, 10, magicFind, random).isNotEmpty() } * 100.0 / rolls
+        }
+        assertClose(1.5, rate(0.0))
+        assertClose(3.0, rate(100.0))
+    }
+
+    @Test
+    fun `a custom mob's own loot follows the minimum level too`() {
+        val entries = listOf(LootEntry.Item("grave-dust", chance = 100.0, min = 1, max = 1))
+        assertEquals(emptyList(), LootRoller.rollEntries(table, entries, 2, 0.0, Random(1)))
     }
 
     private fun gearRate(magicFind: Double): Double {

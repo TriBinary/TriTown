@@ -51,6 +51,19 @@
     + **Refine** it one step of rarity, up to legendary — mythic only ever drops;
     + **Reforge** it with a new named bonus such as Sharp or Titanic;
     + **Salvage** it for essence.
++ Added **custom mobs**: thirteen of the server's own, who now and then take the place of a wild mob of their kind.
+    + The Gravewalker, Crypt Ghoul, Bonecaller Sentry, Frost Revenant, Widow Stalker, Silkweaver and Hexbinder in the
+      Overworld, the Tidecaller in its seas, the Crimson Warhog, Pyromancer and Ashen Legionnaire in the Nether, and
+      the Voidstalker and Starborn Sentinel in the End.
+    + Each has its own name on its nameplate, its own size and speed, affixes it always has, and a look of its own —
+      many wear the gear of their region, which they sometimes drop.
+    + They are tougher than their kind and drop more of its materials besides. Voidstalkers and Starborn Sentinels
+      drop **Rift Shells**, which until now no mob could.
+    + Like every wild mob, they never spawn in a town, from a spawner or from an egg. They may still be elites or
+      champions.
+    + Server owners tune them in `plugins/TriTown/content/bestiary.yml`, or turn them off with `mobs.custom.enabled`.
+      `/tritown mob spawn <kind> [level]` calls one up to look at, dropping nothing extra, and `/tritown mob kinds`
+      lists them (`tritown.mob.admin`).
 + Added three stats: **Speed** (capped by `combat.speed-cap`, since it is the one players feel), **Vitality** (more from
   regeneration and healing potions) and **Magic Find**, which now also helps a champion's gear drop.
 + Server owners tune every piece in `plugins/TriTown/content/gear.yml`, and gear's budget and the Forge's prices in

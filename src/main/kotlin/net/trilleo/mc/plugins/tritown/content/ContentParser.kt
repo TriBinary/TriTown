@@ -1,9 +1,10 @@
 package net.trilleo.mc.plugins.tritown.content
 
 import net.trilleo.mc.plugins.tritown.combat.Stat
+import net.trilleo.mc.plugins.tritown.mobs.Affix
 
 /**
- * Reads `items.yml`, `mobs.yml` and `gear.yml` into their models.
+ * Reads `items.yml`, `mobs.yml`, `gear.yml` and `bestiary.yml` into their models.
  *
  * Plain Kotlin over what SnakeYAML parses, like [BalanceParser], so the bundled
  * files are checked in tests. An entry that cannot be used is left out and
@@ -144,6 +145,125 @@ object ContentParser {
         return Result(GearCatalog(gear, reforges), reader.warnings)
     }
 
+    /**
+     * `bestiary.yml`, checked against the ids of the [items] and [gear] its
+     * costumes and loot may name. What only a server can check — that a base is
+     * a kind of mob, a biome exists, a costume's item is real — is left to
+     * `ContentRegistry`.
+     */
+    fun bestiary(root: Map<*, *>, items: Set<String>, gear: Set<String>): Result<BestiaryCatalog> {
+        val reader = YamlReader(root)
+        val kinds = linkedMapOf<String, MobKindDef>()
+
+        for (id in reader.keys(listOf("variants"))) {
+            val path = listOf("variants", id)
+            if (!ContentItemDef.ID.matches(id)) {
+                reader.warn(path, "an id may only use lower-case letters, digits and dashes; left out")
+                continue
+            }
+            val base = reader.text(path + "base") ?: run {
+                reader.warn(path, "has no base kind of mob; left out")
+                continue
+            }
+            if (reader.keys(path + "spawn").isEmpty()) {
+                reader.warn(path, "has no spawn section, so it would never appear; left out")
+                continue
+            }
+            kinds[id] = MobKindDef(
+                id = id,
+                base = base.uppercase(),
+                spawn = spawnRule(reader, path + "spawn"),
+                rankable = reader.boolean(path + "rankable", true),
+                health = reader.number(path + "health", 1.0, min = 0.1),
+                damage = reader.number(path + "damage", 1.0, min = 0.1),
+                defense = reader.number(path + "defense", 0.0, min = 0.0),
+                speed = reader.number(path + "speed", 0.0, min = -90.0),
+                scale = reader.number(path + "scale", 1.0, min = 0.1),
+                knockback = reader.number(path + "knockback", 0.0, min = 0.0).coerceAtMost(100.0),
+                affixes = affixes(reader, path + "affixes"),
+                equipment = equipment(reader, path + "equipment", gear),
+                loot = kindLoot(reader, path + "loot", items, gear),
+            )
+        }
+        return Result(BestiaryCatalog(kinds), reader.warnings)
+    }
+
+    private fun spawnRule(reader: YamlReader, path: List<String>): SpawnRule {
+        val levels = reader.range(path + "levels", 1..Int.MAX_VALUE, min = 1)
+        val timeName = reader.text(path + "time")
+        val time = timeName?.let { name ->
+            SpawnTime.of(name) ?: run {
+                reader.warn(path + "time", "must be any, day or night, not '$name'; using any")
+                null
+            }
+        } ?: SpawnTime.ANY
+        return SpawnRule(
+            worlds = reader.texts(path + "worlds").map { it.lowercase() }.toSet(),
+            biomes = reader.texts(path + "biomes").map { biome ->
+                biome.lowercase().let { if (':' in it) it else "minecraft:$it" }
+            }.toSet(),
+            minLevel = levels.first,
+            maxLevel = levels.last,
+            chance = reader.number(path + "chance", 0.0, min = 0.0),
+            time = time,
+            minY = height(reader, path + "min-y"),
+            maxY = height(reader, path + "max-y"),
+        )
+    }
+
+    private fun height(reader: YamlReader, path: List<String>): Int? =
+        if (reader.text(path) == null) null else reader.integer(path, 0, min = Int.MIN_VALUE)
+
+    private fun affixes(reader: YamlReader, path: List<String>): Set<Affix> =
+        reader.texts(path).mapNotNull { name ->
+            Affix.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: run {
+                reader.warn(path, "no affix is called '$name'; left out")
+                null
+            }
+        }.toSet()
+
+    /** `gear:<id>` for a piece of gear's look, or a vanilla item's name. */
+    private fun equipment(reader: YamlReader, path: List<String>, gear: Set<String>): Map<CostumeSlot, Costume> =
+        reader.keys(path).mapNotNull { name ->
+            val slot = CostumeSlot.of(name) ?: run {
+                reader.warn(path + name, "no slot is called '$name'; left out")
+                return@mapNotNull null
+            }
+            val text = reader.text(path + name) ?: return@mapNotNull null
+            val costume = if (text.startsWith(GEAR_PREFIX)) {
+                val id = text.removePrefix(GEAR_PREFIX)
+                if (id !in gear) {
+                    reader.warn(path + name, "'$id' is not gear in gear.yml; left bare")
+                    return@mapNotNull null
+                }
+                Costume.Gear(id)
+            } else Costume.Vanilla(text.uppercase())
+            slot to costume
+        }.toMap()
+
+    private fun kindLoot(reader: YamlReader, path: List<String>, items: Set<String>, gear: Set<String>): List<LootEntry> =
+        reader.sections(path).mapIndexedNotNull { index, section ->
+            val entry = YamlReader(section)
+            val at = path + "$index"
+            val chance = entry.number(listOf("chance"), 0.0, min = 0.0)
+            val item = entry.text(listOf("item"))
+            val piece = entry.text(listOf("gear"))
+            val result = when {
+                item != null && item in items -> {
+                    val amount = entry.range(listOf("amount"), 1..1, min = 1)
+                    LootEntry.Item(item, chance, amount.first, amount.last)
+                }
+
+                piece != null && piece in gear -> LootEntry.Gear(piece, chance)
+                else -> {
+                    reader.warn(at, "names neither an item in items.yml nor gear in gear.yml; left out")
+                    null
+                }
+            }
+            entry.warnings.forEach { reader.warn(at, it) }
+            result
+        }
+
     /** Stat weights, scaled to sum to 1, or `null` (and a warning) when there are none to use. */
     private fun weights(reader: YamlReader, path: List<String>): Map<Stat, Double>? {
         val raw = reader.keys(path).mapNotNull { name ->
@@ -201,4 +321,6 @@ object ContentParser {
             gearChance = reader.number(path + "gear-chance", 0.0, min = 0.0),
         )
     }
+
+    private const val GEAR_PREFIX = "gear:"
 }

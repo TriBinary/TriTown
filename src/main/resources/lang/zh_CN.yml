@@ -156,7 +156,7 @@ command:
 
   mob:
     description: "查看怪物等级与战斗平衡"
-    usage: "<red>用法：<white>/tritown mob <level|balance></white>"
+    usage: "<red>用法：<white>/tritown mob <level|balance|kinds|spawn <kind> [level]></white>"
     players-only: "<red>要在游戏中站在某处才能查看那里的等级。"
     inactive: "<red>这个世界的怪物没有等级。"
     level: "在这里生成的怪物为 <white>{level}</white> 级。"
@@ -167,6 +167,9 @@ command:
     level-deep: "<gray> · 位于 Y 0 以下，等级更高。"
     balance-header: "各等级的僵尸对上一整套为该等级打造的稀有 ★★★ 装备："
     balance-row: "<gray>Lv <white>{level}</white> <dark_gray>（{tier} 阶）</dark_gray>：<red>{health}❤</red>，每击 <red>{hit}</red> · <white>{hits}</white> 下击杀 · 每击扣除生命的 <white>{percent}%</white>"
+    kinds: "共 <white>{amount}</white> 种自定义怪物：<gray>{ids}"
+    unknown-kind: "<red>没有名为 <white>{id}</white> 的自定义怪物。<gray>/tritown mob kinds</gray> 会列出全部。"
+    spawned: "已召出一只 <white>{level}</white> 级的 <white>{name}</white>。它只会掉落原版战利品。"
 
   item:
     description: "发放服务器自己的物品"
@@ -1333,6 +1336,8 @@ mob:
   # {badge} 是等阶的标记，{affixes} 按 affix-name 的写法列出每个词缀。
   nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] {badge}{affixes}<red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
   affix-name: "<yellow>{name} "
+  # 自定义怪物自己的名字，代替其种类的名字。
+  kind-name: "<#f0c060>{name}"
 
   rank:
     elite: "<gold>★ "
@@ -1350,6 +1355,49 @@ mob:
     summoner: "召唤"
     blinking: "闪现"
     warded: "护盾"
+
+  # plugins/TriTown/content/bestiary.yml 中的自定义怪物，按 id 排列。名字显示在怪物的名牌上，与名牌其余部分一样使用服务器的语言；
+  # 描述是图鉴中对它的介绍。
+  kind:
+    gravewalker:
+      name: "墓行者"
+      lore: "它穿着下葬时的盔甲爬了出来。"
+    crypt-ghoul:
+      name: "墓穴食尸鬼"
+      lore: "沙漠留下的一切，它都吃。"
+    bonecaller-sentry:
+      name: "唤骨哨兵"
+      lore: "它仍在为一位早已死去的领主守望。"
+    frost-revenant:
+      name: "霜寒亡魂"
+      lore: "它把坟墓的寒意带进每一场战斗。"
+    widow-stalker:
+      name: "寡妇潜猎者"
+      lore: "早在你看见它之前，它就在盯着你了。"
+    silkweaver:
+      name: "织丝蛛"
+      lore: "小巧，迅捷，而且从不落单太久。"
+    hexbinder:
+      name: "咒缚女巫"
+      lore: "她的药水是你最不需要担心的。"
+    tidecaller:
+      name: "唤潮者"
+      lore: "它一呼唤，大海便会回应。"
+    crimson-warhog:
+      name: "绯红战猪"
+      lore: "绯红森林里最老、也最暴躁的一头。"
+    pyromancer:
+      name: "炎术师"
+      lore: "一只学会了瞄准的烈焰人。"
+    ashen-legionnaire:
+      name: "灰烬军团兵"
+      lore: "要塞最后的忠诚士兵之一。"
+    voidstalker:
+      name: "虚空潜行者"
+      lore: "你一转开视线，它就已经在你身后。"
+    starborn-sentinel:
+      name: "星裔哨兵"
+      lore: "它守护着世界的边缘——防的是你。"
 
 
 # plugins/TriTown/content/items.yml 中的物品，按 id 排列。名称会使用物品稀有度的颜色，所以名称本身不带颜色。

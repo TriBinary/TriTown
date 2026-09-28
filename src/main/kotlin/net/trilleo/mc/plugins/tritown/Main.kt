@@ -18,6 +18,8 @@ import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 import net.trilleo.mc.plugins.tritown.guis.storage.StorageGUI
 import net.trilleo.mc.plugins.tritown.menu.MenuItem
+import net.trilleo.mc.plugins.tritown.mobs.ActiveMobs
+import net.trilleo.mc.plugins.tritown.mobs.MobKinds
 import net.trilleo.mc.plugins.tritown.news.NewsManager
 import net.trilleo.mc.plugins.tritown.news.storage.JsonNewsStorage
 import net.trilleo.mc.plugins.tritown.registration.*
@@ -183,6 +185,8 @@ class Main : JavaPlugin() {
         // under every piece of gear anyone is carrying.
         PlayerStats.invalidateAll()
         server.onlinePlayers.forEach { player -> player.inventory.contents.forEach(Gear::refresh) }
+        // A custom mob's size and speed are attribute modifiers, which only change when they are put on again.
+        ActiveMobs.all().filter { it.isValid }.forEach(MobKinds::refresh)
 
         // Only the settings, as with the shops: the storage files are never re-read while players hold them open.
         StorageSettings.load(pluginConfig)

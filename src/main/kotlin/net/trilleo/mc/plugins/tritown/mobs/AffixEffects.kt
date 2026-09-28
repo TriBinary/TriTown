@@ -3,8 +3,6 @@ package net.trilleo.mc.plugins.tritown.mobs
 import net.trilleo.mc.plugins.tritown.Main
 import net.trilleo.mc.plugins.tritown.combat.CombatHealth
 import net.trilleo.mc.plugins.tritown.combat.DamageMath
-import net.trilleo.mc.plugins.tritown.config.MobSettings
-import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -18,7 +16,6 @@ import org.bukkit.damage.DamageType
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
@@ -28,7 +25,8 @@ import kotlin.random.Random
 /**
  * What every [Affix] does, and the only place any of it is done.
  *
- * Numbers come from the `affixes` block of `balance.yml`. What an affix
+ * Numbers come from the `affixes` block of `balance.yml`; what Armored and
+ * Enraged add to a mob's Defense and hits is `MobPower`'s. What an affix
  * remembers about one mob — a ward already broken, minions already called, the
  * last blink — is kept in memory: a mob that unloads mid-fight gets its ward
  * back, which only ever favours the mob.
@@ -44,26 +42,16 @@ object AffixEffects {
     private val summoned = HashSet<UUID>()
     private val lastBlink = HashMap<UUID, Int>()
 
-    /** Sets up what an affix changes about the mob itself, as it spawns. */
+    /** Sets up what an affix changes about the mob itself, as it spawns or gains one. Safe to run again. */
     fun onSpawn(mob: LivingEntity, profile: MobProfile) {
         val tuning = ContentRegistry.balance.affixes
         if (profile.has(Affix.FRENZIED)) {
-            mob.getAttribute(Attribute.MOVEMENT_SPEED)?.addModifier(
-                AttributeModifier(FRENZY, tuning.frenziedSpeed / 100.0, AttributeModifier.Operation.ADD_SCALAR)
-            )
+            mob.getAttribute(Attribute.MOVEMENT_SPEED)?.let { speed ->
+                speed.removeModifier(FRENZY)
+                speed.addModifier(AttributeModifier(FRENZY, tuning.frenziedSpeed / 100.0, AttributeModifier.Operation.ADD_SCALAR))
+            }
         }
         if (profile.rank == MobRank.CHAMPION) mob.isGlowing = true
-    }
-
-    /** The Defense [profile] gives its mob against every hit. */
-    fun defense(profile: MobProfile): Double =
-        if (profile.has(Affix.ARMORED)) ContentRegistry.balance.affixes.armoredDefense else 0.0
-
-    /** What [mob]'s hits are multiplied by: its rank, and its rage once it is badly hurt. */
-    fun damageMultiplier(mob: LivingEntity, profile: MobProfile, balance: Balance): Double {
-        val enraged = profile.has(Affix.ENRAGED) &&
-                CombatHealth.fraction(mob) * 100.0 < balance.affixes.enragedBelow
-        return profile.rank.damage(balance) * if (enraged) 1.0 + balance.affixes.enragedDamage / 100.0 else 1.0
     }
 
     /**
@@ -111,14 +99,10 @@ object AffixEffects {
         summoned += mob.uniqueId
         mob.world.playSound(mob.location, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1f, 1f)
         val target = (mob as? Mob)?.target
+        val kind = MobKinds.def(profile)
         repeat(tuning.summonerMinions) {
             val spot = besideOf(mob.location) ?: return@repeat
-            val minion = mob.world.spawnEntity(spot, mob.type, SpawnReason.CUSTOM) as? LivingEntity ?: return@repeat
-            MobProfiles.assign(
-                minion,
-                MobProfile(profile.level, MobRank.NORMAL, emptySet(), MobSettings.snapshot.nameplates, eligible = false),
-            )
-            MobNameplate.updateLater(minion)
+            val minion = MobSetup.spawn(spot, mob.type, profile.level, kind) ?: return@repeat
             if (target != null) (minion as? Mob)?.target = target
             mob.world.spawnParticle(Particle.SOUL, spot.clone().add(0.0, 1.0, 0.0), 12, 0.3, 0.5, 0.3, 0.02)
         }

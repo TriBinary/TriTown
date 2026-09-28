@@ -3392,8 +3392,8 @@ change to them is already on disk.
 ## Combat
 
 Fights with mobs happen in RPG numbers: players and mobs have health pools in the hundreds and thousands, and hits come
-from stats. The core lives in `combat/` (stats, the pipeline's maths, the HUD) and `mobs/` (levels, profiles,
-nameplates), neither of which is scanned. The listeners are `listeners/combat/DamageListener`, `StatListener` and
+from stats. The core lives in `combat/` (stats, the pipeline's maths, the HUD) and `mobs/` (levels, profiles, custom
+mobs, nameplates), neither of which is scanned. The listeners are `listeners/combat/DamageListener`, `StatListener` and
 `listeners/mobs/MobListener`, the HUD task is `tasks/combat/CombatHudTask`, the menu is `guis/adventure/StatsGUI`, and
 the commands are `commands/adventure/StatsCommand` (`/tritown stats`) and `commands/mobs/MobCommand` (`/tritown mob`).
 
@@ -3421,7 +3421,7 @@ the damage source's *causing* entity, which covers arrows, fangs, explosions and
 | the world → a player                  | left alone, so falls, lava and drowning take vanilla's share                    |
 | player → mob, melee                   | `DamageMath.meleeHit`: `(lens + Damage) × (1 + Strength/100) × share × crit`    |
 | player → mob, arrow or trident        | `DamageMath.shotHit`: vanilla's hit × the weapon's shot multiplier × Strength × crit |
-| mob → player, mob → mob               | `DamageMath.mobHit`: vanilla's hit × lens × `damage-growth^(level−1)`, then Defense |
+| mob → player, mob → mob               | `DamageMath.mobHit`: vanilla's hit × lens × `damage-growth^(level−1)` × `MobPower.damage`, then Defense |
 | the world, or a player's potion or TNT → mob | `DamageMath.environmentHit`: vanilla × lens, i.e. level-1 units          |
 
 - **The share** is vanilla's own melee hit divided by the player's attack damage (`DamageMath.vanillaShare`). It carries
@@ -3518,12 +3518,46 @@ one with a player within 32 blocks its turn twice a second: particles, and blink
 
 A slime's children keep its level but not its rank, or one champion would split into a crowd of them.
 
+**`MobPower` is the one place a profile becomes numbers**: the multiplier on a mob's pool (rank × kind), on its hits
+(rank × kind × Enraged) and its Defense (Armored + its kind's). `CombatHealth.max` and `DamageListener` ask it, so a
+new source of toughness goes there and nowhere else.
+
 **Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] ★ Vampiric Zombie 1,820/2,400❤` — redrawn a
 tick after it is hurt or healed. A ranked mob's is always visible, so nobody walks into a champion unwarned. A name is
 shared by every viewer, so its frame is rendered in the configured language, and the kind of mob is a
 `<lang:entity.minecraft.…>` tag that each client fills in itself. A normal mob's shows on the crosshair, the way a
 named mob's does. Setting a name never makes a mob persistent (only a name tag does), and a mob a player names keeps
-their name: `PlayerNameEntityEvent` drops the nameplate.
+their name: `PlayerNameEntityEvent` drops the nameplate. A custom mob's nameplate carries its own name
+(`mob.kind-name`) in place of its kind's, rendered in the configured language like the frame, and always shows.
+
+### Custom mobs
+
+The server's own mobs are defined in `bestiary.yml` (see [Content Files](#content-files)): a vanilla kind with a name,
+a look, traits and loot of its own. `content/MobKindDef` is the model and `BestiaryCatalog` holds them, read by
+`ContentParser.bestiary`; `mobs/MobKinds` finds a mob's kind and dresses it, and `mobs/MobSetup` settles any mob TriTown
+has just decided about.
+
+- **A mob stores its kind, never its stats.** `MobProfile.kind` is the id alone. What the kind multiplies its pool and
+  hits by, and its Defense, are read from the catalog every time through `MobPower`, so `/tritown reload` retunes every
+  one already out there. Size, speed and footing are attribute modifiers (`tritown:kind-scale`, `-speed`,
+  `-knockback`), which `MobKinds.refresh` puts on again as a mob loads and on a reload. A mob whose kind has left the
+  file is an ordinary one at its level.
+- **A variant takes the place of a wild spawn of its own kind.** `MobListener.onSpawn` asks `MobRoll.kind` — plain
+  Kotlin over a `SpawnPlace` (`MobZones.place`: kind of world, world, biome, height, night) and a seeded `Random`,
+  tested in `MobRollTest` — before the rank roll. Each variant of the kind whose `spawn` rule allows the level and place
+  rolls its `chance` in file order, and the first to succeed takes the spawn. So a custom mob is only ever a wild one:
+  never in a town (level 1, below every variant), from a spawner, an egg or a command. `rankable: false` keeps a variant
+  from also rolling a rank; its fixed `affixes` are written into its profile alongside any its rank rolls.
+- **A costume is only a look.** `MobKinds.dress` puts on what `equipment` names — `Gear.costume` for a piece of gear
+  (its base with its model, trim and dye, and no `GearData`), or a vanilla item — with its `ATTRIBUTE_MODIFIERS`
+  emptied, so netherite on a mob is no hidden armor and a sword no hidden damage. Every piece has a drop chance of 0 and
+  a custom mob picks nothing up, so gear only leaves a mob through `MobLoot`.
+- **It changes no blocks.** `MobListener` cancels `EntityChangeBlockEvent` for any custom mob, so a Voidstalker carries
+  nothing off.
+- **Transformations keep the kind only if it still fits.** A drowned Gravewalker is an ordinary drowned at the same
+  level, and a split never keeps a kind.
+- **Summoned minions share their summoner's kind**, through `MobSetup.spawn`, which is also what
+  `/tritown mob spawn <kind> [level]` uses. Neither is ever eligible for loot. `mob kinds` lists them all.
 
 ### Loot
 
@@ -3541,7 +3575,9 @@ loot, through `MobLoot.dropsFor`, when all of these hold:
 `LootRoller` rolls the drops: the family's material at the rank's chance — a normal mob's multiplied by the killer's
 Magic Find, up to `magic-find-cap` — and, for a ranked mob, essence of the grade its level falls in. A champion also has
 a `gear-chance` of a finished piece of gear (`LootRoller.dropsGear`, Magic Find helping), of the tier its level is made
-for and a rarity from `drop-odds` — the one way to a mythic before bosses. It is plain Kotlin over a seeded `Random`,
+for and a rarity from `drop-odds` — but only a piece with a recipe, since one without is a custom mob's own. A custom
+mob rolls its own `loot` lines on top (`LootRoller.rollEntries`), each on its own and each boosted by Magic Find: items
+from `items.yml`, or a piece of gear at a rarity from `drop-odds`. It is plain Kotlin over a seeded `Random`,
 tested in `LootRollerTest`; the ledger is tested in `DamageLedgerTest`.
 
 The drops go into `EntityDeathEvent.getDrops()`, so item protection's death window hands them to the killer like the
@@ -3669,6 +3705,7 @@ wilderness line can end with it and still read naturally without it.
 | `mobs.levels.*`              | Night and depth bonuses, each kind of world's rings, and per-world ones |
 | `mobs.xp-per-level`          | Extra experience per level above 1                                    |
 | `mobs.nameplates`            | Whether levelled mobs wear a nameplate                                |
+| `mobs.custom.enabled`        | Whether the custom mobs of `bestiary.yml` take the place of wild spawns |
 
 `CombatSettings` and `MobSettings` are snapshots swapped in whole on a reload.
 
@@ -3678,12 +3715,13 @@ The combat layer is tuned in files of its own rather than in `config.yml`: `conf
 content files say what it is worth. They live in `src/main/resources/content/`, are copied to
 `plugins/TriTown/content/` on first start the way the language files are, and `/tritown reload` reads them again.
 
-| File          | Holds                                                                                     |
-|:--------------|:------------------------------------------------------------------------------------------|
-| `balance.yml` | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks and affixes, gear's budget and the Forge's costs |
-| `items.yml`   | Content items: each id's look (`model`), `rarity` and `glint`                              |
-| `mobs.yml`    | Mob families and their material, the loot rules per rank, and the essence grades           |
-| `gear.yml`    | Gear: each piece's slot, tier, base, look, weights and recipe; and reforges                |
+| File           | Holds                                                                                     |
+|:---------------|:------------------------------------------------------------------------------------------|
+| `balance.yml`  | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks and affixes, gear's budget and the Forge's costs |
+| `items.yml`    | Content items: each id's look (`model`), `rarity` and `glint`                              |
+| `mobs.yml`     | Mob families and their material, the loot rules per rank, and the essence grades           |
+| `gear.yml`     | Gear: each piece's slot, tier, base, look, weights and recipe; and reforges                |
+| `bestiary.yml` | Custom mobs: each one's base kind, where it spawns, its traits, costume and loot         |
 
 `ContentRegistry` loads them with SnakeYAML into immutable snapshots and swaps each in whole. Parsing is plain Kotlin
 over the parsed map (`BalanceParser`, `ContentParser`, both reading through `YamlReader`), so the bundled files are
@@ -3691,14 +3729,16 @@ checked in tests:
 
 - `BalanceParserTest` requires `balance.yml` to parse to exactly `Balance.DEFAULT` with no warnings, so the defaults in
   Kotlin and the file can never disagree.
-- `ContentFilesTest` requires `items.yml`, `mobs.yml` and `gear.yml` to parse without a warning, every item, piece of
-  gear and reforge to be named in every language, no language to translate one that does not exist, and every piece to
-  have a recipe and a tier from 1 to 10.
+- `ContentFilesTest` requires `items.yml`, `mobs.yml`, `gear.yml` and `bestiary.yml` to parse without a warning,
+  every item, piece of gear, reforge and custom mob to be named in every language, no language to translate one that
+  does not exist, every piece to have a recipe and a tier from 1 to 10, and every custom mob a chance to appear.
+- `BestiaryParserTest` covers what `bestiary.yml` can get wrong.
 
 What only the server can check — that a piece's `base` is worn where its slot says — leaves the piece out and says so.
 
-What only the server can check — that a `model` is a real item, that a family's mob is a real kind — is checked as the
-files load, and warned about in the console.
+What only the server can check — that a `model` is a real item, that a family's mob is a real kind, that a custom
+mob's base is a mob that can be spawned (or it is left out), that its biomes and costume items exist — is checked as
+the files load, and warned about in the console.
 
 - A value that is missing takes the default quietly; one that is present but unusable takes it too, and the console
   names it.

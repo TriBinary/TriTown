@@ -44,6 +44,15 @@ object Gear {
         return ItemStack.of(base).also { save(it, data) }
     }
 
+    /**
+     * [def]'s look alone, for a custom mob to wear: its base item with its
+     * model, trim and dye, and no data, so it is not a piece of gear at all.
+     */
+    fun costume(def: GearDef): ItemStack? {
+        val base = Material.matchMaterial(def.base)?.takeIf { it.isItem } ?: return null
+        return ItemStack.of(base).also { GearRender.look(it, def) }
+    }
+
     /** What [stack] is and what it is worth, or `null` if it is not gear the content files still define. */
     fun read(stack: ItemStack?): Piece? {
         val data = GearCodec.read(stack) ?: return null

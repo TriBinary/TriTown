@@ -5,22 +5,25 @@ import net.trilleo.mc.plugins.tritown.combat.Combat
 import net.trilleo.mc.plugins.tritown.combat.CombatFormat
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
+import net.trilleo.mc.plugins.tritown.mobs.MobSetup
 import net.trilleo.mc.plugins.tritown.mobs.MobZones
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 
 /**
  * Looking into how dangerous the world is: the mob level where you stand, and
- * what the balance in force makes of each level.
+ * what the balance in force makes of each level; and the custom mobs of
+ * `bestiary.yml`, which an administrator can call up to see.
  */
 class MobCommand : PluginCommand(
     name = "mob",
     description = "Inspect mob levels and the combat balance",
-    usage = "/tritown mob <level|balance>",
+    usage = "/tritown mob <level|balance|kinds|spawn <kind> [level]>",
     permission = PERMISSION,
 ) {
 
@@ -28,13 +31,21 @@ class MobCommand : PluginCommand(
         when (args.firstOrNull()?.lowercase()) {
             LEVEL -> level(sender)
             BALANCE -> balance(sender)
+            KINDS -> kinds(sender)
+            SPAWN -> spawn(sender, args)
             else -> sender.sendPrefixed(sender.tr("command.mob.usage"))
         }
         return true
     }
 
-    override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> =
-        if (args.size == 1) listOf(LEVEL, BALANCE).filter { it.startsWith(args[0], ignoreCase = true) } else emptyList()
+    override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
+        val options = when (args.size) {
+            1 -> listOf(LEVEL, BALANCE, KINDS, SPAWN)
+            2 -> if (args[0].equals(SPAWN, ignoreCase = true)) ContentRegistry.bestiary.kinds.keys.toList() else emptyList()
+            else -> emptyList()
+        }
+        return options.filter { it.startsWith(args.last(), ignoreCase = true) }
+    }
 
     /** Why a mob spawning where the sender stands would be the level it would. */
     private fun level(sender: CommandSender) {
@@ -57,6 +68,46 @@ class MobCommand : PluginCommand(
         player.sendMessage(ComponentUtil.parse(reason))
         if (reading.night) player.sendMessage(ComponentUtil.parse(player.tr("command.mob.level-night")))
         if (reading.deep) player.sendMessage(ComponentUtil.parse(player.tr("command.mob.level-deep")))
+    }
+
+    private fun kinds(sender: CommandSender) {
+        val ids = ContentRegistry.bestiary.kinds.keys
+        sender.sendPrefixed(sender.tr("command.mob.kinds", "amount" to ids.size, "ids" to ids.joinToString(", ")))
+    }
+
+    /**
+     * Calls up a custom mob a few blocks in front of the sender, at the level
+     * given or the level where they stand. It is not eligible, so it drops
+     * nothing beyond vanilla's loot: testing never becomes a way to farm.
+     */
+    private fun spawn(sender: CommandSender, args: Array<out String>) {
+        val player = sender as? Player ?: run {
+            sender.sendPrefixed(sender.tr("command.mob.players-only"))
+            return
+        }
+        val id = args.getOrNull(1)?.lowercase() ?: run {
+            player.sendPrefixed(player.tr("command.mob.usage"))
+            return
+        }
+        val kind = ContentRegistry.bestiary.kinds[id] ?: run {
+            player.sendPrefixed(player.tr("command.mob.unknown-kind", "id" to ComponentUtil.escape(id)))
+            return
+        }
+        val given = args.getOrNull(2)
+        val level = if (given == null) MobZones.levelAt(player.location) else {
+            given.toIntOrNull()?.takeIf { it in 1..MAX_LEVEL } ?: run {
+                player.sendPrefixed(player.tr("command.mob.usage"))
+                return
+            }
+        }
+        val type = EntityType.entries.firstOrNull { it.name == kind.base } ?: return
+
+        val ahead = player.location.add(player.location.direction.setY(0).normalize().multiply(SPAWN_DISTANCE))
+        val at = if (ahead.block.isPassable && ahead.clone().add(0.0, 1.0, 0.0).block.isPassable) ahead else player.location
+        MobSetup.spawn(at, type, level, kind) ?: return
+        player.sendPrefixed(
+            player.tr("command.mob.spawned", "name" to player.tr(kind.nameKey), "level" to level)
+        )
     }
 
     /**
@@ -90,6 +141,10 @@ class MobCommand : PluginCommand(
 
         private const val LEVEL = "level"
         private const val BALANCE = "balance"
+        private const val KINDS = "kinds"
+        private const val SPAWN = "spawn"
+        private const val MAX_LEVEL = 999
+        private const val SPAWN_DISTANCE = 3.0
         private val TABLE_LEVELS = listOf(1, 5, 10, 15, 20, 25, 30, 40, 50, 60)
     }
 }

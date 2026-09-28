@@ -12,6 +12,7 @@ import org.bukkit.entity.EntityType
  * @param xpPerLevel how much more experience a mob drops per level above 1, as a fraction
  * @param nameplates whether levelled mobs carry their level and health as a name
  * @param rankExempt kinds of mob that never spawn ranked
+ * @param customMobs whether the custom mobs of `bestiary.yml` take the place of wild spawns
  */
 data class MobSettings(
     val nightBonus: Int,
@@ -23,6 +24,7 @@ data class MobSettings(
     val xpPerLevel: Double,
     val nameplates: Boolean,
     val rankExempt: Set<EntityType>,
+    val customMobs: Boolean,
 ) {
 
     /** The rings mobs in [world] follow: its own, if it has any, or those of its kind of world. */
@@ -64,6 +66,7 @@ data class MobSettings(
                 rankExempt = config.getStringList("mobs.ranks.exempt")
                     .mapNotNull { name -> EntityType.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } }
                     .toSet(),
+                customMobs = config.getBoolean("mobs.custom.enabled", true),
             )
         }
 

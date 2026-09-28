@@ -18,10 +18,11 @@ class LangFilesTest {
 
     /**
      * Keys built at runtime (`"money.source.$source"`), which the source scan
-     * cannot see. Content items' and gear's keys are held to the content files
-     * instead, by `ContentFilesTest`.
+     * cannot see. Content items', gear's and custom mobs' keys are held to the
+     * content files instead, by `ContentFilesTest`.
      */
-    private val dynamicPrefixes = listOf("command.", "money.source.", "item.", "gear.item.", "gear.reforge.")
+    private val dynamicPrefixes =
+        listOf("command.", "money.source.", "item.", "gear.item.", "gear.reforge.", "mob.kind.")
 
     private val keyLiteral = Regex("\"([a-z][a-z0-9-]*(?:\\.[a-z0-9-]+)+)\"")
     private val placeholder = Regex("\\{([a-z]+)}")

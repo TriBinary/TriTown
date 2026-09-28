@@ -84,7 +84,7 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
-├── mobs/                    # Mobs: levels, ranks and affixes, nameplates, loot (not scanned)
+├── mobs/                    # Mobs: levels, ranks and affixes, custom mobs, nameplates, loot (not scanned)
 ├── news/                    # Server news: posts, storage, read state, notifications (not scanned)
 ├── protection/              # Item protection: drop owners, drop windows, container and entity claims
 │                            # (not scanned)
@@ -99,8 +99,8 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
                              # ChatPrompt, CountdownUtil, TeamUtil, TagUtil, PDCUtil, GameRuleUtil, AtomicFile
 src/main/resources/
 ├── config.yml  plugin.yml
-├── content/                 # balance.yml, items.yml, mobs.yml, gear.yml — what the combat layer is made of and
-│                            # tuned with
+├── content/                 # balance.yml, items.yml, mobs.yml, gear.yml, bestiary.yml — what the combat layer is
+│                            # made of and tuned with
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
 ```
 
@@ -144,8 +144,8 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
   per menu. Reuse an existing key before adding one.
 - Key names must appear as whole string literals (`tr(if (credit) "a.credit" else "a.debit")`, not `"a.$state"`) so
   `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list), `money.source.*`, and
-  `item.*`, `gear.item.*` and `gear.reforge.*` for content, which `ContentFilesTest` holds to the content files
-  instead.
+  `item.*`, `gear.item.*`, `gear.reforge.*` and `mob.kind.*` for content, which `ContentFilesTest` holds to the
+  content files instead.
 - Placeholder names are lowercase letters only (`{name}`, `{balance}`), which is what the test checks for.
 - A GUI declares `titleKey` and its title is translated for the viewer; override `title(player)` when the title carries
   live data.
@@ -384,6 +384,22 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
   both language files, and must never let a player's hit on a player change.
 - **A mob's nameplate is shared by every viewer**, so its frame is rendered in the configured language (`Lang.tr(null,
   …)`) and a mob's kind is a `<lang:…>` tag the client fills in. Setting a name must never make a mob persistent.
+
+## Working with Custom Mobs
+
+**The server's own mobs live in `content/bestiary.yml`.** See [Custom mobs](docs/DEVELOPER_GUIDE.md#custom-mobs).
+
+- **A mob stores its kind, never its stats.** `MobProfile.kind` is an id; what it is worth is read from the catalog
+  every time. Never write a kind's health, damage or Defense onto a mob.
+- **`MobPower` is the only place a profile becomes a multiplier or Defense.** Rank, kind and affixes meet there, and
+  `CombatHealth` and `DamageListener` only ask it. A new source of toughness goes there.
+- **Never change a mob's vanilla `MAX_HEALTH` to make it bigger.** A kind's size is `MobPower.health`; its scale,
+  speed and footing are named attribute modifiers that `MobKinds.refresh` can put on again.
+- **A costume is only a look.** Dress a mob through `MobKinds.dress`, which empties every piece's attribute modifiers
+  and sets its drop chance to 0. Gear only ever leaves a mob through `MobLoot`.
+- **A custom mob is only ever a wild one**, rolled in `MobListener.onSpawn`, or one TriTown calls up itself through
+  `MobSetup.spawn` — which is never eligible for loot.
+- **Custom mobs change no blocks**, and neither may anything new they do.
 
 ## Working with Gear
 

@@ -7,6 +7,7 @@ import net.trilleo.mc.plugins.tritown.gear.Gear
 import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
 import net.trilleo.mc.plugins.tritown.mobs.MobLoot
 import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
+import net.trilleo.mc.plugins.tritown.mobs.MobPower
 import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.AbstractArrow
@@ -34,7 +35,7 @@ import java.util.concurrent.ThreadLocalRandom
  * | anything the world does to a player | left alone                                         |
  * | player → mob (melee)       | the player's stats, scaled by vanilla's share of a full swing |
  * | player → mob (arrow, trident) | vanilla's hit, scaled by the stats the shot was fired with |
- * | mob → player or mob        | vanilla's hit, grown by the attacker's level and rank, through Defense |
+ * | mob → player or mob        | vanilla's hit, grown by the attacker's level, rank and kind, through Defense |
  * | anything else → mob        | level-1 units, so no trap or fire outgrows level 1          |
  *
  * The result is converted to vanilla damage through the target's own pool
@@ -89,7 +90,7 @@ class DamageListener : Listener {
         if (attacker == null || attacker is Player || (attacker as? Tameable)?.isTamed == true) return
 
         val profile = MobProfiles.of(attacker)
-        val multiplier = AffixEffects.damageMultiplier(attacker, profile, balance)
+        val multiplier = MobPower.damage(attacker, profile, balance)
         val hit = DamageMath.afterDefense(
             DamageMath.mobHit(event.damage, balance, profile.level, multiplier),
             PlayerStats.sheet(victim)[Stat.DEFENSE],
@@ -125,14 +126,14 @@ class DamageListener : Listener {
 
             attacker != null && attacker !is Player -> {
                 val attackerProfile = MobProfiles.of(attacker)
-                val multiplier = AffixEffects.damageMultiplier(attacker, attackerProfile, balance)
+                val multiplier = MobPower.damage(attacker, attackerProfile, balance)
                 DamageMath.mobHit(event.damage, balance, attackerProfile.level, multiplier)
             }
 
             else -> DamageMath.environmentHit(event.damage, balance)
         }
 
-        val defended = DamageMath.afterDefense(hit, AffixEffects.defense(profile))
+        val defended = DamageMath.afterDefense(hit, MobPower.defense(profile))
         event.damage = DamageMath.toVanilla(defended, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
         crit?.let { crits[event] = it }
     }

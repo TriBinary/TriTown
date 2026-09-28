@@ -331,6 +331,12 @@ mobs:
       - ELDER_GUARDIAN
       - ENDER_DRAGON
       - WITHER
+  # Custom mobs, such as the Gravewalker or the Widow Stalker, now and then take
+  # the place of a wild mob of their kind: named, dressed for the part, tougher,
+  # and with loot of their own. Who they are, where they live and what they drop
+  # is in plugins/TriTown/content/bestiary.yml.
+  custom:
+    enabled: true
 
 # ── Towns ───────────────────────────────────────────────────────────────────
 towns:

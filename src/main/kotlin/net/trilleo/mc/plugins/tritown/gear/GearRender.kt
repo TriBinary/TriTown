@@ -46,6 +46,21 @@ object GearRender {
                 .build(),
         )
 
+        look(stack, def)
+
+        if (data.rarity >= RARE_ENOUGH_TO_GLOW) {
+            stack.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true)
+        } else stack.resetData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE)
+
+        GearCodec.write(stack, data)
+    }
+
+    /**
+     * Gives [stack] the look [def] names — its model, trim and dye — and
+     * nothing else. A custom mob wears a piece's look this way (see
+     * [Gear.costume]).
+     */
+    fun look(stack: ItemStack, def: GearDef) {
         if (def.model != null) {
             stack.setData(DataComponentTypes.ITEM_MODEL, Key.key(Key.MINECRAFT_NAMESPACE, def.model))
         } else stack.resetData(DataComponentTypes.ITEM_MODEL)
@@ -58,12 +73,6 @@ object GearRender {
         if (def.dye != null) {
             stack.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(Color.fromRGB(def.dye)))
         } else stack.resetData(DataComponentTypes.DYED_COLOR)
-
-        if (data.rarity >= RARE_ENOUGH_TO_GLOW) {
-            stack.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true)
-        } else stack.resetData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE)
-
-        GearCodec.write(stack, data)
     }
 
     /** The piece's name, after its reforge's if it has one, in its rarity's colour. */

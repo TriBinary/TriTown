@@ -2,6 +2,7 @@ package net.trilleo.mc.plugins.tritown.mobs
 
 import com.palmergames.bukkit.towny.TownyAPI
 import net.trilleo.mc.plugins.tritown.config.MobSettings
+import net.trilleo.mc.plugins.tritown.content.SpawnPlace
 import org.bukkit.Location
 import org.bukkit.World
 import kotlin.math.hypot
@@ -36,5 +37,17 @@ object MobZones {
         val bonus = (if (night) settings.nightBonus else 0) + (if (deep) settings.depthBonus else 0)
 
         return Reading(zone.level(distance, bonus), zone.ring(distance), night, deep, false)
+    }
+
+    /** What a custom mob's spawn rule is checked against at [location]. */
+    fun place(location: Location): SpawnPlace {
+        val world = location.world
+        return SpawnPlace(
+            environment = world.environment.name.lowercase(),
+            world = world.name.lowercase(),
+            biome = location.block.biome.key.asString(),
+            y = location.blockY,
+            night = world.environment == World.Environment.NORMAL && !world.isDayTime,
+        )
     }
 }

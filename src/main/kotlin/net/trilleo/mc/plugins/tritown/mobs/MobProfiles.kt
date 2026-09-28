@@ -11,6 +11,9 @@ import org.bukkit.persistence.PersistentDataType
  *
  * @param eligible whether the mob spawned the way a wild one does, so it may
  *   drop more than vanilla gives: a summoner's minions, for one, may not
+ * @param kind the id of the custom mob it is in `bestiary.yml`, or `null` for
+ *   an ordinary one. Only the id is kept: what the kind is worth is read from
+ *   the file every time, so a retune reaches every one already out there
  */
 data class MobProfile(
     val level: Int,
@@ -18,9 +21,14 @@ data class MobProfile(
     val affixes: Set<Affix>,
     val nameplate: Boolean,
     val eligible: Boolean,
+    val kind: String? = null,
 ) {
 
     fun has(affix: Affix): Boolean = affix in affixes
+
+    /** Whether the mob takes a turn in the mob task: it has a rank, a kind, or an affix to show. */
+    val isActive: Boolean
+        get() = rank != MobRank.NORMAL || kind != null || affixes.isNotEmpty()
 
     companion object {
         /** A mob TriTown never touched: level 1, which is to say vanilla. */
@@ -47,6 +55,7 @@ object MobProfiles {
     private val AFFIXES = NamespacedKey("tritown", "affixes")
     private val NAMEPLATE = NamespacedKey("tritown", "nameplate")
     private val ELIGIBLE = NamespacedKey("tritown", "eligible")
+    private val KIND = NamespacedKey("tritown", "kind")
 
     fun of(entity: LivingEntity): MobProfile {
         if (entity is Player) return MobProfile.VANILLA
@@ -60,6 +69,7 @@ object MobProfiles {
                 .toSet(),
             nameplate = data.get(NAMEPLATE, PersistentDataType.BOOLEAN) == true,
             eligible = data.get(ELIGIBLE, PersistentDataType.BOOLEAN) == true,
+            kind = data.get(KIND, PersistentDataType.STRING),
         )
     }
 
@@ -72,6 +82,7 @@ object MobProfiles {
         data.set(AFFIXES, PersistentDataType.LIST.strings(), profile.affixes.map { it.name })
         data.set(NAMEPLATE, PersistentDataType.BOOLEAN, profile.nameplate)
         data.set(ELIGIBLE, PersistentDataType.BOOLEAN, profile.eligible)
+        profile.kind?.let { data.set(KIND, PersistentDataType.STRING, it) }
         entity.persistentDataContainer.set(PROFILE, PersistentDataType.TAG_CONTAINER, data)
     }
 

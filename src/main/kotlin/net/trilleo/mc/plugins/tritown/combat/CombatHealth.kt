@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.combat
 
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.mobs.MobPower
 import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.LivingEntity
@@ -23,7 +24,7 @@ object CombatHealth {
         if (entity is Player) return DamageMath.playerMaxHealth(PlayerStats.sheet(entity)[Stat.HEALTH], vanillaMax(entity))
         val balance = ContentRegistry.balance
         val profile = MobProfiles.of(entity)
-        return DamageMath.mobMaxHealth(vanillaMax(entity), balance, profile.level, profile.rank.health(balance))
+        return DamageMath.mobMaxHealth(vanillaMax(entity), balance, profile.level, MobPower.health(profile, balance))
     }
 
     /** How full the pool is, from 0 to 1 — the same as the entity's hearts. */

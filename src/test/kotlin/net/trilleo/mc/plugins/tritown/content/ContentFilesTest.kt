@@ -7,8 +7,8 @@ import kotlin.test.assertTrue
 
 /**
  * Guards the bundled content files: they parse without a warning, and every
- * item, piece of gear and reforge they define is named in every language — and
- * nothing is translated that none of them uses.
+ * item, piece of gear, reforge and custom mob they define is named in every
+ * language — and nothing is translated that none of them uses.
  *
  * Content ids come from YAML rather than Kotlin, so `LangFilesTest`'s source
  * scan cannot see their keys; this is what holds them instead.
@@ -18,6 +18,10 @@ class ContentFilesTest {
     private val languages = listOf("en_US", "zh_CN").associateWith { flatten(load("lang/$it.yml")) }
     private val items = ContentParser.items(load("content/items.yml"))
     private val gear = ContentParser.gear(load("content/gear.yml"), items.value.keys)
+    private val bestiary = ContentParser.bestiary(load("content/bestiary.yml"), items.value.keys, gear.value.gear.keys)
+
+    /** Every key a custom mob is named or described by. */
+    private val kindKeys = bestiary.value.kinds.values.flatMap { listOf(it.nameKey, it.loreKey) }.toSet()
 
     /** Every key a piece of gear or a reforge is named by. */
     private val gearKeys = gear.value.gear.values.flatMap { listOf(it.nameKey, it.loreKey) }.toSet() +
@@ -69,6 +73,35 @@ class ContentFilesTest {
                 it.startsWith(GearDef.KEY_PREFIX) || it.startsWith(ReforgeDef.KEY_PREFIX)
             } - gearKeys
             assertEquals(emptySet(), orphans.toSet(), "Gear keys in $id.yml that no gear uses")
+        }
+    }
+
+    @Test
+    fun `the bundled bestiary parses without a warning`() {
+        assertEquals(emptyList(), bestiary.warnings)
+    }
+
+    @Test
+    fun `every custom mob is named and described in every language`() {
+        languages.forEach { (id, values) ->
+            assertEquals(emptySet(), kindKeys - values.keys, "Custom mob keys missing from $id.yml")
+        }
+    }
+
+    @Test
+    fun `no language translates a custom mob that does not exist`() {
+        languages.forEach { (id, values) ->
+            val orphans = values.keys.filter { it.startsWith(MobKindDef.KEY_PREFIX) } - kindKeys
+            assertEquals(emptySet(), orphans.toSet(), "Custom mob keys in $id.yml that no custom mob uses")
+        }
+    }
+
+    @Test
+    fun `every custom mob has somewhere to live and a chance to appear there`() {
+        bestiary.value.kinds.values.forEach { def ->
+            val spawn = def.spawn
+            assertTrue(spawn != null && spawn.chance > 0.0, "${def.id} never appears")
+            assertTrue(spawn.minLevel <= spawn.maxLevel, "${def.id} spawns at no level")
         }
     }
 
