@@ -480,5 +480,8 @@ or `Fix` commit carries its own changelog entry. See [docs/COMMIT_STRUCTURE.md](
   with `sendPrefixed(sender.tr("key"))`.
 - **Escape player-written text** — town names, boards, and other player input must be escaped
   (`MiniMessage.miniMessage().escapeTags(...)`) before being embedded in MiniMessage.
-- **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.- **No manual registration** — never edit `plugin.yml` commands/listeners. The auto-registration system handles
+- **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.
+- **Lists fill from the top-left** — a paged list uses `PagedLayout.FRAMED` (or `FULL`), never a centred layout. Only a
+  row of buttons is centred, with `GUIFrame.spacedColumns` or `packedColumns`.
+- **No manual registration** — never edit `plugin.yml` commands/listeners. The auto-registration system handles
   everything.

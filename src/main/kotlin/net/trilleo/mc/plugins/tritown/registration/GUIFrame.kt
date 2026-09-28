@@ -75,32 +75,6 @@ object GUIFrame {
     }
 
     /**
-     * The slots of a [rows]-row framed menu that show [count] items, centred
-     * both ways.
-     *
-     * Rows are filled seven at a time and the last one is [packedColumns], and
-     * the block of rows they take sits in the middle of the space inside the
-     * border — so two players in a list read as a pair in the middle of the
-     * menu rather than as two items lost in its top-left corner. Filling every
-     * slot gives exactly [contentSlots].
-     */
-    fun centeredSlots(rows: Int, count: Int): List<Int> {
-        val innerRows = (rows - 2).coerceAtLeast(0)
-        require(count in 0..innerRows * INNER_COLUMNS) { "$count items do not fit inside a $rows-row menu" }
-        if (count == 0) return emptyList()
-
-        val used = (count + INNER_COLUMNS - 1) / INNER_COLUMNS
-        val firstRow = 1 + (innerRows - used) / 2
-
-        return buildList {
-            for (index in 0 until used) {
-                val inRow = if (index == used - 1) count - INNER_COLUMNS * index else INNER_COLUMNS
-                packedColumns(inRow).forEach { add((firstRow + index) * ROW_SIZE + it) }
-            }
-        }
-    }
-
-    /**
      * Fills every slot of [inventory] that is not in [contentSlots] with the border.
      *
      * Callers draw their own buttons over it afterwards, so a reserved row can be

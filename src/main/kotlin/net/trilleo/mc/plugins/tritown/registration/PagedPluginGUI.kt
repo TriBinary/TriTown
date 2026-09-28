@@ -27,8 +27,8 @@ import java.util.*
  * [layout] decides what the rest of it does. [PagedLayout.FULL] fills every slot
  * above that row with content — a 6-row GUI gives 45 content slots per page.
  * [PagedLayout.FRAMED] insets the content by one slot on every side, giving 28
- * instead and a border around them. [PagedLayout.CENTERED] frames it the same
- * way and centres a page that is not full.
+ * instead and a border around them. Either way a page fills in reading order
+ * from its top-left slot.
  *
  * The class must have either:
  * - A no-arg constructor, **or**
@@ -99,15 +99,6 @@ abstract class PagedPluginGUI(
 
     /** Tracks the current page for each player viewing this GUI. */
     private val playerPages = mutableMapOf<UUID, Int>()
-
-    /**
-     * Which position on the page each drawn slot shows, per viewer.
-     *
-     * Remembered as drawn rather than worked out again from the layout, because
-     * a centred page puts its items in different slots depending on how many
-     * of them there are.
-     */
-    private val shownPositions = mutableMapOf<UUID, Map<Int, Int>>()
 
     /**
      * Returns all items that should be distributed across pages for the
@@ -192,11 +183,14 @@ abstract class PagedPluginGUI(
     private val contentSlots: List<Int> by lazy {
         when (layout) {
             PagedLayout.FULL -> (0 until (rows - 1) * ROW_SIZE).toList()
-            PagedLayout.FRAMED, PagedLayout.CENTERED -> GUIFrame.contentSlots(rows)
+            PagedLayout.FRAMED -> GUIFrame.contentSlots(rows)
         }
     }
 
-    private val contentSlotSet: Set<Int> by lazy { contentSlots.toSet() }
+    /** Each content slot's position on a page. */
+    private val contentPositions: Map<Int, Int> by lazy {
+        contentSlots.withIndex().associate { (position, slot) -> slot to position }
+    }
 
     /** How many items fit on one page. */
     protected val pageSize: Int
@@ -211,14 +205,13 @@ abstract class PagedPluginGUI(
      * [page], or `null` when that slot is not part of the content area.
      *
      * An empty slot inside the content area still has a position, just one past
-     * the end of the list — except on a [PagedLayout.CENTERED] page, where only
-     * the slots holding an item are content at all.
+     * the end of the list, so look it up with `getOrNull`.
      *
      * In [PagedGUIMode.SET] this is `page * pageSize` plus the position the
      * item was given in [getSetItems].
      */
     protected fun contentIndex(event: InventoryClickEvent, page: Int): Int? =
-        shownPositions[event.whoClicked.uniqueId]?.get(event.rawSlot)?.let { position -> page * pageSize + position }
+        contentPositions[event.rawSlot]?.let { position -> page * pageSize + position }
 
     /**
      * Redraws the page [player] is looking at, into the inventory they have open.
@@ -271,14 +264,13 @@ abstract class PagedPluginGUI(
 
             navOffset == PAGE_INDICATOR_OFFSET -> return
             navOffset in 0 until ROW_SIZE -> onNavClick(event, navOffset)
-            slot in contentSlotSet -> onContentClick(event, page)
+            slot in contentPositions -> onContentClick(event, page)
         }
     }
 
     override fun onClose(event: InventoryCloseEvent) {
         val player = event.player as? Player ?: return
         playerPages.remove(player.uniqueId)
-        shownPositions.remove(player.uniqueId)
     }
 
     // ----- Internal helpers ---------------------------------------------------
@@ -318,15 +310,13 @@ abstract class PagedPluginGUI(
         }
 
         val totalPages = totalPages(player)
-        var slots = contentSlots
 
         when (mode) {
             PagedGUIMode.LIST -> {
                 val items = getItems(player)
                 val start = page * pageSize
                 val onPage = items.subList(minOf(start, items.size), minOf(start + pageSize, items.size))
-                if (layout == PagedLayout.CENTERED) slots = GUIFrame.centeredSlots(rows, onPage.size)
-                onPage.forEachIndexed { position, item -> inventory.setItem(slots[position], item) }
+                onPage.forEachIndexed { position, item -> inventory.setItem(contentSlots[position], item) }
             }
 
             PagedGUIMode.SET -> {
@@ -336,7 +326,6 @@ abstract class PagedPluginGUI(
                 }
             }
         }
-        shownPositions[player.uniqueId] = slots.withIndex().associate { (position, slot) -> slot to position }
 
         renderNavRow(player, inventory, page, totalPages)
     }

@@ -30,7 +30,7 @@ class ForgeRecipesGUI : PagedPluginGUI(
     titleKey = "gui.forge-recipes.title",
     rows = 6,
     fillMode = FillMode.NONE,
-    layout = PagedLayout.CENTERED,
+    layout = PagedLayout.FRAMED,
 ) {
 
     /** What each viewer's list holds, in the order it shows them. */

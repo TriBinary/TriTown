@@ -75,25 +75,4 @@ class GUIFrameTest {
         assertEquals(listOf(2, 3, 5, 6), GUIFrame.packedColumns(4))
         assertEquals(listOf(1, 2, 3, 5, 6, 7), GUIFrame.packedColumns(6))
     }
-
-    @Test
-    fun `a few items sit in the middle of the menu`() {
-        assertEquals(listOf(22), GUIFrame.centeredSlots(6, 1))
-        assertEquals(listOf(21, 23), GUIFrame.centeredSlots(6, 2))
-    }
-
-    @Test
-    fun `a partial page centres its last row under full ones`() {
-        assertEquals((19..25).toList() + listOf(30, 32), GUIFrame.centeredSlots(6, 9))
-    }
-
-    @Test
-    fun `a full page is exactly the framed content`() {
-        assertEquals(GUIFrame.contentSlots(6), GUIFrame.centeredSlots(6, 28))
-    }
-
-    @Test
-    fun `nothing to show takes no slots`() {
-        assertEquals(emptyList(), GUIFrame.centeredSlots(6, 0))
-    }
 }

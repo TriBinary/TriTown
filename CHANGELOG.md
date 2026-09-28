@@ -105,6 +105,13 @@
 
 + The Forge is a new money sink, listed as **The Forge** in the admin panel's economy breakdown and in `/eco history`.
 
+### Improvements
+
+#### Main Menu
+
++ The leaderboard and the list of players to trade with or pay now fill from the top-left like every other list,
+  instead of gathering a short page in the middle.
+
 ### Technical Details
 
 #### Misc
@@ -112,6 +119,7 @@
 + Removed `LangTranslator`. Paper never translates anything inside an item for each player, so gear and content items
   are written in the item language through `Lang.item`, stamped with `Lang.itemRevision`, and redrawn by `ItemRedraw`
   from `ItemRefreshListener` (formerly `GearRefreshListener`), on reload, and over every shop's items.
++ Removed `PagedLayout.CENTERED` and `GUIFrame.centeredSlots`: every paged list fills from the top-left.
 
 ## Version 1.4.0
 

@@ -36,7 +36,7 @@ class PlayerPickerGUI : PagedPluginGUI(
     titleKey = "gui.menu-players.title-trade",
     rows = 6,
     fillMode = FillMode.NONE,
-    layout = PagedLayout.CENTERED,
+    layout = PagedLayout.FRAMED,
 ) {
 
     /** What the picker is picking someone for. */

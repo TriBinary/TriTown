@@ -34,7 +34,7 @@ class LeaderboardGUI : PagedPluginGUI(
     titleKey = "gui.menu-leaderboard.title",
     rows = 6,
     fillMode = FillMode.NONE,
-    layout = PagedLayout.CENTERED,
+    layout = PagedLayout.FRAMED,
 ) {
 
     private val snapshots = ConcurrentHashMap<UUID, List<ItemStack>>()

@@ -415,11 +415,11 @@ pure arithmetic apart from `pane` and `draw`, and `GUIFrameTest` pins it down.
 | `draw(inventory, slots)`      | Fills every slot not in `slots` with the border                                        |
 | `spacedColumns(count)`        | Columns for up to 4 buttons spread with a gap between each, centred (`4`; `3, 5`; …)    |
 | `packedColumns(count)`        | Columns for up to 7 items side by side, centred; an even count leaves column 4 empty   |
-| `centeredSlots(rows, count)`  | Slots for `count` items in rows of seven, last row packed, the block centred vertically |
 
 A menu of buttons whose set depends on the viewer — a permission, a feature switched off — should lay each row out with
 `spacedColumns` from the buttons it actually has, rather than fixing slots and leaving a hole where one is missing.
-`MainMenuGUI` and `AdminPanelGUI` both do this.
+`MainMenuGUI` and `AdminPanelGUI` both do this. Centring is for a row of buttons only: a list — anything paged — fills
+from the top-left, so its items keep their places as it grows.
 
 ### ConfirmGUI
 
@@ -532,20 +532,13 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 |:-----------------------|:-----------------------|:-------------------------------------------------------------------------------|
 | `PagedLayout.FULL`     | 45                     | Every slot above the navigation row is content                                 |
 | `PagedLayout.FRAMED`   | 28                     | Content is inset by one slot on every side, with a black glass border round it |
-| `PagedLayout.CENTERED` | 28                     | Framed, and a page that is not full keeps its items centred inside the border  |
 
-A framed menu carries the border into its navigation row too, so the whole edge is one colour rather than changing
-where the controls start.
-
-`CENTERED` is for lists that are often short, such as the players online. A full page looks exactly like `FRAMED`; a
-page of a few items puts them in the middle of the menu rather than in its top-left corner, with the last row packed
-around the centre column (see [`GUIFrame`](#guiframe)). It only changes `LIST` mode — `SET` positions are explicit.
+Either way a page fills in reading order from its top-left slot, however few items it holds. A framed menu carries the
+border into its navigation row too, so the whole edge is one colour rather than changing where the controls start.
 
 **Do not index `getItems` by the raw slot.** Under a framed layout a slot is not a position in that list, because the
-border sits between them, and on a centred page the slot an item lands in depends on how many share the page. Use
-`contentIndex(event, page)`, which reads the slots as they were drawn for that viewer and returns the position or
-`null` when the slot is not content (an empty slot inside a `FULL` or `FRAMED` area still has a position, one past the
-end of the list):
+border sits between them. Use `contentIndex(event, page)`, which returns the position or `null` when the slot is not
+content (an empty slot inside the content area still has a position, one past the end of the list):
 
 ```kotlin
 override fun onContentClick(event: InventoryClickEvent, page: Int) {
@@ -2509,7 +2502,7 @@ gate, the storage only while `StorageManager.isAvailable`, trading only when `pl
 command's permission (`CommandRegistrar.canRun`), the news only while `NewsManager.isAvailable`, the Forge and the
 bestiary only where combat is on (the bestiary only when `bestiary.yml` defines a mob), the sidebar switch
 only while the sidebar runs, the admin panel only with `tritown.admin`, and the TownyMenu shortcut only when TownyMenu is enabled. Empty rows are dropped, so the menu
-never has a hole in it. The two list menus use `PagedLayout.CENTERED` and keep *Back* and one extra button either side
+never has a hole in it. The two list menus use `PagedLayout.FRAMED` and keep *Back* and one extra button either side
 of the page number (`MenuRender.BACK_OFFSET`, `EXTRA_OFFSET`).
 
 **The menu points the way; it does not do the work.** Each button runs the command or opens the menu that already owns

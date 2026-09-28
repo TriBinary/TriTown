@@ -32,7 +32,7 @@ class BestiaryGUI : PagedPluginGUI(
     titleKey = "gui.bestiary.title",
     rows = 6,
     fillMode = FillMode.NONE,
-    layout = PagedLayout.CENTERED,
+    layout = PagedLayout.FRAMED,
 ) {
 
     override fun getItems(player: Player): List<ItemStack> =
