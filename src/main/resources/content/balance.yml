@@ -93,6 +93,42 @@ affixes:
   blinking-range: 6
   blinking-cooldown-ticks: 100
 
+# What the abilities custom mobs have (see bestiary.yml) are worth. A mob uses one when its target is where the ability
+# can reach, no sooner than its cooldown-ticks after the last time, and always with a warning first: windup-ticks of
+# particles and sound. Damage is in the units of a level-1 mob's vanilla hit — a zombie's is 3 — so the mob's level,
+# rank and kind grow it like any other hit of its own, and Defense takes its share. Only players are ever hit.
+abilities:
+  # The least time between any two abilities of one mob.
+  global-cooldown-ticks: 40
+  # Pounces on a target further than 4 blocks and within range, hurting players within radius where it lands.
+  leap: {cooldown-ticks: 160, windup-ticks: 8, range: 12, radius: 2.5, damage: 4}
+  # Rears up, then a shockwave hurts players within radius and throws them up by power.
+  slam: {cooldown-ticks: 200, windup-ticks: 20, radius: 5, damage: 6, power: 0.8}
+  # Lowers its head, then dashes at a target within range at power, hitting everyone it runs through once.
+  charge: {cooldown-ticks: 200, windup-ticks: 15, range: 16, damage: 6, power: 1.6}
+  # Looses count arrows in a fan at a target within range, each hitting for damage.
+  volley: {cooldown-ticks: 140, windup-ticks: 10, range: 20, damage: 2.5, count: 5}
+  # Hurls count fireballs at a target within range. They hit as a blaze's do, and set no blocks alight.
+  fireball: {cooldown-ticks: 120, windup-ticks: 10, range: 24, count: 3}
+  # Marks count spots on and around a target within range, then fire lands on each, hurting players within radius.
+  meteor: {cooldown-ticks: 240, windup-ticks: 30, range: 20, radius: 2.5, damage: 6, count: 3}
+  # As meteor, with lightning, which sets nothing alight.
+  storm: {cooldown-ticks: 240, windup-ticks: 30, range: 24, radius: 2, damage: 6, count: 3}
+  # Spits a web at a target within range, slowing it almost to a stop for seconds.
+  ensnare: {cooldown-ticks: 200, windup-ticks: 10, range: 14, seconds: 2}
+  # Drags a target further than 5 blocks and within range towards itself at up to power, hurting it a little.
+  hook: {cooldown-ticks: 200, windup-ticks: 10, range: 16, damage: 2, power: 1.4}
+  # Calls minions to its side until count of them are alive. They are its own kind unless bestiary.yml names another.
+  summon: {cooldown-ticks: 400, windup-ticks: 20, count: 2}
+  # Once hurt, braces itself: power more Defense for seconds.
+  bulwark: {cooldown-ticks: 400, seconds: 6, power: 200}
+  # A burst that hurts players within radius and slows them for seconds.
+  frost-nova: {cooldown-ticks: 240, windup-ticks: 20, radius: 5, damage: 5, seconds: 3}
+  # Leaves a cloud of radius where a target within range stands, hurting players in it twice a second for seconds.
+  miasma: {cooldown-ticks: 260, windup-ticks: 10, range: 16, radius: 3, damage: 1.5, seconds: 6}
+  # Latches on to a target within range for seconds, hurting it twice a second and healing power percent of it.
+  drain: {cooldown-ticks: 240, range: 10, damage: 1.5, seconds: 3, power: 50}
+
 # What gear is worth. Every piece of a slot and tier has the same points, spent on stats by the weights gear.yml gives
 # it, so no piece is stronger than its tier allows however it is shaped.
 gear:

@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.content
 
+import net.trilleo.mc.plugins.tritown.mobs.Ability
 import net.trilleo.mc.plugins.tritown.mobs.Affix
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,6 +62,24 @@ class BestiaryParserTest {
         assertEquals(emptySet(), def.affixes)
         assertEquals(emptyMap(), def.equipment)
         assertEquals(emptyList(), def.loot)
+    }
+
+    @Test
+    fun `abilities read by their names, and minions must be a custom mob in the file`() {
+        val result = parse(
+            "walker" to mapOf(
+                "base" to "zombie",
+                "spawn" to mapOf("chance" to 5),
+                "abilities" to listOf("leap", "frost-nova", "leap", "sneeze"),
+                "minions" to "crawler",
+            ),
+            "crawler" to mapOf("base" to "spider", "spawn" to mapOf("chance" to 5), "minions" to "nobody"),
+        )
+
+        assertEquals(listOf(Ability.LEAP, Ability.FROST_NOVA), result.value.kinds.getValue("walker").abilities)
+        assertEquals("crawler", result.value.kinds.getValue("walker").minions)
+        assertEquals(null, result.value.kinds.getValue("crawler").minions)
+        assertEquals(2, result.warnings.size, result.warnings.toString())
     }
 
     @Test

@@ -94,6 +94,7 @@ class MobListener : Listener {
     fun onUnload(event: EntityRemoveFromWorldEvent) {
         ActiveMobs.untrack(event.entity.uniqueId)
         AffixEffects.forget(event.entity.uniqueId)
+        AbilityEffects.forget(event.entity.uniqueId)
         MobLoot.forget(event.entity.uniqueId)
     }
 
@@ -119,6 +120,7 @@ class MobListener : Listener {
         if (entity is Player) return
         val profile = MobProfiles.of(entity)
         AffixEffects.onDeath(entity, profile)
+        AbilityEffects.forget(entity.uniqueId)
         event.drops += MobLoot.dropsFor(entity)
         if (profile.level > 1) {
             event.droppedExp =

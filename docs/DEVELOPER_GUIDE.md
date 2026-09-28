@@ -3512,9 +3512,10 @@ keeps bosses such as the Warden unranked. `MobRoll` is plain Kotlin over a `Rand
 
 **`AffixEffects` is the only place any of it happens**, and every effect is triggered by a mob, so none of it can reach
 a hit between players. What an affix remembers about one mob — a broken ward, minions already called, the last blink —
-is in memory and forgotten when the mob unloads, which only ever favours the mob. `RankedMobs` holds the ranked mobs in
-loaded chunks (kept in step by `MobListener`'s spawn, load and unload handlers), and `tasks/mobs/AffixTask` gives each
-one with a player within 32 blocks its turn twice a second: particles, and blinking.
+is in memory and forgotten when the mob unloads, which only ever favours the mob. `ActiveMobs` holds every mob in
+loaded chunks that has a rank, a custom kind or an affix (`MobProfile.isActive`), kept in step by `MobListener`'s spawn,
+load and unload handlers, and `tasks/mobs/MobTurnTask` gives each one with a player within 32 blocks its turn twice a
+second: affix particles and blinking, then a custom mob's abilities.
 
 A slime's children keep its level but not its rank, or one champion would split into a crowd of them.
 
@@ -3558,6 +3559,42 @@ has just decided about.
   level, and a split never keeps a kind.
 - **Summoned minions share their summoner's kind**, through `MobSetup.spawn`, which is also what
   `/tritown mob spawn <kind> [level]` uses. Neither is ever eligible for loot. `mob kinds` lists them all.
+
+### Abilities
+
+A custom mob's `abilities` are what it does in a fight, on cooldowns. `mobs/Ability` names them and
+`mobs/AbilityEffects` is **the only place any of them happens**; their numbers are the `abilities` block of
+`balance.yml` (`Balance.AbilityTuning`: a cooldown, a wind-up, damage, range, radius, seconds, a count and a power for
+each, of which each ability reads only what it needs).
+
+| Ability    | Does                                                                                     |
+|:-----------|:-----------------------------------------------------------------------------------------|
+| Leap       | Pounces on a target 4 blocks or more away, and hurts players where it lands              |
+| Slam       | Rears up, then a shockwave hurts and throws up players around it                         |
+| Charge     | Lowers its head, then dashes, hitting everyone it runs through once                      |
+| Volley     | Looses a fan of arrows that cannot be picked up                                          |
+| Fireball   | Hurls small fireballs that set no blocks alight                                          |
+| Meteor, Storm | Marks spots on and around its target, then brings fire or lightning (an effect only) down on them |
+| Ensnare    | Spits a web that all but roots its target                                                |
+| Hook       | Drags a target that keeps its distance in                                                |
+| Summon     | Calls minions until its cap is alive: its `minions` kind, or its own                     |
+| Bulwark    | Once hurt, braces for far more Defense for a few seconds (`MobPower.defense` asks)        |
+| Frost Nova | A burst that hurts and slows everyone close by                                           |
+| Miasma     | A poisonous cloud where its target stood, hurting twice a second                         |
+| Drain      | A tether that hurts its target twice a second and heals the mob by a share of it          |
+
+- **It only ever hurts players, and only as the mob.** Every hit is `player.damage` with a `DamageSource` the mob
+  caused, so `DamageListener.hurtPlayer` grows it by the mob's level, rank and kind and takes the player's Defense off
+  it like any of its hits, and the mob's affixes answer it. Ability damage is in level-1 vanilla units — a zombie's hit
+  is 3. Nothing an ability does can reach a hit between players, and only players in survival or adventure are hit.
+- **It changes no blocks.** Fireballs are not incendiary, lightning is `strikeLightningEffect`, and meteors are
+  particles.
+- **It always warns first.** `windUp` shows particles and sound for `windup-ticks` (holding the mob in place for the
+  close-quarters ones) before it lands, and a mob winding one up starts no other. `MobTurnTask` offers a mob a turn
+  twice a second; it picks at random among its abilities that are off cooldown and can reach its target — a distance
+  window, line of sight, its minion cap — and waits `global-cooldown-ticks` before the next.
+- **What it remembers is in memory**: cooldowns, a Bulwark's end, the minions it has called. `forget` clears it when
+  the mob dies or unloads.
 
 ### Loot
 
@@ -3717,7 +3754,7 @@ content files say what it is worth. They live in `src/main/resources/content/`, 
 
 | File           | Holds                                                                                     |
 |:---------------|:------------------------------------------------------------------------------------------|
-| `balance.yml`  | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks and affixes, gear's budget and the Forge's costs |
+| `balance.yml`  | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks, affixes and abilities, gear's budget and the Forge's costs |
 | `items.yml`    | Content items: each id's look (`model`), `rarity` and `glint`                              |
 | `mobs.yml`     | Mob families and their material, the loot rules per rank, and the essence grades           |
 | `gear.yml`     | Gear: each piece's slot, tier, base, look, weights and recipe; and reforges                |

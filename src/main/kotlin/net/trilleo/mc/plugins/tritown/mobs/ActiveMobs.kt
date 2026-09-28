@@ -5,7 +5,7 @@ import java.util.*
 
 /**
  * Every mob in a loaded chunk that takes a turn in the mob task — one with a
- * rank, a custom kind or an affix ([MobProfile.isActive]) — so `AffixTask` can
+ * rank, a custom kind or an affix ([MobProfile.isActive]) — so `MobTurnTask` can
  * give each its turn without walking every entity in every world.
  *
  * Filled as such mobs spawn or load back in, emptied as they unload or die;

@@ -5,7 +5,6 @@ import net.trilleo.mc.plugins.tritown.combat.CombatHealth
 import net.trilleo.mc.plugins.tritown.combat.DamageMath
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import org.bukkit.Bukkit
-import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.Sound
@@ -20,7 +19,6 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
 import java.util.*
-import kotlin.random.Random
 
 /**
  * What every [Affix] does, and the only place any of it is done.
@@ -101,7 +99,7 @@ object AffixEffects {
         val target = (mob as? Mob)?.target
         val kind = MobKinds.def(profile)
         repeat(tuning.summonerMinions) {
-            val spot = besideOf(mob.location) ?: return@repeat
+            val spot = MobSetup.besideOf(mob.location) ?: return@repeat
             val minion = MobSetup.spawn(spot, mob.type, profile.level, kind) ?: return@repeat
             if (target != null) (minion as? Mob)?.target = target
             mob.world.spawnParticle(Particle.SOUL, spot.clone().add(0.0, 1.0, 0.0), 12, 0.3, 0.5, 0.3, 0.02)
@@ -159,7 +157,7 @@ object AffixEffects {
         if (now - (lastBlink[mob.uniqueId] ?: Int.MIN_VALUE / 2) < tuning.blinkingCooldownTicks) return
 
         val behind = target.location.clone().subtract(target.location.direction.setY(0).normalizeOrZero().multiply(BLINK_BEHIND))
-        if (!standable(behind)) return
+        if (!MobSetup.standable(behind)) return
         lastBlink[mob.uniqueId] = now
         mob.world.spawnParticle(Particle.PORTAL, mob.location.add(0.0, 1.0, 0.0), 30, 0.3, 0.6, 0.3, 0.5)
         mob.teleport(behind.setDirection(target.location.toVector().subtract(behind.toVector())))
@@ -182,24 +180,9 @@ object AffixEffects {
         Affix.WARDED -> Particle.ENCHANT.takeIf { mob.uniqueId !in brokenWards }
     }
 
-    /** A spot within a couple of blocks of [origin] that a mob can stand in, if one turns up in a few tries. */
-    private fun besideOf(origin: Location): Location? {
-        repeat(SPOT_TRIES) {
-            val spot = origin.clone().add(Random.nextDouble(-2.0, 2.0), 0.0, Random.nextDouble(-2.0, 2.0))
-            if (standable(spot)) return spot
-        }
-        return null
-    }
-
-    private fun standable(spot: Location): Boolean {
-        val feet = spot.block
-        return feet.isPassable && feet.getRelative(0, 1, 0).isPassable && !feet.getRelative(0, -1, 0).isPassable
-    }
-
     private fun Vector.normalizeOrZero(): Vector = if (lengthSquared() > 0.0) normalize() else this
 
     private const val TICKS = 20
-    private const val SPOT_TRIES = 6
     private const val BLINK_BEHIND = 1.5
 
     /** Vanilla damage a Volatile blast of power 1 lands point-blank, before the mob's level scales it. */

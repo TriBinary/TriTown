@@ -132,6 +132,8 @@ class MobRollTest {
         scale = 1.0,
         knockback = 0.0,
         affixes = emptySet(),
+        abilities = emptyList(),
+        minions = null,
         equipment = emptyMap(),
         loot = emptyList(),
     )

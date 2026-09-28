@@ -68,8 +68,9 @@ harder, the Nether and the End start higher, and night and the deep add to it. H
 your 100 health is drawn over your ten hearts, a level-1 zombie has 100 and a level-30 one over 3,000 — and your
 Defense, Damage, Strength and crits come from what you wear and hold. Some mobs spawn as elites and champions, with
 affixes that make them fight differently, and the server's own mobs — the Gravewalker in its grave-gear, the Crypt
-Ghoul, the Widow Stalker, the Voidstalker and more — take the place of wild mobs now and then, tougher and with loot of
-their own. Wild mobs drop materials. At the Forge those become gear in ten tiers
+Ghoul, the Widow Stalker, the Voidstalker and more — take the place of wild mobs now and then, tougher, with abilities
+of their own that they always warn you of — leaps, charges, volleys, meteors, webs, frost novas — and loot of their
+own. Wild mobs drop materials. At the Forge those become gear in ten tiers
 and six rarities, which you upgrade, refine and reforge as you push further out. `/tt stats` shows your stats and where
 each comes from, your health and Defense sit above your hotbar, and every hit you land floats its damage up from the
 mob. At level 1 with vanilla gear it plays exactly like vanilla. Town claims are always level 1 and mobs from spawners

@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.tasks.mobs
 
+import net.trilleo.mc.plugins.tritown.mobs.AbilityEffects
 import net.trilleo.mc.plugins.tritown.mobs.ActiveMobs
 import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
 import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
@@ -8,10 +9,10 @@ import net.trilleo.mc.plugins.tritown.registration.PluginTask
 /**
  * Gives every active mob — ranked, custom or with an affix — that has a
  * player nearby its turn twice a second: the particles that show its affixes,
- * and a blinker closing the distance. One out of everyone's sight does
- * nothing, so a far-off champion costs nothing.
+ * a blinker closing the distance, and a custom mob's abilities. One out of
+ * everyone's sight does nothing, so a far-off champion costs nothing.
  */
-class AffixTask : PluginTask(delay = 20L, period = 10L) {
+class MobTurnTask : PluginTask(delay = 20L, period = 10L) {
 
     override fun run() {
         for (mob in ActiveMobs.all()) {
@@ -20,7 +21,9 @@ class AffixTask : PluginTask(delay = 20L, period = 10L) {
                 continue
             }
             if (mob.world.getNearbyPlayers(mob.location, AWAKE_RANGE).isEmpty()) continue
-            AffixEffects.tick(mob, MobProfiles.of(mob))
+            val profile = MobProfiles.of(mob)
+            AffixEffects.tick(mob, profile)
+            AbilityEffects.tick(mob, profile)
         }
     }
 

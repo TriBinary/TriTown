@@ -59,6 +59,9 @@
       many wear the gear of their region, which they sometimes drop.
     + They are tougher than their kind and drop more of its materials besides. Voidstalkers and Starborn Sentinels
       drop **Rift Shells**, which until now no mob could.
+    + Each fights with **abilities** of its own: Leap, Slam, Charge, Volley, Fireball, Meteor, Storm, Ensnare, Hook,
+      Summon, Bulwark, Frost Nova, Miasma and Drain. Every one is warned of with particles and sound before it lands,
+      breaks no blocks, and only ever hurts players.
     + Like every wild mob, they never spawn in a town, from a spawner or from an egg. They may still be elites or
       champions.
     + Server owners tune them in `plugins/TriTown/content/bestiary.yml`, or turn them off with `mobs.custom.enabled`.

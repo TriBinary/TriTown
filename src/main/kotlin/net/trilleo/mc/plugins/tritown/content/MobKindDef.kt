@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.content
 
+import net.trilleo.mc.plugins.tritown.mobs.Ability
 import net.trilleo.mc.plugins.tritown.mobs.Affix
 
 /**
@@ -22,6 +23,8 @@ import net.trilleo.mc.plugins.tritown.mobs.Affix
  * @param scale how large it is, where 1 is its kind's own size
  * @param knockback percent of knockback it shrugs off
  * @param affixes affixes it always has, on top of any its rank rolls
+ * @param abilities what it does in a fight, on cooldowns
+ * @param minions the id of the kind its Summon calls, or `null` for its own
  * @param equipment what it wears and holds, for the look alone
  * @param loot what it drops on top of its family's material and its rank's essence
  */
@@ -37,6 +40,8 @@ data class MobKindDef(
     val scale: Double,
     val knockback: Double,
     val affixes: Set<Affix>,
+    val abilities: List<Ability>,
+    val minions: String?,
     val equipment: Map<CostumeSlot, Costume>,
     val loot: List<LootEntry>,
 ) {

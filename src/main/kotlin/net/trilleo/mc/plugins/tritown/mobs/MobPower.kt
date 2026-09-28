@@ -24,9 +24,9 @@ object MobPower {
         return profile.rank.damage(balance) * (MobKinds.def(profile)?.damage ?: 1.0) * rage
     }
 
-    /** The Defense [profile]'s mob has against every hit: its kind's, and Armored's. */
-    fun defense(profile: MobProfile): Double {
+    /** The Defense [mob] has against every hit: its kind's, Armored's, and a Bulwark it has up. */
+    fun defense(mob: LivingEntity, profile: MobProfile): Double {
         val armored = if (profile.has(Affix.ARMORED)) ContentRegistry.balance.affixes.armoredDefense else 0.0
-        return armored + (MobKinds.def(profile)?.defense ?: 0.0)
+        return armored + (MobKinds.def(profile)?.defense ?: 0.0) + AbilityEffects.defense(mob)
     }
 }

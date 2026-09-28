@@ -400,6 +400,9 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
 - **A custom mob is only ever a wild one**, rolled in `MobListener.onSpawn`, or one TriTown calls up itself through
   `MobSetup.spawn` — which is never eligible for loot.
 - **Custom mobs change no blocks**, and neither may anything new they do.
+- **Every ability lives in `AbilityEffects`**, and hurts only players, only as the mob (a `DamageSource` it caused),
+  so the pipeline scales it and it can never touch a hit between players. A new ability goes there, in `Ability`, and
+  in the `abilities` block of `balance.yml` with its default in `Balance`, and always warns before it lands.
 
 ## Working with Gear
 

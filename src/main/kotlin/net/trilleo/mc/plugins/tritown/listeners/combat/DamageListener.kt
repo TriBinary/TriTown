@@ -133,7 +133,7 @@ class DamageListener : Listener {
             else -> DamageMath.environmentHit(event.damage, balance)
         }
 
-        val defended = DamageMath.afterDefense(hit, MobPower.defense(profile))
+        val defended = DamageMath.afterDefense(hit, MobPower.defense(victim, profile))
         event.damage = DamageMath.toVanilla(defended, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
         crit?.let { crits[event] = it }
     }

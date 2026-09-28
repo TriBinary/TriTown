@@ -6,6 +6,7 @@ import org.bukkit.Location
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.LivingEntity
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
+import kotlin.random.Random
 
 /** Setting a mob up once TriTown has decided what it is. */
 object MobSetup {
@@ -45,4 +46,21 @@ object MobSetup {
         settle(mob, profile)
         return mob
     }
+
+    /** A spot within a couple of blocks of [origin] that a mob can stand in, if one turns up in a few tries. */
+    fun besideOf(origin: Location): Location? {
+        repeat(SPOT_TRIES) {
+            val spot = origin.clone().add(Random.nextDouble(-2.0, 2.0), 0.0, Random.nextDouble(-2.0, 2.0))
+            if (standable(spot)) return spot
+        }
+        return null
+    }
+
+    /** Whether a mob can stand at [spot]: room for its feet and head, and ground beneath. */
+    fun standable(spot: Location): Boolean {
+        val feet = spot.block
+        return feet.isPassable && feet.getRelative(0, 1, 0).isPassable && !feet.getRelative(0, -1, 0).isPassable
+    }
+
+    private const val SPOT_TRIES = 6
 }

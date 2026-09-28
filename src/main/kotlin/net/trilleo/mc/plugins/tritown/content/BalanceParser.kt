@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.content
 
 import net.trilleo.mc.plugins.tritown.combat.Stat
+import net.trilleo.mc.plugins.tritown.mobs.Ability
 
 /**
  * Reads [Balance] out of the parsed YAML of `balance.yml`.
@@ -67,6 +68,7 @@ object BalanceParser {
                 champion = rank(reader, "champion", default.ranks.champion),
             ),
             affixes = affixes(reader, default.affixes),
+            abilities = abilities(reader, default.abilities),
             gear = gear(reader, default.gear),
             forge = forge(reader, default.forge),
         )
@@ -135,6 +137,8 @@ object BalanceParser {
         )
     }
 
+    private const val GLOBAL_COOLDOWN = "global-cooldown-ticks"
+
     /** A stat's name as the content files write it: `crit-chance`. */
     fun name(stat: Stat): String = stat.name.lowercase().replace('_', '-')
 
@@ -148,6 +152,31 @@ object BalanceParser {
             damage = reader.number(path + "damage", default.damage, min = 1.0),
             minAffixes = minAffixes,
             maxAffixes = reader.integer(path + "max-affixes", default.maxAffixes, min = minAffixes),
+        )
+    }
+
+    private fun abilities(reader: YamlReader, default: Balance.AbilityTuning): Balance.AbilityTuning {
+        val root = listOf("abilities")
+        reader.keys(root)
+            .filter { it != GLOBAL_COOLDOWN && Ability.of(it) == null }
+            .forEach { reader.warn(root + it, "no ability is called '$it'; left out") }
+
+        return Balance.AbilityTuning(
+            globalCooldownTicks = reader.integer(root + GLOBAL_COOLDOWN, default.globalCooldownTicks, min = 0),
+            stats = Ability.entries.associateWith { ability ->
+                val path = root + ability.configName
+                val fallback = default[ability]
+                Balance.AbilityStats(
+                    cooldownTicks = reader.integer(path + "cooldown-ticks", fallback.cooldownTicks, min = 1),
+                    windupTicks = reader.integer(path + "windup-ticks", fallback.windupTicks, min = 0),
+                    damage = reader.number(path + "damage", fallback.damage, min = 0.0),
+                    range = reader.number(path + "range", fallback.range, min = 0.0),
+                    radius = reader.number(path + "radius", fallback.radius, min = 0.0),
+                    seconds = reader.number(path + "seconds", fallback.seconds, min = 0.0),
+                    count = reader.integer(path + "count", fallback.count, min = 0),
+                    power = reader.number(path + "power", fallback.power, min = 0.0),
+                )
+            },
         )
     }
 

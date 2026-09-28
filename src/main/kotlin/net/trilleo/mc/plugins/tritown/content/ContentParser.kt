@@ -1,6 +1,7 @@
 package net.trilleo.mc.plugins.tritown.content
 
 import net.trilleo.mc.plugins.tritown.combat.Stat
+import net.trilleo.mc.plugins.tritown.mobs.Ability
 import net.trilleo.mc.plugins.tritown.mobs.Affix
 
 /**
@@ -181,11 +182,18 @@ object ContentParser {
                 scale = reader.number(path + "scale", 1.0, min = 0.1),
                 knockback = reader.number(path + "knockback", 0.0, min = 0.0).coerceAtMost(100.0),
                 affixes = affixes(reader, path + "affixes"),
+                abilities = abilities(reader, path + "abilities"),
+                minions = reader.text(path + "minions")?.lowercase(),
                 equipment = equipment(reader, path + "equipment", gear),
                 loot = kindLoot(reader, path + "loot", items, gear),
             )
         }
-        return Result(BestiaryCatalog(kinds), reader.warnings)
+        val named = kinds.mapValues { (id, def) ->
+            if (def.minions == null || def.minions in kinds) return@mapValues def
+            reader.warn(listOf("variants", id, "minions"), "'${def.minions}' is not a custom mob here; it calls its own kind")
+            def.copy(minions = null)
+        }
+        return Result(BestiaryCatalog(named), reader.warnings)
     }
 
     private fun spawnRule(reader: YamlReader, path: List<String>): SpawnRule {
@@ -221,6 +229,14 @@ object ContentParser {
                 null
             }
         }.toSet()
+
+    private fun abilities(reader: YamlReader, path: List<String>): List<Ability> =
+        reader.texts(path).mapNotNull { name ->
+            Ability.of(name) ?: run {
+                reader.warn(path, "no ability is called '$name'; left out")
+                null
+            }
+        }.distinct()
 
     /** `gear:<id>` for a piece of gear's look, or a vanilla item's name. */
     private fun equipment(reader: YamlReader, path: List<String>, gear: Set<String>): Map<CostumeSlot, Costume> =
