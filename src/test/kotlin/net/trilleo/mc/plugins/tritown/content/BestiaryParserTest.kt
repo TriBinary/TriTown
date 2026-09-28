@@ -83,6 +83,64 @@ class BestiaryParserTest {
     }
 
     @Test
+    fun `a boss reads its level, sigil, place, arena and phases, highest first`() {
+        val result = ContentParser.bestiary(
+            mapOf(
+                "bosses" to mapOf(
+                    "lord" to mapOf(
+                        "base" to "zombie",
+                        "level" to 12,
+                        "sigil" to "grave-dust",
+                        "place" to mapOf("worlds" to listOf("normal"), "water" to true, "max-y" to 40),
+                        "arena" to 20,
+                        "bar" to "purple",
+                        "phases" to listOf(
+                            mapOf("below" to 25, "affixes" to listOf("enraged")),
+                            mapOf("below" to 60, "summon" to 3, "abilities" to listOf("charge")),
+                        ),
+                    ),
+                ),
+                "rules" to mapOf("contributor-share" to 15, "gear-odds" to mapOf("mythic" to 1)),
+            ),
+            items,
+            gear,
+        )
+        val def = result.value.kinds.getValue("lord")
+        val boss = def.boss!!
+
+        assertEquals(emptyList(), result.warnings)
+        assertEquals(null, def.spawn)
+        assertEquals(12, boss.level)
+        assertEquals(SummonPlace(setOf("normal"), water = true, maxY = 40), boss.place)
+        assertEquals("purple", boss.bar)
+        assertEquals(listOf(60.0, 25.0), boss.phases.map { it.below })
+        assertEquals(listOf(Ability.CHARGE), boss.phases[0].abilities)
+        assertEquals(3, boss.phases[0].summon)
+        assertEquals(def, result.value.bossForSigil("grave-dust"))
+        assertEquals(15.0, result.value.rules.contributorShare)
+        assertEquals(mapOf(Rarity.MYTHIC to 1.0), result.value.rules.gearOdds)
+        assertEquals(emptyList(), result.value.variantsFor("ZOMBIE"))
+    }
+
+    @Test
+    fun `a boss needs a sigil of its own`() {
+        val result = ContentParser.bestiary(
+            mapOf(
+                "bosses" to linkedMapOf(
+                    "first" to mapOf("base" to "zombie", "sigil" to "grave-dust"),
+                    "second" to mapOf("base" to "zombie", "sigil" to "grave-dust"),
+                    "third" to mapOf("base" to "zombie", "sigil" to "no-such-sigil"),
+                ),
+            ),
+            items,
+            gear,
+        )
+
+        assertEquals(setOf("first"), result.value.kinds.keys)
+        assertEquals(2, result.warnings.size, result.warnings.toString())
+    }
+
+    @Test
     fun `a variant with no base or nowhere to spawn is left out`() {
         val result = parse(
             "nobody" to mapOf("spawn" to mapOf("chance" to 5)),

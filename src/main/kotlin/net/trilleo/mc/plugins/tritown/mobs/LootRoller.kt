@@ -49,9 +49,13 @@ object LootRoller {
      */
     fun dropsGear(table: LootTable, rank: MobRank, level: Int, magicFind: Double, random: Random): Boolean {
         if (level < table.rules.minLevel) return false
-        val chance = dropFor(table, rank).gearChance
-        if (chance <= 0.0) return false
-        return random.nextDouble() * 100.0 < chance * boost(table, magicFind)
+        return chance(table, dropFor(table, rank).gearChance, magicFind, random)
+    }
+
+    /** Whether something with a [percent] chance comes up, that chance multiplied by Magic Find. */
+    fun chance(table: LootTable, percent: Double, magicFind: Double, random: Random): Boolean {
+        if (percent <= 0.0) return false
+        return random.nextDouble() * 100.0 < percent * boost(table, magicFind)
     }
 
     /**

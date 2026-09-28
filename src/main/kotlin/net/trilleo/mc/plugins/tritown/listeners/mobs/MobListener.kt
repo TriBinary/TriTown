@@ -7,6 +7,7 @@ import net.trilleo.mc.plugins.tritown.combat.Combat
 import net.trilleo.mc.plugins.tritown.config.MobSettings
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.mobs.*
+import net.trilleo.mc.plugins.tritown.mobs.boss.BossFights
 import org.bukkit.entity.Enemy
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
@@ -88,6 +89,7 @@ class MobListener : Listener {
         if (!profile.isActive) return
         ActiveMobs.track(entity)
         if (profile.kind != null) MobKinds.refresh(entity)
+        if (BossFights.isBoss(entity)) BossFights.adopt(entity)
     }
 
     @EventHandler
@@ -96,6 +98,7 @@ class MobListener : Listener {
         AffixEffects.forget(event.entity.uniqueId)
         AbilityEffects.forget(event.entity.uniqueId)
         MobLoot.forget(event.entity.uniqueId)
+        BossFights.release(event.entity.uniqueId)
     }
 
     /** A custom mob changes no blocks: an enderman of the bestiary carries nothing off. */
@@ -121,7 +124,7 @@ class MobListener : Listener {
         val profile = MobProfiles.of(entity)
         AffixEffects.onDeath(entity, profile)
         AbilityEffects.forget(entity.uniqueId)
-        event.drops += MobLoot.dropsFor(entity)
+        if (BossFights.isBoss(entity)) BossFights.defeated(entity) else event.drops += MobLoot.dropsFor(entity)
         if (profile.level > 1) {
             event.droppedExp =
                 (event.droppedExp * (1.0 + MobSettings.snapshot.xpPerLevel * (profile.level - 1))).roundToInt()

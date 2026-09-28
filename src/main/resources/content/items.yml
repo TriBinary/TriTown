@@ -72,6 +72,28 @@ items:
     model: echo_shard
     rarity: epic
 
+  # Sigils, which summon the bosses of bestiary.yml. The custom mobs of each boss's region drop them.
+  grave-sigil:
+    model: skeleton_skull
+    rarity: rare
+    glint: true
+  brood-sigil:
+    model: fermented_spider_eye
+    rarity: rare
+    glint: true
+  tide-sigil:
+    model: heart_of_the_sea
+    rarity: epic
+    glint: true
+  cinder-sigil:
+    model: wither_skeleton_skull
+    rarity: epic
+    glint: true
+  void-sigil:
+    model: ender_eye
+    rarity: legendary
+    glint: true
+
   # Essence, from elites and champions. Its grade follows the mob's level.
   dim-essence:
     model: glowstone_dust

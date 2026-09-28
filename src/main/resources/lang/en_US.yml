@@ -170,6 +170,8 @@ command:
     kinds: "<white>{amount}</white> custom mobs: <gray>{ids}"
     unknown-kind: "<red>There is no custom mob <white>{id}</white>. <gray>/tritown mob kinds</gray> names them all."
     spawned: "Called up a <white>{name}</white> at level <white>{level}</white>. It drops nothing beyond vanilla's loot."
+    bosses-header: "Each boss at its level, against one player in a full kit of rare ★★★ gear of its tier:"
+    bosses-row: "<gray>{name} <dark_gray>(Lv {level}, tier {tier})</dark_gray>: <red>{health}❤</red>, hits for <red>{hit}</red> · alone, <white>{hits}</white> swings · each hit takes <white>{percent}%</white> of health"
 
   item:
     description: "Give out the server's own items"
@@ -1343,6 +1345,7 @@ mob:
   rank:
     elite: "<gold>★ "
     champion: "<light_purple>★★ "
+    boss: "<dark_red>☠ "
 
   affix:
     armored: "Armored"
@@ -1399,7 +1402,55 @@ mob:
     starborn-sentinel:
       name: "Starborn Sentinel"
       lore: "It guards the edge of the world. From you."
+    grave-lord:
+      name: "Grave Lord"
+      lore: "Master of every grave between here and the horizon."
+      phase-1: "{name} <gray>calls the dead to rise!"
+      phase-2: "{name} <gray>is consumed by fury!"
+    broodmother:
+      name: "Broodmother"
+      lore: "The mother of every web in the world."
+      phase-1: "{name} <gray>spills its brood!"
+      phase-2: "{name} <gray>skitters into a frenzy!"
+    tide-tyrant:
+      name: "Tide Tyrant"
+      lore: "The cruellest king the sea ever had."
+      phase-1: "{name} <gray>raises the tide!"
+      phase-2: "{name} <gray>rages like a storm at sea!"
+    cinder-warlord:
+      name: "Cinder Warlord"
+      lore: "The last general of the fortresses."
+      phase-1: "{name} <gray>calls its legion and raises its guard!"
+      phase-2: "{name} <gray>bursts into flame!"
+    void-herald:
+      name: "Void Herald"
+      lore: "It speaks for the nothing beyond the stars."
+      phase-1: "{name} <gray>tears the void open!"
+      phase-2: "{name} <gray>brings the sky down!"
 
+
+
+# A boss's fight, from its summoning to its fall. {name} is boss.name.
+boss:
+  name: "<red>☠ {name}</red>"
+  # The boss bar each player near its arena sees, in their own language.
+  bar: "☠ {name} · Lv{level}"
+  subtitle: "<gray>Level {level}"
+  ritual: "<gray>The sigil flares, and {name} <gray>stirs…"
+  summoned: "<white>{player}</white> <gray>has summoned {name}<gray>!"
+  defeated: "{name} <gray>has fallen to <white>{players}</white>!"
+  defeated-alone: "{name} <gray>has fallen."
+  departed: "{name} <gray>tires of waiting, and leaves."
+  reward: "Your share of the spoils: {items}"
+  reward-empty: "<gray>Your share of the spoils came to nothing this time."
+  no-share: "<gray>You did not deal enough of the damage to earn a share of the spoils."
+  refused:
+    disabled: "Bosses cannot be summoned on this server."
+    inactive: "Nothing answers a sigil in this world."
+    town: "{name} will not be summoned inside a town."
+    place: "{name} cannot be summoned here. Its sigil says where."
+    crowded: "Another boss is too close to summon {name} here."
+    room: "There is no room here for {name}."
 
 # The items in plugins/TriTown/content/items.yml, by id. A name takes the colour of the item's rarity, so
 # names carry no colour of their own. Keep each lore line short: it is one line of the item's tooltip.
@@ -1458,6 +1509,21 @@ item:
   null-shard:
     name: "Null Shard"
     lore: "It weighs nothing, and takes the light with it."
+  grave-sigil:
+    name: "Grave Sigil"
+    lore: "Raise it in the Overworld's wilds to summon the Grave Lord."
+  brood-sigil:
+    name: "Brood Sigil"
+    lore: "Raise it below Y 40 to summon the Broodmother."
+  tide-sigil:
+    name: "Tide Sigil"
+    lore: "Raise it in the Overworld's water to summon the Tide Tyrant."
+  cinder-sigil:
+    name: "Cinder Sigil"
+    lore: "Raise it in the Nether to summon the Cinder Warlord."
+  void-sigil:
+    name: "Void Sigil"
+    lore: "Raise it in the End to summon the Void Herald."
   dim-essence:
     name: "Dim Essence"
     lore: "Power drawn from the strong."
@@ -1669,6 +1735,36 @@ gear:
     starfall-boots:
       name: "Starfall Striders"
       lore: "The ground is only a suggestion."
+    gravelord-crown:
+      name: "Gravelord's Crown"
+      lore: "Heavy with the names of the buried."
+    sepulcher-cleaver:
+      name: "Sepulcher Cleaver"
+      lore: "It opened a hundred tombs, and closed more."
+    broodfang:
+      name: "Broodfang"
+      lore: "Still wet with venom."
+    widowmantle:
+      name: "Widowmantle"
+      lore: "Spun from the Broodmother's own silk."
+    tyrants-harpoon:
+      name: "Tyrant's Harpoon"
+      lore: "It drags the sea along behind it."
+    crown-of-tides:
+      name: "Crown of Tides"
+      lore: "The tide rises and falls with whoever wears it."
+    warlords-brand:
+      name: "Warlord's Brand"
+      lore: "Forged in the fortress's last fire."
+    cinder-aegis:
+      name: "Cinder Aegis"
+      lore: "Embers still glow between its plates."
+    eclipse-scythe:
+      name: "Eclipse Scythe"
+      lore: "It harvests light."
+    herald-crown:
+      name: "Herald's Crown"
+      lore: "Whoever wears it hears the void speak."
 
 
 # The sidebar. Which lines appear, and in what order, is set per board in

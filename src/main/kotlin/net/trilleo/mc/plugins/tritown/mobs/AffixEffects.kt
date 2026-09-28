@@ -96,14 +96,7 @@ object AffixEffects {
 
         summoned += mob.uniqueId
         mob.world.playSound(mob.location, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1f, 1f)
-        val target = (mob as? Mob)?.target
-        val kind = MobKinds.def(profile)
-        repeat(tuning.summonerMinions) {
-            val spot = MobSetup.besideOf(mob.location) ?: return@repeat
-            val minion = MobSetup.spawn(spot, mob.type, profile.level, kind) ?: return@repeat
-            if (target != null) (minion as? Mob)?.target = target
-            mob.world.spawnParticle(Particle.SOUL, spot.clone().add(0.0, 1.0, 0.0), 12, 0.3, 0.5, 0.3, 0.02)
-        }
+        MobSetup.minions(mob, profile, tuning.summonerMinions, (mob as? Mob)?.target)
     }
 
     /**
@@ -160,7 +153,7 @@ object AffixEffects {
         if (!MobSetup.standable(behind)) return
         lastBlink[mob.uniqueId] = now
         mob.world.spawnParticle(Particle.PORTAL, mob.location.add(0.0, 1.0, 0.0), 30, 0.3, 0.6, 0.3, 0.5)
-        mob.teleport(behind.setDirection(target.location.toVector().subtract(behind.toVector())))
+        MobSetup.teleport(mob, behind.setDirection(target.location.toVector().subtract(behind.toVector())))
         mob.world.playSound(behind, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f)
     }
 

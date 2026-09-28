@@ -170,6 +170,8 @@ command:
     kinds: "共 <white>{amount}</white> 种自定义怪物：<gray>{ids}"
     unknown-kind: "<red>没有名为 <white>{id}</white> 的自定义怪物。<gray>/tritown mob kinds</gray> 会列出全部。"
     spawned: "已召出一只 <white>{level}</white> 级的 <white>{name}</white>。它只会掉落原版战利品。"
+    bosses-header: "各首领在其等级下，对上一名身着该阶稀有 ★★★ 整套装备的玩家："
+    bosses-row: "<gray>{name} <dark_gray>（Lv {level}，{tier} 阶）</dark_gray>：<red>{health}❤</red>，每击 <red>{hit}</red> · 单人需 <white>{hits}</white> 下 · 每击扣除生命的 <white>{percent}%</white>"
 
   item:
     description: "发放服务器自己的物品"
@@ -1342,6 +1344,7 @@ mob:
   rank:
     elite: "<gold>★ "
     champion: "<light_purple>★★ "
+    boss: "<dark_red>☠ "
 
   affix:
     armored: "重甲"
@@ -1398,7 +1401,55 @@ mob:
     starborn-sentinel:
       name: "星裔哨兵"
       lore: "它守护着世界的边缘——防的是你。"
+    grave-lord:
+      name: "墓王"
+      lore: "从此处到地平线间每一座坟墓的主人。"
+      phase-1: "{name} <gray>唤起了亡者！"
+      phase-2: "{name} <gray>陷入了狂怒！"
+    broodmother:
+      name: "巢母"
+      lore: "世间一切蛛网之母。"
+      phase-1: "{name} <gray>放出了它的幼崽！"
+      phase-2: "{name} <gray>疯狂地爬动起来！"
+    tide-tyrant:
+      name: "潮汐暴君"
+      lore: "大海有史以来最残酷的君王。"
+      phase-1: "{name} <gray>掀起了潮水！"
+      phase-2: "{name} <gray>如海上风暴般狂怒！"
+    cinder-warlord:
+      name: "余烬督军"
+      lore: "要塞的最后一位将军。"
+      phase-1: "{name} <gray>召集军团，举起了盾牌！"
+      phase-2: "{name} <gray>燃起了烈焰！"
+    void-herald:
+      name: "虚空使者"
+      lore: "它替群星之外的虚无发声。"
+      phase-1: "{name} <gray>撕开了虚空！"
+      phase-2: "{name} <gray>让天空坠落！"
 
+
+
+# 首领战，从召唤到倒下。{name} 使用 boss.name 的写法。
+boss:
+  name: "<red>☠ {name}</red>"
+  # 首领竞技场附近的每位玩家看到的首领血条，使用各自的语言。
+  bar: "☠ {name} · Lv{level}"
+  subtitle: "<gray>等级 {level}"
+  ritual: "<gray>印记闪耀，{name} <gray>正在苏醒……"
+  summoned: "<white>{player}</white> <gray>召唤了 {name}<gray>！"
+  defeated: "{name} <gray>倒在了 <white>{players}</white> 手下！"
+  defeated-alone: "{name} <gray>倒下了。"
+  departed: "{name} <gray>等得不耐烦，离开了。"
+  reward: "你分得的战利品：{items}"
+  reward-empty: "<gray>这一次，你分得的战利品一无所获。"
+  no-share: "<gray>你造成的伤害不足，没有分到战利品。"
+  refused:
+    disabled: "本服务器无法召唤首领。"
+    inactive: "在这个世界里，没有东西回应印记。"
+    town: "{name} 不会在城镇中被召唤。"
+    place: "{name} 无法在这里被召唤。印记上写明了地点。"
+    crowded: "附近已有另一位首领，无法在此召唤 {name}。"
+    room: "这里没有足够的空间容纳 {name}。"
 
 # plugins/TriTown/content/items.yml 中的物品，按 id 排列。名称会使用物品稀有度的颜色，所以名称本身不带颜色。
 # 每行描述请保持简短：它是物品提示框中的一行。
@@ -1457,6 +1508,21 @@ item:
   null-shard:
     name: "虚无碎片"
     lore: "它毫无重量，却会把光一并带走。"
+  grave-sigil:
+    name: "墓之印记"
+    lore: "在主世界的荒野中举起它，召唤墓王。"
+  brood-sigil:
+    name: "巢之印记"
+    lore: "在 Y 40 以下举起它，召唤巢母。"
+  tide-sigil:
+    name: "潮之印记"
+    lore: "在主世界的水中举起它，召唤潮汐暴君。"
+  cinder-sigil:
+    name: "烬之印记"
+    lore: "在下界举起它，召唤余烬督军。"
+  void-sigil:
+    name: "虚空印记"
+    lore: "在末地举起它，召唤虚空使者。"
   dim-essence:
     name: "黯淡精华"
     lore: "从强者身上汲取的力量。"
@@ -1668,6 +1734,36 @@ gear:
     starfall-boots:
       name: "星陨疾靴"
       lore: "大地只是一个建议。"
+    gravelord-crown:
+      name: "墓王之冠"
+      lore: "沉甸甸地刻满了逝者的名字。"
+    sepulcher-cleaver:
+      name: "墓穴劈斧"
+      lore: "它劈开过上百座坟墓，也封上过更多。"
+    broodfang:
+      name: "巢牙"
+      lore: "毒液仍未干涸。"
+    widowmantle:
+      name: "寡妇斗篷"
+      lore: "由巢母亲自吐出的丝织成。"
+    tyrants-harpoon:
+      name: "暴君鱼叉"
+      lore: "它身后拖着整片大海。"
+    crown-of-tides:
+      name: "潮汐之冠"
+      lore: "潮水随佩戴者起落。"
+    warlords-brand:
+      name: "督军烙刃"
+      lore: "锻造于要塞最后的火焰之中。"
+    cinder-aegis:
+      name: "余烬神盾甲"
+      lore: "甲片之间的余烬仍在发光。"
+    eclipse-scythe:
+      name: "日蚀镰刀"
+      lore: "它收割光芒。"
+    herald-crown:
+      name: "使者之冠"
+      lore: "戴上它的人会听见虚空的低语。"
 
 
 scoreboard:

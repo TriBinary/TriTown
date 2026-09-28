@@ -337,6 +337,15 @@ mobs:
   # is in plugins/TriTown/content/bestiary.yml.
   custom:
     enabled: true
+  # Bosses: summoned by a player with a sigil, which the custom mobs of the
+  # boss's region drop. Each fights in an arena around where it was summoned,
+  # and every player who dealt enough of its damage gets loot of their own.
+  # What each boss is and does is in plugins/TriTown/content/bestiary.yml.
+  bosses:
+    enabled: true
+    # Players this close hear when a boss is summoned, falls, or gives up and
+    # leaves.
+    announce-range: 128
 
 # ── Towns ───────────────────────────────────────────────────────────────────
 towns:

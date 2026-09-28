@@ -21,6 +21,12 @@ class DamageLedger {
         credit.getOrPut(mob, ::HashMap).merge(player, amount, Double::plus)
     }
 
+    /** How much of a pool of [max] each player has dealt to [mob], from 0 to 1. */
+    fun shares(mob: UUID, max: Double): Map<UUID, Double> {
+        if (max <= 0.0) return emptyMap()
+        return credit[mob].orEmpty().mapValues { (_, dealt) -> dealt / max }
+    }
+
     /** How much of a pool of [max] players have dealt to [mob], from 0 to 1. */
     fun share(mob: UUID, max: Double): Double {
         if (max <= 0.0) return 0.0

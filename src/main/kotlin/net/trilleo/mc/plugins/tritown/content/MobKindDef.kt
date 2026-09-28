@@ -5,7 +5,8 @@ import net.trilleo.mc.plugins.tritown.mobs.Affix
 
 /**
  * A custom mob defined in `bestiary.yml`: a vanilla kind of mob with a name, a
- * look, traits and loot of its own.
+ * look, traits and loot of its own. A variant takes the place of wild spawns
+ * ([spawn]); a boss is summoned with its sigil ([boss]).
  *
  * It never lists its health or its hits. It lists what it multiplies its
  * kind's by, on top of what its level and rank make of them, and a mob only
@@ -14,7 +15,8 @@ import net.trilleo.mc.plugins.tritown.mobs.Affix
  * the language files.
  *
  * @param base the vanilla kind it is, by its `EntityType` name
- * @param spawn when it takes the place of a wild spawn of its [base] kind
+ * @param spawn when it takes the place of a wild spawn of its [base] kind; `null` for a boss
+ * @param boss what makes it a boss, or `null` for a variant
  * @param rankable whether it may still spawn as an elite or a champion
  * @param health what it multiplies its pool by
  * @param damage what it multiplies its hits by
@@ -26,12 +28,14 @@ import net.trilleo.mc.plugins.tritown.mobs.Affix
  * @param abilities what it does in a fight, on cooldowns
  * @param minions the id of the kind its Summon calls, or `null` for its own
  * @param equipment what it wears and holds, for the look alone
- * @param loot what it drops on top of its family's material and its rank's essence
+ * @param loot what it drops on top of its family's material and its rank's essence; a
+ *   boss's is all it drops, rolled once for each player who earned a share
  */
 data class MobKindDef(
     val id: String,
     val base: String,
     val spawn: SpawnRule?,
+    val boss: BossDef?,
     val rankable: Boolean,
     val health: Double,
     val damage: Double,
@@ -51,6 +55,9 @@ data class MobKindDef(
 
     val loreKey: String
         get() = "$KEY_PREFIX$id.lore"
+
+    /** The line announced as a boss enters its phase at [index], counting from 0. */
+    fun phaseKey(index: Int): String = "$KEY_PREFIX$id.phase-${index + 1}"
 
     companion object {
         /** Where custom mobs' names live in the language files, which the language tests know is built at runtime. */
@@ -107,6 +114,77 @@ enum class SpawnTime {
  */
 data class SpawnPlace(val environment: String, val world: String, val biome: String, val y: Int, val night: Boolean)
 
+/**
+ * What makes a custom mob a boss: a fight a player starts on purpose, with its
+ * [sigil], at a fixed [level], held to an arena around where it was summoned.
+ *
+ * @param sigil the id of the item in `items.yml` that summons it
+ * @param arena how far from where it was summoned it fights, in blocks
+ * @param bar the colour of its boss bar: pink, blue, red, green, yellow, purple or white
+ * @param phases what changes as its health falls, highest threshold first
+ */
+data class BossDef(
+    val level: Int,
+    val sigil: String,
+    val place: SummonPlace,
+    val arena: Double,
+    val bar: String,
+    val phases: List<BossPhase>,
+) {
+    companion object {
+        val BAR_COLORS = setOf("pink", "blue", "red", "green", "yellow", "purple", "white")
+    }
+}
+
+/**
+ * Where a boss may be summoned.
+ *
+ * @param worlds kinds of world (`normal`, `nether`, `the_end`) or world names; empty for any
+ * @param water whether it must be summoned from water
+ * @param maxY the highest it may be summoned at, or `null` for any height
+ */
+data class SummonPlace(val worlds: Set<String>, val water: Boolean, val maxY: Int?)
+
+/**
+ * What a boss gains once its health falls below [below] percent: affixes and
+ * abilities it keeps from then on, and [summon] minions called at once.
+ */
+data class BossPhase(val below: Double, val affixes: Set<Affix>, val abilities: List<Ability>, val summon: Int)
+
+/**
+ * How every boss fight goes, from the `rules` block of `bestiary.yml`.
+ *
+ * @param contributorShare percent of a boss's health a player must have dealt to earn a share of its loot
+ * @param lootRange how near a contributor must be for their share to fall where the boss did; further off, it goes
+ *   straight to them
+ * @param idleSeconds how long a boss waits with nobody in its arena before it leaves
+ * @param ritualSeconds how long a sigil takes to summon its boss
+ * @param arenaMargin how far past its arena a boss may be pulled before it is taken back
+ * @param gearChance percent chance each share has of a finished piece of the boss's tier, too
+ * @param gearOdds the rarities a boss's gear drops at, weighted
+ */
+data class BossRules(
+    val contributorShare: Double,
+    val lootRange: Double,
+    val idleSeconds: Int,
+    val ritualSeconds: Int,
+    val arenaMargin: Double,
+    val gearChance: Double,
+    val gearOdds: Map<Rarity, Double>,
+) {
+    companion object {
+        val DEFAULT = BossRules(
+            contributorShare = 10.0,
+            lootRange = 48.0,
+            idleSeconds = 120,
+            ritualSeconds = 3,
+            arenaMargin = 8.0,
+            gearChance = 25.0,
+            gearOdds = mapOf(Rarity.RARE to 40.0, Rarity.EPIC to 35.0, Rarity.LEGENDARY to 20.0, Rarity.MYTHIC to 5.0),
+        )
+    }
+}
+
 /** Where a custom mob wears or holds a piece of its costume. */
 enum class CostumeSlot {
     HEAD, CHEST, LEGS, FEET, HAND, OFF_HAND;
@@ -142,13 +220,17 @@ sealed interface LootEntry {
     data class Gear(val id: String, override val chance: Double) : LootEntry
 }
 
-/** Everything `bestiary.yml` defines, by id. */
-data class BestiaryCatalog(val kinds: Map<String, MobKindDef>) {
+/** Everything `bestiary.yml` defines: its custom mobs by id, and how boss fights go. */
+data class BestiaryCatalog(val kinds: Map<String, MobKindDef>, val rules: BossRules = BossRules.DEFAULT) {
 
     private val variants: Map<String, List<MobKindDef>> = kinds.values.filter { it.spawn != null }.groupBy { it.base }
+    private val bySigil: Map<String, MobKindDef> = kinds.values.mapNotNull { def -> def.boss?.let { it.sigil to def } }.toMap()
 
     /** The kinds that may take the place of a wild spawn of [type] (an `EntityType` name), in the file's order. */
     fun variantsFor(type: String): List<MobKindDef> = variants[type].orEmpty()
+
+    /** The boss the item [id] summons, if it is a sigil. */
+    fun bossForSigil(id: String): MobKindDef? = bySigil[id]
 
     companion object {
         val EMPTY = BestiaryCatalog(emptyMap())

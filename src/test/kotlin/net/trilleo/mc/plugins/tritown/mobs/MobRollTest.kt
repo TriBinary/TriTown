@@ -124,6 +124,7 @@ class MobRollTest {
             minY = 0,
             maxY = null,
         ),
+        boss = null,
         rankable = true,
         health = 1.0,
         damage = 1.0,

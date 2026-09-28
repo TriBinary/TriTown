@@ -13,7 +13,8 @@
 #   trim     optional, for armor: an armor trim's pattern and material
 #   dye      optional, for leather: a colour such as '#3a5f8c'
 #   weights  how its points are shared between stats. They are scaled to add up, so 60 and 40 mean the same as 3 and 2
-#   recipe   what the Forge takes to craft it: items from items.yml, and money. A piece with none only ever drops
+#   recipe   what the Forge takes to craft it: items from items.yml, and money. A piece with none is signature gear:
+#            only the custom mobs and bosses whose loot names it (bestiary.yml) ever drop it
 #
 # The stats are health, defense, damage, strength, crit-chance, crit-damage, speed, vitality and magic-find. A piece's
 # name and description are gear.item.<id>.name and gear.item.<id>.lore in the language files.
@@ -460,6 +461,62 @@ gear:
     recipe:
       items: {void-fragment: 26, rift-shell: 12, astral-essence: 6}
       money: 38000
+
+  # Signature gear: no recipe, and only a boss drops it (bestiary.yml). The Forge still upgrades, refines, reforges
+  # and salvages it like any other piece.
+  gravelord-crown:
+    slot: helmet
+    tier: 2
+    base: golden_helmet
+    weights: {health: 35, defense: 35, magic-find: 30}
+  sepulcher-cleaver:
+    slot: weapon
+    tier: 2
+    base: iron_axe
+    weights: {damage: 50, strength: 50}
+  broodfang:
+    slot: weapon
+    tier: 4
+    base: diamond_sword
+    weights: {damage: 30, crit-chance: 35, crit-damage: 35}
+  widowmantle:
+    slot: chestplate
+    tier: 4
+    base: chainmail_chestplate
+    trim: {pattern: silence, material: amethyst}
+    weights: {health: 40, defense: 40, speed: 20}
+  tyrants-harpoon:
+    slot: weapon
+    tier: 5
+    base: trident
+    weights: {damage: 45, strength: 35, crit-damage: 20}
+  crown-of-tides:
+    slot: helmet
+    tier: 5
+    base: turtle_helmet
+    weights: {health: 40, defense: 30, vitality: 30}
+  warlords-brand:
+    slot: weapon
+    tier: 7
+    base: netherite_sword
+    weights: {damage: 50, strength: 30, crit-damage: 20}
+  cinder-aegis:
+    slot: chestplate
+    tier: 7
+    base: netherite_chestplate
+    trim: {pattern: rib, material: redstone}
+    weights: {health: 50, defense: 40, vitality: 10}
+  eclipse-scythe:
+    slot: weapon
+    tier: 10
+    base: netherite_hoe
+    weights: {damage: 50, strength: 30, crit-damage: 20}
+  herald-crown:
+    slot: helmet
+    tier: 10
+    base: netherite_helmet
+    trim: {pattern: eye, material: diamond}
+    weights: {health: 40, defense: 40, magic-find: 20}
 
 # A reforge is a small named extra the Forge can give a piece: worth reforge-share percent of its points (balance.yml),
 # spent by the reforge's own weights, on the slots it fits. Its name goes before the piece's, and is

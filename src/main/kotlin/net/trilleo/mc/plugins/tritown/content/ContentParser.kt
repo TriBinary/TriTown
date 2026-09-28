@@ -170,30 +170,120 @@ object ContentParser {
                 reader.warn(path, "has no spawn section, so it would never appear; left out")
                 continue
             }
-            kinds[id] = MobKindDef(
-                id = id,
-                base = base.uppercase(),
+            kinds[id] = kind(reader, path, id, base, items, gear).copy(
                 spawn = spawnRule(reader, path + "spawn"),
                 rankable = reader.boolean(path + "rankable", true),
-                health = reader.number(path + "health", 1.0, min = 0.1),
-                damage = reader.number(path + "damage", 1.0, min = 0.1),
-                defense = reader.number(path + "defense", 0.0, min = 0.0),
-                speed = reader.number(path + "speed", 0.0, min = -90.0),
-                scale = reader.number(path + "scale", 1.0, min = 0.1),
-                knockback = reader.number(path + "knockback", 0.0, min = 0.0).coerceAtMost(100.0),
-                affixes = affixes(reader, path + "affixes"),
-                abilities = abilities(reader, path + "abilities"),
-                minions = reader.text(path + "minions")?.lowercase(),
-                equipment = equipment(reader, path + "equipment", gear),
-                loot = kindLoot(reader, path + "loot", items, gear),
             )
         }
+
+        for (id in reader.keys(listOf("bosses"))) {
+            val path = listOf("bosses", id)
+            if (!ContentItemDef.ID.matches(id) || id in kinds) {
+                reader.warn(path, "an id must be new and use only lower-case letters, digits and dashes; left out")
+                continue
+            }
+            val base = reader.text(path + "base") ?: run {
+                reader.warn(path, "has no base kind of mob; left out")
+                continue
+            }
+            val sigil = reader.text(path + "sigil")
+            if (sigil == null || sigil !in items) {
+                reader.warn(path + "sigil", "'$sigil' is not an item in items.yml, so nothing could summon it; left out")
+                continue
+            }
+            if (kinds.values.any { it.boss?.sigil == sigil }) {
+                reader.warn(path + "sigil", "'$sigil' already summons another boss; left out")
+                continue
+            }
+            kinds[id] = kind(reader, path, id, base, items, gear).copy(boss = boss(reader, path, sigil))
+        }
+
         val named = kinds.mapValues { (id, def) ->
             if (def.minions == null || def.minions in kinds) return@mapValues def
-            reader.warn(listOf("variants", id, "minions"), "'${def.minions}' is not a custom mob here; it calls its own kind")
+            val section = if (def.boss != null) "bosses" else "variants"
+            reader.warn(listOf(section, id, "minions"), "'${def.minions}' is not a custom mob here; it calls its own kind")
             def.copy(minions = null)
         }
-        return Result(BestiaryCatalog(named), reader.warnings)
+        return Result(BestiaryCatalog(named, bossRules(reader)), reader.warnings)
+    }
+
+    /** What every custom mob has, variant or boss, as neither: the caller says which it is. */
+    private fun kind(
+        reader: YamlReader,
+        path: List<String>,
+        id: String,
+        base: String,
+        items: Set<String>,
+        gear: Set<String>,
+    ) = MobKindDef(
+        id = id,
+        base = base.uppercase(),
+        spawn = null,
+        boss = null,
+        rankable = false,
+        health = reader.number(path + "health", 1.0, min = 0.1),
+        damage = reader.number(path + "damage", 1.0, min = 0.1),
+        defense = reader.number(path + "defense", 0.0, min = 0.0),
+        speed = reader.number(path + "speed", 0.0, min = -90.0),
+        scale = reader.number(path + "scale", 1.0, min = 0.1),
+        knockback = reader.number(path + "knockback", 0.0, min = 0.0).coerceAtMost(100.0),
+        affixes = affixes(reader, path + "affixes"),
+        abilities = abilities(reader, path + "abilities"),
+        minions = reader.text(path + "minions")?.lowercase(),
+        equipment = equipment(reader, path + "equipment", gear),
+        loot = kindLoot(reader, path + "loot", items, gear),
+    )
+
+    private fun boss(reader: YamlReader, path: List<String>, sigil: String): BossDef {
+        val barName = reader.text(path + "bar")?.lowercase()
+        val bar = barName?.takeIf { it in BossDef.BAR_COLORS } ?: run {
+            if (barName != null) reader.warn(path + "bar", "no boss bar colour is called '$barName'; using red")
+            "red"
+        }
+        val phases = reader.sections(path + "phases").mapIndexed { index, section ->
+            val phase = YamlReader(section)
+            val at = path + "phases" + "$index"
+            BossPhase(
+                below = phase.number(listOf("below"), 0.0, min = 0.0).coerceAtMost(100.0),
+                affixes = affixes(phase, listOf("affixes")),
+                abilities = abilities(phase, listOf("abilities")),
+                summon = phase.integer(listOf("summon"), 0, min = 0),
+            ).also { phase.warnings.forEach { reader.warn(at, it) } }
+        }
+        val place = path + "place"
+        return BossDef(
+            level = reader.integer(path + "level", 1, min = 1),
+            sigil = sigil,
+            place = SummonPlace(
+                worlds = reader.texts(place + "worlds").map { it.lowercase() }.toSet(),
+                water = reader.boolean(place + "water", false),
+                maxY = height(reader, place + "max-y"),
+            ),
+            arena = reader.number(path + "arena", 24.0, min = 4.0),
+            bar = bar,
+            phases = phases.sortedByDescending { it.below },
+        )
+    }
+
+    private fun bossRules(reader: YamlReader): BossRules {
+        val path = listOf("rules")
+        val default = BossRules.DEFAULT
+        val odds = reader.keys(path + "gear-odds").mapNotNull { name ->
+            val rarity = Rarity.of(name) ?: run {
+                reader.warn(path + "gear-odds" + name, "no rarity is called '$name'; left out")
+                return@mapNotNull null
+            }
+            rarity to reader.number(path + "gear-odds" + name, 0.0, min = 0.0)
+        }.toMap()
+        return BossRules(
+            contributorShare = reader.number(path + "contributor-share", default.contributorShare, min = 0.0),
+            lootRange = reader.number(path + "loot-range", default.lootRange, min = 0.0),
+            idleSeconds = reader.integer(path + "idle-seconds", default.idleSeconds, min = 1),
+            ritualSeconds = reader.integer(path + "ritual-seconds", default.ritualSeconds, min = 0),
+            arenaMargin = reader.number(path + "arena-margin", default.arenaMargin, min = 0.0),
+            gearChance = reader.number(path + "gear-chance", default.gearChance, min = 0.0),
+            gearOdds = odds.ifEmpty { default.gearOdds },
+        )
     }
 
     private fun spawnRule(reader: YamlReader, path: List<String>): SpawnRule {

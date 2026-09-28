@@ -71,6 +71,19 @@
     + Server owners tune them in `plugins/TriTown/content/bestiary.yml`, or turn them off with `mobs.custom.enabled`.
       `/tritown mob spawn <kind> [level]` calls one up to look at, dropping nothing extra, and `/tritown mob kinds`
       lists them (`tritown.mob.admin`).
++ Added **bosses**: the Grave Lord, the Broodmother, the Tide Tyrant, the Cinder Warlord and the Void Herald.
+    + Each is summoned with its **sigil**, which the custom mobs of its region now and then drop. Raise one in the
+      right place — the Broodmother answers only deep underground, the Tide Tyrant only from the water — and after a
+      short ritual the boss rises in front of you. Sigils never work in a town.
+    + A boss fights in an arena around where it rose, with a boss bar for everyone nearby, abilities of its own, and
+      phases as its health falls: it calls minions, grows new affixes and learns new tricks. It gives up and leaves if
+      nobody stays to fight it.
+    + Everyone who dealt at least a tenth of its health gets **their own share** of the spoils, dropped where it fell
+      for them alone: materials, trophies, essence, perhaps a piece of gear of its tier, and perhaps a piece of its
+      **signature gear** — ten pieces that only bosses drop, such as the Gravelord's Crown and the Eclipse Scythe, and
+      which can drop as mythic.
+    + Server owners tune them in `bestiary.yml`, switch them off with `mobs.bosses.enabled`, and see each against a
+      kit of its tier with `/tritown mob bosses`. `/tritown mob spawn <boss>` calls one up to test, dropping nothing.
 + Added three stats: **Speed** (capped by `combat.speed-cap`, since it is the one players feel), **Vitality** (more from
   regeneration and healing potions) and **Magic Find**, which now also helps a champion's gear drop.
 + Server owners tune every piece in `plugins/TriTown/content/gear.yml`, and gear's budget and the Forge's prices in

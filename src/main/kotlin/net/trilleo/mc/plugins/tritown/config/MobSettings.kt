@@ -13,6 +13,8 @@ import org.bukkit.entity.EntityType
  * @param nameplates whether levelled mobs carry their level and health as a name
  * @param rankExempt kinds of mob that never spawn ranked
  * @param customMobs whether the custom mobs of `bestiary.yml` take the place of wild spawns
+ * @param bosses whether sigils summon their bosses
+ * @param announceRange how near a player must be to hear of a boss summoned, fallen or gone
  */
 data class MobSettings(
     val nightBonus: Int,
@@ -25,6 +27,8 @@ data class MobSettings(
     val nameplates: Boolean,
     val rankExempt: Set<EntityType>,
     val customMobs: Boolean,
+    val bosses: Boolean,
+    val announceRange: Double,
 ) {
 
     /** The rings mobs in [world] follow: its own, if it has any, or those of its kind of world. */
@@ -67,6 +71,8 @@ data class MobSettings(
                     .mapNotNull { name -> EntityType.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } }
                     .toSet(),
                 customMobs = config.getBoolean("mobs.custom.enabled", true),
+                bosses = config.getBoolean("mobs.bosses.enabled", true),
+                announceRange = config.getDouble("mobs.bosses.announce-range", 128.0).coerceAtLeast(0.0),
             )
         }
 

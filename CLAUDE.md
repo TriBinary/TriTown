@@ -84,7 +84,8 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
-├── mobs/                    # Mobs: levels, ranks and affixes, custom mobs, nameplates, loot (not scanned)
+├── mobs/                    # Mobs: levels, ranks and affixes, custom mobs and abilities, bosses (boss/),
+│                            # nameplates, loot (not scanned)
 ├── news/                    # Server news: posts, storage, read state, notifications (not scanned)
 ├── protection/              # Item protection: drop owners, drop windows, container and entity claims
 │                            # (not scanned)
@@ -403,6 +404,12 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
 - **Every ability lives in `AbilityEffects`**, and hurts only players, only as the mob (a `DamageSource` it caused),
   so the pipeline scales it and it can never touch a hit between players. A new ability goes there, in `Ability`, and
   in the `abilities` block of `balance.yml` with its default in `Balance`, and always warns before it lands.
+- **Bosses go through `mobs/boss/`.** `BossSummons` is the only way one is summoned — every refusal asked before the
+  sigil is taken — and `BossFights` the only thing that runs a fight. Only TriTown moves a boss, through
+  `MobSetup.teleport`; `BossListener` refuses every other teleport and portal.
+- **A boss's loot is personal**, rolled per contributor in `MobLoot.bossRewards` and never added to its death drops.
+  A piece of gear with no recipe is signature gear: only the loot that names it drops it.
+- **A new boss is held to `BossBalanceTest`**, and its kind needs vanilla numbers there.
 
 ## Working with Gear
 

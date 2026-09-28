@@ -7,12 +7,16 @@ import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
 import net.trilleo.mc.plugins.tritown.mobs.MobSetup
 import net.trilleo.mc.plugins.tritown.mobs.MobZones
+import net.trilleo.mc.plugins.tritown.mobs.boss.BossSummons
 import net.trilleo.mc.plugins.tritown.registration.PluginCommand
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import net.trilleo.mc.plugins.tritown.utils.tr
+import org.bukkit.Bukkit
+import org.bukkit.attribute.Attribute
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 
 /**
@@ -23,7 +27,7 @@ import org.bukkit.entity.Player
 class MobCommand : PluginCommand(
     name = "mob",
     description = "Inspect mob levels and the combat balance",
-    usage = "/tritown mob <level|balance|kinds|spawn <kind> [level]>",
+    usage = "/tritown mob <level|balance|bosses|kinds|spawn <kind> [level]>",
     permission = PERMISSION,
 ) {
 
@@ -31,6 +35,7 @@ class MobCommand : PluginCommand(
         when (args.firstOrNull()?.lowercase()) {
             LEVEL -> level(sender)
             BALANCE -> balance(sender)
+            BOSSES -> bosses(sender)
             KINDS -> kinds(sender)
             SPAWN -> spawn(sender, args)
             else -> sender.sendPrefixed(sender.tr("command.mob.usage"))
@@ -40,7 +45,7 @@ class MobCommand : PluginCommand(
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         val options = when (args.size) {
-            1 -> listOf(LEVEL, BALANCE, KINDS, SPAWN)
+            1 -> listOf(LEVEL, BALANCE, BOSSES, KINDS, SPAWN)
             2 -> if (args[0].equals(SPAWN, ignoreCase = true)) ContentRegistry.bestiary.kinds.keys.toList() else emptyList()
             else -> emptyList()
         }
@@ -94,7 +99,7 @@ class MobCommand : PluginCommand(
             return
         }
         val given = args.getOrNull(2)
-        val level = if (given == null) MobZones.levelAt(player.location) else {
+        val level = if (given == null) kind.boss?.level ?: MobZones.levelAt(player.location) else {
             given.toIntOrNull()?.takeIf { it in 1..MAX_LEVEL } ?: run {
                 player.sendPrefixed(player.tr("command.mob.usage"))
                 return
@@ -104,10 +109,49 @@ class MobCommand : PluginCommand(
 
         val ahead = player.location.add(player.location.direction.setY(0).normalize().multiply(SPAWN_DISTANCE))
         val at = if (ahead.block.isPassable && ahead.clone().add(0.0, 1.0, 0.0).block.isPassable) ahead else player.location
-        MobSetup.spawn(at, type, level, kind) ?: return
+        val spawned = if (kind.boss != null) BossSummons.spawn(kind, at, level, eligible = false)
+        else MobSetup.spawn(at, type, level, kind)
+        spawned ?: return
         player.sendPrefixed(
             player.tr("command.mob.spawned", "name" to player.tr(kind.nameKey), "level" to level)
         )
+    }
+
+    /**
+     * Each boss at its level against a full kit of the tier made for it: how
+     * long one player would take to bring it down, and how hard it hits. A
+     * boss's kind is measured by making one that never enters the world.
+     */
+    private fun bosses(sender: CommandSender) {
+        val balance = ContentRegistry.balance
+        val world = Bukkit.getWorlds().firstOrNull() ?: return
+        sender.sendPrefixed(sender.tr("command.mob.bosses-header"))
+        ContentRegistry.bestiary.kinds.values.forEach { kind ->
+            val boss = kind.boss ?: return@forEach
+            val type = EntityType.entries.firstOrNull { it.name == kind.base } ?: return@forEach
+            val body = type.entityClass?.let { world.createEntity(world.spawnLocation, it) } as? LivingEntity
+                ?: return@forEach
+            val foe = BalanceSimulator.Foe(
+                health = body.getAttribute(Attribute.MAX_HEALTH)?.baseValue ?: return@forEach,
+                hit = body.getAttribute(Attribute.ATTACK_DAMAGE)?.baseValue ?: 0.0,
+            )
+            val tier = (boss.level + ForgeCosts.LEVELS_PER_TIER - 1) / ForgeCosts.LEVELS_PER_TIER
+            val row = BalanceSimulator.bossRow(balance, boss.level, tier, foe, kind.health, kind.damage, kind.defense)
+            sender.sendMessage(
+                ComponentUtil.parse(
+                    sender.tr(
+                        "command.mob.bosses-row",
+                        "name" to sender.tr(kind.nameKey),
+                        "level" to boss.level,
+                        "tier" to tier,
+                        "health" to CombatFormat.number(row.foeHealth),
+                        "hit" to CombatFormat.number(row.foeHit),
+                        "hits" to row.hitsToKill,
+                        "percent" to CombatFormat.number(row.shareTaken * 100.0),
+                    )
+                )
+            )
+        }
     }
 
     /**
@@ -141,6 +185,7 @@ class MobCommand : PluginCommand(
 
         private const val LEVEL = "level"
         private const val BALANCE = "balance"
+        private const val BOSSES = "bosses"
         private const val KINDS = "kinds"
         private const val SPAWN = "spawn"
         private const val MAX_LEVEL = 999

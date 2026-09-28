@@ -16,7 +16,6 @@ import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.AbstractArrow
 import org.bukkit.entity.Arrow
-import org.bukkit.entity.EntityType
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
@@ -58,13 +57,20 @@ object AbilityEffects {
     private val bracedUntil = HashMap<UUID, Int>()
     private val minions = HashMap<UUID, MutableSet<UUID>>()
 
-    /** What [profile]'s mob can do: its kind's abilities. */
-    fun abilities(profile: MobProfile): List<Ability> = MobKinds.def(profile)?.abilities.orEmpty()
+    /**
+     * What [mob] can do now: its kind's abilities, and a boss's from every
+     * phase its health has fallen into.
+     */
+    fun abilities(mob: LivingEntity, profile: MobProfile): List<Ability> {
+        val def = MobKinds.def(profile) ?: return emptyList()
+        val phases = def.boss?.phases.orEmpty().filter { CombatHealth.fraction(mob) * 100.0 < it.below }
+        return (def.abilities + phases.flatMap { it.abilities }).distinct()
+    }
 
     /** [mob]'s twice-a-second turn: showing a Bulwark it has up, and perhaps starting an ability. */
     fun tick(mob: LivingEntity, profile: MobProfile) {
         if (braced(mob)) showBulwark(mob)
-        val abilities = abilities(profile)
+        val abilities = abilities(mob, profile)
         if (abilities.isEmpty() || mob.uniqueId in busy) return
         val target = (mob as? Mob)?.target as? Player ?: return
         if (!hittable(target) || target.world != mob.world) return
@@ -283,17 +289,8 @@ object AbilityEffects {
             if (tick == 0) sound(mob.location, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1f)
             mob.world.spawnParticle(Particle.SOUL, mob.location.add(0.0, 1.0, 0.0), 3, 0.6, 0.6, 0.6, 0.02)
         }) {
-            val own = MobKinds.def(profile)
-            val kind = own?.minions?.let { ContentRegistry.bestiary.kinds[it] } ?: own
-            val type = kind?.base?.let { base -> EntityType.entries.firstOrNull { it.name == base } } ?: mob.type
-            val called = minions.getOrPut(mob.uniqueId, ::HashSet)
-            repeat(stats.count - livingMinions(mob)) {
-                val spot = MobSetup.besideOf(mob.location) ?: return@repeat
-                val minion = MobSetup.spawn(spot, type, profile.level, kind) ?: return@repeat
-                (minion as? Mob)?.target = target
-                called += minion.uniqueId
-                mob.world.spawnParticle(Particle.SOUL, spot.clone().add(0.0, 1.0, 0.0), 12, 0.3, 0.5, 0.3, 0.02)
-            }
+            val called = MobSetup.minions(mob, profile, stats.count - livingMinions(mob), target)
+            minions.getOrPut(mob.uniqueId, ::HashSet) += called.map { it.uniqueId }
         }
     }
 

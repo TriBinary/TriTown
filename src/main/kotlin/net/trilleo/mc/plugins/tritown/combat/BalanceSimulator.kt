@@ -66,7 +66,10 @@ object BalanceSimulator {
         rarity: Rarity = Rarity.RARE,
         stars: Int = 3,
         foe: Foe = Foe.ZOMBIE,
-    ): Row {
+    ): Row = fight(balance, level, kit(balance, tier, rarity, stars), foe)
+
+    /** A full kit of the plainest gear of [tier], with the base stats under it. */
+    private fun kit(balance: Balance, tier: Int, rarity: Rarity, stars: Int): StatSheet {
         val gear = listOf(
             reference(GearSlot.WEAPON, tier, Stat.DAMAGE to 0.6, Stat.STRENGTH to 0.4),
             reference(GearSlot.HELMET, tier, Stat.HEALTH to 0.5, Stat.DEFENSE to 0.5),
@@ -76,17 +79,32 @@ object BalanceSimulator {
         ).map { def ->
             GearStats.of(def, GearData(def.id, rarity, stars, emptyMap(), null, 0), balance.gear, null)
         }
-        val sheet = gear.fold(StatSheet.of(Stat.HEALTH to balance.player.health), StatSheet::plus)
-        return fight(balance, level, sheet, foe)
+        return gear.fold(StatSheet.of(Stat.HEALTH to balance.player.health), StatSheet::plus)
     }
+
+    /**
+     * A boss of [foe]'s kind at [level] — its pool and hits multiplied by
+     * [health] and [damage], and with [defense] against every swing — against
+     * one player in the same kit of [tier] as [gearRow].
+     */
+    fun bossRow(balance: Balance, level: Int, tier: Int, foe: Foe, health: Double, damage: Double, defense: Double): Row =
+        fight(balance, level, kit(balance, tier, Rarity.RARE, 3), foe, health, damage, defense)
 
     private fun reference(slot: GearSlot, tier: Int, vararg weights: Pair<Stat, Double>): GearDef =
         GearDef("reference", slot, tier, "", null, null, null, weights.toMap(), null)
 
-    private fun fight(balance: Balance, level: Int, sheet: StatSheet, foe: Foe): Row {
-        val foeHealth = DamageMath.mobMaxHealth(foe.health, balance, level)
-        val foeHit = DamageMath.mobHit(foe.hit, balance, level)
-        val swing = DamageMath.meleeHit(sheet, balance, vanillaShare = 1.0, crit = false)
+    private fun fight(
+        balance: Balance,
+        level: Int,
+        sheet: StatSheet,
+        foe: Foe,
+        health: Double = 1.0,
+        damage: Double = 1.0,
+        defense: Double = 0.0,
+    ): Row {
+        val foeHealth = DamageMath.mobMaxHealth(foe.health, balance, level, health)
+        val foeHit = DamageMath.mobHit(foe.hit, balance, level, damage)
+        val swing = DamageMath.afterDefense(DamageMath.meleeHit(sheet, balance, vanillaShare = 1.0, crit = false), defense)
         val taken = DamageMath.afterDefense(foeHit, sheet[Stat.DEFENSE])
 
         return Row(

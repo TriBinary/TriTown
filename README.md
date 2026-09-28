@@ -70,7 +70,9 @@ Defense, Damage, Strength and crits come from what you wear and hold. Some mobs 
 affixes that make them fight differently, and the server's own mobs — the Gravewalker in its grave-gear, the Crypt
 Ghoul, the Widow Stalker, the Voidstalker and more — take the place of wild mobs now and then, tougher, with abilities
 of their own that they always warn you of — leaps, charges, volleys, meteors, webs, frost novas — and loot of their
-own. Wild mobs drop materials. At the Forge those become gear in ten tiers
+own. Five bosses — the Grave Lord, the Broodmother, the Tide Tyrant, the Cinder Warlord and the Void Herald — are
+summoned with sigils those mobs drop, fought in arenas with phases and boss bars, and share their loot, signature gear
+among it, with everyone who helped. Wild mobs drop materials. At the Forge those become gear in ten tiers
 and six rarities, which you upgrade, refine and reforge as you push further out. `/tt stats` shows your stats and where
 each comes from, your health and Defense sit above your hotbar, and every hit you land floats its damage up from the
 mob. At level 1 with vanilla gear it plays exactly like vanilla. Town claims are always level 1 and mobs from spawners
@@ -460,6 +462,31 @@ Sentinels are where Rift Shells come from.
 `mobs.custom.enabled` turns them off. `/tt mob spawn <kind> [level]` calls one up to look at (it drops nothing extra),
 and `/tt mob kinds` lists them.
 
+### Bosses
+
+Five bosses are summoned by players, each with a **sigil** that the custom mobs of its region now and then drop.
+Right-click one where its boss answers and, after a short ritual, the boss rises a few blocks in front of you:
+
+| Boss           | Level | Summoned                  | Its sigil drops from               | Its signature gear                   |
+|:---------------|:------|:--------------------------|:-----------------------------------|:-------------------------------------|
+| Grave Lord     | 12    | the Overworld's wilds     | Gravewalkers, Crypt Ghouls         | Gravelord's Crown, Sepulcher Cleaver |
+| Broodmother    | 24    | underground, below Y 40   | Widow Stalkers, Silkweavers        | Broodfang, Widowmantle               |
+| Tide Tyrant    | 30    | from the Overworld's water | Tidecallers, Hexbinders           | Tyrant's Harpoon, Crown of Tides     |
+| Cinder Warlord | 42    | the Nether                | Pyromancers, Ashen Legionnaires    | Warlord's Brand, Cinder Aegis        |
+| Void Herald    | 60    | the End                   | Voidstalkers, Starborn Sentinels   | Eclipse Scythe, Herald's Crown       |
+
+A boss fights in an arena around where it rose, glowing, with a boss bar for everyone nearby. As its health falls it
+enters new phases — calling minions, gaining affixes, learning abilities — and it gives up and leaves if nobody stays in
+its arena. It is built for a group: alone, in gear of its tier, it takes over a hundred swings.
+
+Everyone who dealt at least a tenth of its health gets **their own share** of its loot, with their own Magic Find,
+dropped where it fell for them alone (or straight into their inventory if they are far away): its region's materials,
+trophies and essence, perhaps a finished piece of its tier, and perhaps its **signature gear**, which only bosses drop
+and which can be mythic. Sigils never work in a town, and a boss never teleports, despawns or leaves its world.
+
+`mobs.bosses.enabled` turns summoning off, and `mobs.bosses.announce-range` sets who hears of a boss. `/tt mob bosses`
+shows each boss against one player in a kit of its tier, and `/tt mob spawn <boss>` calls one up to test.
+
 ### Gear and the Forge
 
 **Gear** comes in ten tiers, each made for mobs up to six times its level — tier 5 is for level 25 to 30 — and in six
@@ -491,9 +518,9 @@ Everything is tuned in files of its own in `plugins/TriTown/content/`, which `/t
 - `items.yml` — the materials and essence: how each looks and how rare it is.
 - `gear.yml` — every piece of gear: its slot, tier, base item, look, how it shares out its stats, and its recipe; and
   the reforges. Retuning a piece reaches every copy already out there.
-- `bestiary.yml` — the custom mobs: what each is, where it lives, how much tougher than its kind, its affixes and
-  abilities, what it wears and what it drops. Retuning one reaches every one already out there. What each ability does
-  is in `balance.yml`.
+- `bestiary.yml` — the custom mobs and bosses: what each is, where it lives or is summoned, how much tougher than its
+  kind, its affixes, abilities and phases, what it wears and what it drops; and how boss fights and their loot go.
+  Retuning one reaches every one already out there. What each ability does is in `balance.yml`.
 
 Names are in the language files under `item` and `gear`. `/tt mob balance` shows what your numbers make of each level —
 a zombie against a full kit of the tier made for it — before anyone fights. A value that cannot be used falls back to

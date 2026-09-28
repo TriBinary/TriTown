@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.content
 
+import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
 import org.yaml.snakeyaml.Yaml
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,8 +21,13 @@ class ContentFilesTest {
     private val gear = ContentParser.gear(load("content/gear.yml"), items.value.keys)
     private val bestiary = ContentParser.bestiary(load("content/bestiary.yml"), items.value.keys, gear.value.gear.keys)
 
-    /** Every key a custom mob is named or described by. */
-    private val kindKeys = bestiary.value.kinds.values.flatMap { listOf(it.nameKey, it.loreKey) }.toSet()
+    /** Every key a custom mob is named or described by, and every boss phase's line. */
+    private val kindKeys = bestiary.value.kinds.values.flatMap { def ->
+        listOf(def.nameKey, def.loreKey) + def.boss?.phases.orEmpty().indices.map(def::phaseKey)
+    }.toSet()
+
+    private val variants = bestiary.value.kinds.values.filter { it.boss == null }
+    private val bosses = bestiary.value.kinds.values.mapNotNull { def -> def.boss?.let { def to it } }
 
     /** Every key a piece of gear or a reforge is named by. */
     private val gearKeys = gear.value.gear.values.flatMap { listOf(it.nameKey, it.loreKey) }.toSet() +
@@ -97,8 +103,8 @@ class ContentFilesTest {
     }
 
     @Test
-    fun `every custom mob has somewhere to live and a chance to appear there`() {
-        bestiary.value.kinds.values.forEach { def ->
+    fun `every variant has somewhere to live and a chance to appear there`() {
+        variants.forEach { def ->
             val spawn = def.spawn
             assertTrue(spawn != null && spawn.chance > 0.0, "${def.id} never appears")
             assertTrue(spawn.minLevel <= spawn.maxLevel, "${def.id} spawns at no level")
@@ -106,10 +112,31 @@ class ContentFilesTest {
     }
 
     @Test
-    fun `every piece has a recipe and a tier from 1 to 10`() {
+    fun `every boss has phases, and a sigil some variant drops`() {
+        assertTrue(bosses.isNotEmpty())
+        bosses.forEach { (def, boss) ->
+            assertTrue(boss.phases.isNotEmpty(), "${def.id} has no phases")
+            val sources = variants.filter { variant -> variant.loot.any { (it as? LootEntry.Item)?.id == boss.sigil } }
+            assertTrue(sources.isNotEmpty(), "No variant drops ${boss.sigil}, so ${def.id} can never be summoned")
+        }
+    }
+
+    @Test
+    fun `every piece has a tier from 1 to 10, and a recipe unless a custom mob drops it`() {
+        val dropped = bestiary.value.kinds.values.flatMap { it.loot }.filterIsInstance<LootEntry.Gear>().map { it.id }.toSet()
         gear.value.gear.values.forEach { def ->
-            assertTrue(def.recipe != null, "${def.id} has no recipe")
+            assertTrue(def.recipe != null || def.id in dropped, "${def.id} has no recipe, and nothing drops it")
             assertTrue(def.tier in 1..10, "${def.id} is tier ${def.tier}")
+        }
+    }
+
+    @Test
+    fun `signature gear drops at the tier its boss's level is made for`() {
+        bosses.forEach { (def, boss) ->
+            val tier = (boss.level + ForgeCosts.LEVELS_PER_TIER - 1) / ForgeCosts.LEVELS_PER_TIER
+            def.loot.filterIsInstance<LootEntry.Gear>().mapNotNull { gear.value.gear[it.id] }
+                .filter { it.recipe == null }
+                .forEach { piece -> assertEquals(tier, piece.tier, "${piece.id} drops from ${def.id}, of tier $tier") }
         }
     }
 

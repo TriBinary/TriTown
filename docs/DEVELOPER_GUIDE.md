@@ -3596,6 +3596,44 @@ each, of which each ability reads only what it needs).
 - **What it remembers is in memory**: cooldowns, a Bulwark's end, the minions it has called. `forget` clears it when
   the mob dies or unloads.
 
+### Bosses
+
+A boss is a custom mob under `bosses:` in `bestiary.yml`: everything a variant has but `spawn`, plus a `BossDef` — a
+fixed `level`, the `sigil` that summons it, the `place` it may be summoned (worlds, water, a highest Y), an `arena`, a
+bar colour and `phases`. They live in `mobs/boss/`.
+
+- **Summoned on purpose.** A sigil is a content item; `listeners/mobs/BossListener` takes a right-click with one in the
+  main hand to `BossSummons.summon`. It keeps `ShopTrade`'s order: **everything that can refuse is asked first** —
+  `mobs.bosses.enabled`, combat on in the world, not a town claim, the boss's `place`, no other boss or ritual within
+  two arenas, and room for the boss's scaled height (measured on an entity made with `createEntity`, never added) —
+  and only then is one sigil taken from the hand. After `ritual-seconds` the boss rises a few blocks ahead; if it
+  cannot, the sigil is handed back. It is **eligible**, at its own level whatever the ring, glowing, and
+  `removeWhenFarAway = false`; its profile and home (`tritown:boss-home`) are set in the spawn consumer, before
+  anything sees it arrive.
+- **`BossFights` runs every fight**, from `MobTurnTask` twice a second whether or not anyone is near: a boss bar per
+  viewer in their own language (`boss.bar`), a boss pulled past `arena + arena-margin` taken home, a boss with no one to
+  fight turned to the nearest player in its arena (which keeps a spider or an enderman hostile), phases entered, and a
+  boss nobody has been in the arena of for `idle-seconds` sent away. It takes a fight up again as the boss loads
+  (`adopt`), without announcing phases it has already passed, and lets it go as it unloads or dies (`release`).
+- **Phases** are read from health: below a phase's `below` percent, its abilities join the boss's
+  (`AbilityEffects.abilities`), and the first time, its line (`mob.kind.<id>.phase-N`) is announced, its minions are
+  called (`MobSetup.minions`) and its affixes are written into the boss's profile.
+- **Only TriTown moves a boss.** `BossListener` cancels a boss's own teleports (an enderman's) and portals; the moves
+  TriTown makes — taking it home, Blinking — go through `MobSetup.teleport`, which lets them through.
+- **Loot is personal.** `MobListener.onDeath` hands a boss to `BossFights.defeated` instead of dropping anything.
+  `MobLoot.bossRewards` rolls its `loot` once for each player whose share of the `DamageLedger` is at least
+  `contributor-share`, with their own Magic Find, gear at `gear-odds` (mythic among them), plus a `gear-chance` of a
+  random craftable piece of its tier — as long as a player killed it and players dealt `player-share` between them, as
+  for any mob. A share is dropped where the boss fell as its owner's alone (`ItemOwnership.dropFor(player, stack, at)`)
+  for a contributor within `loot-range`, or handed over with `InventoryUtil.give`. Only players online are given
+  anything. Those who took part without earning a share are told so.
+- **Signature gear** is a piece with no recipe: the Forge never crafts it and the random champion drop never picks it,
+  so only the loot that names it drops it.
+
+`/tritown mob spawn <boss>` calls a boss up at its level, not eligible, for testing; `/tritown mob bosses` prints each
+boss against one player in a kit of its tier, reading its kind's vanilla health and hit off an entity made with
+`createEntity`.
+
 ### Loot
 
 A wild mob drops the materials and essence `mobs.yml` gives it (see [Content Files](#content-files)) on top of vanilla's
@@ -3614,8 +3652,9 @@ Magic Find, up to `magic-find-cap` — and, for a ranked mob, essence of the gra
 a `gear-chance` of a finished piece of gear (`LootRoller.dropsGear`, Magic Find helping), of the tier its level is made
 for and a rarity from `drop-odds` — but only a piece with a recipe, since one without is a custom mob's own. A custom
 mob rolls its own `loot` lines on top (`LootRoller.rollEntries`), each on its own and each boosted by Magic Find: items
-from `items.yml`, or a piece of gear at a rarity from `drop-odds`. It is plain Kotlin over a seeded `Random`,
-tested in `LootRollerTest`; the ledger is tested in `DamageLedgerTest`.
+from `items.yml`, or a piece of gear at a rarity from `drop-odds`. A boss drops nothing here: its loot is personal (see
+[Bosses](#bosses)). It is plain Kotlin over a seeded `Random`, tested in `LootRollerTest`; the ledger is tested in
+`DamageLedgerTest`.
 
 The drops go into `EntityDeathEvent.getDrops()`, so item protection's death window hands them to the killer like the
 rest of the mob's loot, and nothing new had to be taught to it. **Mobs never drop money**: materials are sold to the
@@ -3623,9 +3662,10 @@ server's shops, so every faucet stays one the owner prices.
 
 ### Content items
 
-Materials, essence and trophies are *content items*, defined in `items.yml` and made by `ContentItems.create`. Every one is an
-**echo shard** wearing another vanilla item's look through the `item_model` component, and carrying its id under
-`PluginItem.ITEM_ID_KEY`. An echo shard's only use is crafting a recovery compass, which
+Materials, essence, trophies and sigils are *content items*, defined in `items.yml` and made by `ContentItems.create`.
+Every one is an **echo shard** wearing another vanilla item's look through the `item_model` component, and carrying its
+id under `PluginItem.ITEM_ID_KEY`. The one use TriTown gives any of them is a sigil's, right-clicked to summon its boss
+(see [Bosses](#bosses)). An echo shard's only use is crafting a recovery compass, which
 `listeners/items/ContentItemListener` refuses in a crafting grid and a crafter — so a content item can't be placed,
 eaten, smelted, brewed, traded to a villager or used as what it looks like. Pick nothing else as the base without
 re-checking every use it has.
@@ -3714,9 +3754,13 @@ and the result back into vanilla damage — so the whole model runs in tests:
   elite takes 12–20 swings, **a tier behind** needs no more than 2.5 times the swings (a mob's health about doubles
   every tier, so a tier of gear is worth about double), and **two tiers ahead** a zombie dies in two.
 
-`BalanceSimulator` is the same model as a table, and `/tritown mob balance` prints the on-level gear table so an owner
-can see what an edit does before anyone fights. A change that breaks `BalanceSimulationTest` changes how the game feels, and has to be a
-decision.
+- `BossBalanceTest` holds every bundled boss to a group fight (`BalanceSimulator.bossRow`): one player in a rare
+  three-star kit of the boss's tier needs 60–200 swings to bring it down, and each of its hits takes 10–30% of their
+  health.
+
+`BalanceSimulator` is the same model as a table, and `/tritown mob balance` prints the on-level gear table — and
+`/tritown mob bosses` each boss — so an owner can see what an edit does before anyone fights. A change that breaks
+`BalanceSimulationTest` or `BossBalanceTest` changes how the game feels, and has to be a decision.
 
 ### The HUD
 
@@ -3743,6 +3787,8 @@ wilderness line can end with it and still read naturally without it.
 | `mobs.xp-per-level`          | Extra experience per level above 1                                    |
 | `mobs.nameplates`            | Whether levelled mobs wear a nameplate                                |
 | `mobs.custom.enabled`        | Whether the custom mobs of `bestiary.yml` take the place of wild spawns |
+| `mobs.bosses.enabled`        | Whether sigils summon their bosses                                    |
+| `mobs.bosses.announce-range` | How near a player must be to hear of a boss summoned, fallen or gone  |
 
 `CombatSettings` and `MobSettings` are snapshots swapped in whole on a reload.
 
@@ -3768,7 +3814,8 @@ checked in tests:
   Kotlin and the file can never disagree.
 - `ContentFilesTest` requires `items.yml`, `mobs.yml`, `gear.yml` and `bestiary.yml` to parse without a warning,
   every item, piece of gear, reforge and custom mob to be named in every language, no language to translate one that
-  does not exist, every piece to have a recipe and a tier from 1 to 10, and every custom mob a chance to appear.
+  does not exist, every piece a tier from 1 to 10 and a recipe unless a custom mob drops it (signature gear, of its
+  boss's tier), every variant a chance to appear, and every boss phases and a sigil some variant drops.
 - `BestiaryParserTest` covers what `bestiary.yml` can get wrong.
 
 What only the server can check — that a piece's `base` is worn where its slot says — leaves the piece out and says so.

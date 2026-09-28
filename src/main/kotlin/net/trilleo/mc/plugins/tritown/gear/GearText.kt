@@ -1,10 +1,12 @@
 package net.trilleo.mc.plugins.tritown.gear
 
 import net.kyori.adventure.text.format.NamedTextColor
+import net.trilleo.mc.plugins.tritown.content.ContentItems
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.content.Rarity
 import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.command.CommandSender
+import org.bukkit.inventory.ItemStack
 
 /**
  * Gear and content items named in one reader's language, for chat and menus.
@@ -27,6 +29,13 @@ object GearText {
     }
 
     fun rarity(reader: CommandSender, rarity: Rarity): String = reader.tr(rarity.key)
+
+    /** What [stack] is — `3x Grave Dust`, or a piece of gear by its name — or `null` if it is neither. */
+    fun stack(reader: CommandSender, stack: ItemStack): String? {
+        Gear.read(stack)?.let { return name(reader, it) }
+        val id = ContentItems.idOf(stack) ?: return null
+        return "${stack.amount}x ${item(reader, id)}"
+    }
 
     private fun colored(rarity: Rarity, text: String): String {
         val color = NamedTextColor.NAMES.key(rarity.color) ?: return text

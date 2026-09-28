@@ -37,7 +37,7 @@ object MobNameplate {
             null,
             "mob.nameplate",
             "level" to profile.level,
-            "badge" to (profile.rank.badgeKey?.let { Lang.tr(null, it) } ?: ""),
+            "badge" to (badgeKey(profile)?.let { Lang.tr(null, it) } ?: ""),
             "affixes" to profile.affixes.sortedBy { it.ordinal }.joinToString("") { affix ->
                 Lang.tr(null, "mob.affix-name", "name" to Lang.tr(null, affix.key))
             },
@@ -48,6 +48,10 @@ object MobNameplate {
         entity.customName(ComponentUtil.parse(text))
         entity.isCustomNameVisible = profile.rank != MobRank.NORMAL || profile.kind != null
     }
+
+    /** A boss's badge, or its rank's: a normal mob wears none. */
+    private fun badgeKey(profile: MobProfile): String? =
+        if (MobKinds.def(profile)?.boss != null) "mob.rank.boss" else profile.rank.badgeKey
 
     /**
      * A custom mob's own name, in the server's language like the rest of the

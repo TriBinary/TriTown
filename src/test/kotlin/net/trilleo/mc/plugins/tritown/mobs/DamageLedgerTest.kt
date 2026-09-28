@@ -21,6 +21,19 @@ class DamageLedgerTest {
     }
 
     @Test
+    fun `each player's share is their own`() {
+        val ledger = DamageLedger()
+        ledger.credit(mob, alex, 30.0)
+        ledger.credit(mob, sam, 5.0)
+        ledger.credit(mob, alex, 10.0)
+
+        val shares = ledger.shares(mob, max = 100.0)
+        assertEquals(0.4, shares.getValue(alex), 1e-9)
+        assertEquals(0.05, shares.getValue(sam), 1e-9)
+        assertEquals(emptyMap(), ledger.shares(UUID.randomUUID(), max = 100.0))
+    }
+
+    @Test
     fun `nothing is credited for nothing`() {
         val ledger = DamageLedger()
         ledger.credit(mob, alex, 0.0)
