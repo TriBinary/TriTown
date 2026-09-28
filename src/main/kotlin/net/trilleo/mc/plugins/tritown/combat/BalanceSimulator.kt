@@ -42,7 +42,13 @@ object BalanceSimulator {
      * @param hitsToKill uncritical swings the kit's sword needs to kill the foe
      * @param shareTaken the part of the player's health one of the foe's hits takes through the kit's armor
      */
-    data class Row(val level: Int, val foeHealth: Double, val foeHit: Double, val hitsToKill: Int, val shareTaken: Double)
+    data class Row(
+        val level: Int,
+        val foeHealth: Double,
+        val foeHit: Double,
+        val hitsToKill: Int,
+        val shareTaken: Double
+    )
 
     fun row(balance: Balance, level: Int, kit: Kit, foe: Foe = Foe.ZOMBIE): Row {
         val sheet = StatSheet.of(
@@ -87,7 +93,15 @@ object BalanceSimulator {
      * [health] and [damage], and with [defense] against every swing — against
      * one player in the same kit of [tier] as [gearRow].
      */
-    fun bossRow(balance: Balance, level: Int, tier: Int, foe: Foe, health: Double, damage: Double, defense: Double): Row =
+    fun bossRow(
+        balance: Balance,
+        level: Int,
+        tier: Int,
+        foe: Foe,
+        health: Double,
+        damage: Double,
+        defense: Double
+    ): Row =
         fight(balance, level, kit(balance, tier, Rarity.RARE, 3), foe, health, damage, defense)
 
     private fun reference(slot: GearSlot, tier: Int, vararg weights: Pair<Stat, Double>): GearDef =
@@ -104,7 +118,8 @@ object BalanceSimulator {
     ): Row {
         val foeHealth = DamageMath.mobMaxHealth(foe.health, balance, level, health)
         val foeHit = DamageMath.mobHit(foe.hit, balance, level, damage)
-        val swing = DamageMath.afterDefense(DamageMath.meleeHit(sheet, balance, vanillaShare = 1.0, crit = false), defense)
+        val swing =
+            DamageMath.afterDefense(DamageMath.meleeHit(sheet, balance, vanillaShare = 1.0, crit = false), defense)
         val taken = DamageMath.afterDefense(foeHit, sheet[Stat.DEFENSE])
 
         return Row(

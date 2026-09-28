@@ -5,21 +5,10 @@ import net.trilleo.mc.plugins.tritown.combat.CombatHealth
 import net.trilleo.mc.plugins.tritown.combat.DamageMath
 import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
-import org.bukkit.Bukkit
-import org.bukkit.Color
-import org.bukkit.GameMode
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.Particle
-import org.bukkit.Sound
+import org.bukkit.*
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
-import org.bukkit.entity.AbstractArrow
-import org.bukkit.entity.Arrow
-import org.bukkit.entity.LivingEntity
-import org.bukkit.entity.Mob
-import org.bukkit.entity.Player
-import org.bukkit.entity.SmallFireball
+import org.bukkit.entity.*
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
@@ -102,7 +91,13 @@ object AbilityEffects {
         minions -= mob
     }
 
-    private fun usable(ability: Ability, mob: LivingEntity, target: Player, distance: Double, stats: Balance.AbilityStats) =
+    private fun usable(
+        ability: Ability,
+        mob: LivingEntity,
+        target: Player,
+        distance: Double,
+        stats: Balance.AbilityStats
+    ) =
         when (ability) {
             Ability.LEAP -> mob.isOnGround && distance in LEAP_MIN..stats.range
             Ability.SLAM -> mob.isOnGround && distance <= stats.radius * CLOSE_ENOUGH
@@ -117,7 +112,13 @@ object AbilityEffects {
             Ability.FROST_NOVA -> distance <= stats.radius * CLOSE_ENOUGH
         }
 
-    private fun cast(ability: Ability, mob: LivingEntity, profile: MobProfile, target: Player, stats: Balance.AbilityStats) =
+    private fun cast(
+        ability: Ability,
+        mob: LivingEntity,
+        profile: MobProfile,
+        target: Player,
+        stats: Balance.AbilityStats
+    ) =
         when (ability) {
             Ability.LEAP -> leap(mob, target, stats)
             Ability.SLAM -> slam(mob, stats)
@@ -206,7 +207,8 @@ object AbilityEffects {
             val spread = VOLLEY_SPREAD_DEGREES * PI / 180.0
             repeat(stats.count) { index ->
                 val angle = (index - (stats.count - 1) / 2.0) * spread
-                val arrow = mob.launchProjectile(Arrow::class.java, aim.clone().rotateAroundY(angle).multiply(VOLLEY_SPEED))
+                val arrow =
+                    mob.launchProjectile(Arrow::class.java, aim.clone().rotateAroundY(angle).multiply(VOLLEY_SPEED))
                 arrow.damage = stats.damage / VOLLEY_SPEED
                 arrow.pickupStatus = AbstractArrow.PickupStatus.DISALLOWED
             }
@@ -221,7 +223,8 @@ object AbilityEffects {
         }) {
             repeatFor(mob, stats.count * FIREBALL_GAP, FIREBALL_GAP.toLong()) {
                 if (!target.isValid || target.world != mob.world) return@repeatFor false
-                val fireball = mob.launchProjectile(SmallFireball::class.java, aimAt(mob, target).multiply(FIREBALL_SPEED))
+                val fireball =
+                    mob.launchProjectile(SmallFireball::class.java, aimAt(mob, target).multiply(FIREBALL_SPEED))
                 fireball.setIsIncendiary(false)
                 sound(mob.location, Sound.ENTITY_BLAZE_SHOOT, 1f)
                 true
@@ -233,12 +236,18 @@ object AbilityEffects {
     private fun strike(mob: LivingEntity, target: Player, stats: Balance.AbilityStats, lightning: Boolean) {
         val spots = List(stats.count.coerceAtLeast(1)) { index ->
             if (index == 0) target.location else target.location.add(
-                Random.nextDouble(-STRIKE_SCATTER, STRIKE_SCATTER), 0.0, Random.nextDouble(-STRIKE_SCATTER, STRIKE_SCATTER),
+                Random.nextDouble(-STRIKE_SCATTER, STRIKE_SCATTER),
+                0.0,
+                Random.nextDouble(-STRIKE_SCATTER, STRIKE_SCATTER),
             )
         }
         val mark = if (lightning) Particle.ELECTRIC_SPARK else Particle.FLAME
         windUp(mob, stats.windupTicks, root = false, show = { tick ->
-            if (tick == 0) sound(mob.location, if (lightning) Sound.ENTITY_EVOKER_CAST_SPELL else Sound.ITEM_FIRECHARGE_USE, 0.8f)
+            if (tick == 0) sound(
+                mob.location,
+                if (lightning) Sound.ENTITY_EVOKER_CAST_SPELL else Sound.ITEM_FIRECHARGE_USE,
+                0.8f
+            )
             if (tick % 2 == 0) spots.forEach { ring(it, stats.radius, mark) }
         }) {
             spots.forEach { spot ->
@@ -264,7 +273,14 @@ object AbilityEffects {
             if (!reaches(mob, target, stats.range + REACH_GRACE)) return@windUp
             target.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, ticks(stats.seconds), ENSNARED))
             target.world.spawnParticle(
-                Particle.BLOCK, target.location.add(0.0, 0.5, 0.0), 30, 0.4, 0.5, 0.4, 0.0, Material.COBWEB.createBlockData(),
+                Particle.BLOCK,
+                target.location.add(0.0, 0.5, 0.0),
+                30,
+                0.4,
+                0.5,
+                0.4,
+                0.0,
+                Material.COBWEB.createBlockData(),
             )
             sound(target.location, Sound.BLOCK_POWDER_SNOW_STEP, 0.6f)
         }
@@ -310,7 +326,15 @@ object AbilityEffects {
             val at = mob.location
             sound(at, Sound.BLOCK_GLASS_BREAK, 0.6f)
             sound(at, Sound.ENTITY_PLAYER_HURT_FREEZE, 0.8f)
-            mob.world.spawnParticle(Particle.SNOWFLAKE, at.clone().add(0.0, 1.0, 0.0), 80, stats.radius / 2, 0.5, stats.radius / 2, 0.1)
+            mob.world.spawnParticle(
+                Particle.SNOWFLAKE,
+                at.clone().add(0.0, 1.0, 0.0),
+                80,
+                stats.radius / 2,
+                0.5,
+                stats.radius / 2,
+                0.1
+            )
             playersNear(at, stats.radius).forEach { player ->
                 hurt(player, mob, stats.damage, DamageType.FREEZE)
                 player.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, ticks(stats.seconds), CHILLED))
@@ -340,10 +364,16 @@ object AbilityEffects {
         sound(mob.location, Sound.ENTITY_PHANTOM_BITE, 0.6f)
         repeatFor(mob, ticks(stats.seconds), PULSE.toLong()) {
             if (!reaches(mob, target, stats.range + REACH_GRACE) || !mob.hasLineOfSight(target)) return@repeatFor false
-            line(target.location.add(0.0, 1.0, 0.0), mob.eyeLocation, Particle.DUST, Particle.DustOptions(DRAIN_COLOR, 1.2f))
+            line(
+                target.location.add(0.0, 1.0, 0.0),
+                mob.eyeLocation,
+                Particle.DUST,
+                Particle.DustOptions(DRAIN_COLOR, 1.2f)
+            )
             val before = target.health
             hurt(target, mob, stats.damage, DamageType.MAGIC)
-            val taken = DamageMath.toRpg(before - target.health, CombatHealth.max(target), CombatHealth.vanillaMax(target))
+            val taken =
+                DamageMath.toRpg(before - target.health, CombatHealth.max(target), CombatHealth.vanillaMax(target))
             if (taken > 0.0) heal(mob, taken * stats.power / 100.0)
             true
         }
@@ -433,14 +463,25 @@ object AbilityEffects {
         to.toVector().subtract(from.toVector()).setY(0.0).normalizeOrZero().multiply(strength)
 
     private fun face(mob: LivingEntity, at: Location) {
-        mob.setRotation(mob.location.setDirection(at.toVector().subtract(mob.location.toVector())).yaw, mob.location.pitch)
+        mob.setRotation(
+            mob.location.setDirection(at.toVector().subtract(mob.location.toVector())).yaw,
+            mob.location.pitch
+        )
     }
 
     private fun ring(center: Location, radius: Double, particle: Particle) {
         val points = (radius * RING_DENSITY).toInt().coerceAtLeast(8)
         repeat(points) { index ->
             val angle = 2 * PI * index / points
-            center.world.spawnParticle(particle, center.clone().add(radius * cos(angle), 0.1, radius * sin(angle)), 1, 0.0, 0.0, 0.0, 0.0)
+            center.world.spawnParticle(
+                particle,
+                center.clone().add(radius * cos(angle), 0.1, radius * sin(angle)),
+                1,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            )
         }
     }
 

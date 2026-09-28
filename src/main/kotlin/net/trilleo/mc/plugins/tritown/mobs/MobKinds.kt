@@ -58,8 +58,20 @@ object MobKinds {
     fun refresh(mob: LivingEntity) {
         val def = def(MobProfiles.of(mob))
         trait(mob, Attribute.SCALE, SCALE, def?.let { it.scale - 1.0 }, AttributeModifier.Operation.ADD_SCALAR)
-        trait(mob, Attribute.MOVEMENT_SPEED, SPEED, def?.let { it.speed / 100.0 }, AttributeModifier.Operation.ADD_SCALAR)
-        trait(mob, Attribute.KNOCKBACK_RESISTANCE, KNOCKBACK, def?.let { it.knockback / 100.0 }, AttributeModifier.Operation.ADD_NUMBER)
+        trait(
+            mob,
+            Attribute.MOVEMENT_SPEED,
+            SPEED,
+            def?.let { it.speed / 100.0 },
+            AttributeModifier.Operation.ADD_SCALAR
+        )
+        trait(
+            mob,
+            Attribute.KNOCKBACK_RESISTANCE,
+            KNOCKBACK,
+            def?.let { it.knockback / 100.0 },
+            AttributeModifier.Operation.ADD_NUMBER
+        )
     }
 
     private fun trait(

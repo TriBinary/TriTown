@@ -5,6 +5,7 @@ import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.content.GearDef
 import net.trilleo.mc.plugins.tritown.economy.EconomyContext
 import net.trilleo.mc.plugins.tritown.economy.TransactionReason
+import net.trilleo.mc.plugins.tritown.gear.Forge.refusal
 import net.trilleo.mc.plugins.tritown.utils.EconomyUtil
 import net.trilleo.mc.plugins.tritown.utils.InventoryUtil
 import org.bukkit.entity.Player
@@ -45,20 +46,23 @@ object Forge {
         return Result(Outcome.DONE, Gear.read(stack))
     }
 
-    fun upgrade(player: Player): Result = change(player, TransactionReason.GEAR_UPGRADE,
+    fun upgrade(player: Player): Result = change(
+        player, TransactionReason.GEAR_UPGRADE,
         cost = { piece ->
             ForgeCosts.upgrade(piece.def, piece.data, balance.gear, balance.forge, ContentRegistry.loot)
         },
         apply = { piece -> piece.data.copy(stars = piece.data.stars + 1) },
     )
 
-    fun refine(player: Player): Result = change(player, TransactionReason.GEAR_REFINE,
+    fun refine(player: Player): Result = change(
+        player, TransactionReason.GEAR_REFINE,
         cost = { piece -> ForgeCosts.refine(piece.def, piece.data, balance.forge, ContentRegistry.loot) },
         apply = { piece -> piece.data.copy(rarity = ForgeCosts.nextRarity(piece.data.rarity)) },
     )
 
     /** A new reforge, never the one the piece already has when another would fit. */
-    fun reforge(player: Player): Result = change(player, TransactionReason.GEAR_REFORGE,
+    fun reforge(player: Player): Result = change(
+        player, TransactionReason.GEAR_REFORGE,
         cost = { piece ->
             ForgeCosts.reforge(piece.def, balance.forge, ContentRegistry.loot)
                 .takeIf { ContentRegistry.gear.reforgesFor(piece.def.slot).isNotEmpty() }

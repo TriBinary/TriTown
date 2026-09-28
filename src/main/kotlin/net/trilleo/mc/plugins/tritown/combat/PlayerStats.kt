@@ -1,5 +1,6 @@
 package net.trilleo.mc.plugins.tritown.combat
 
+import net.trilleo.mc.plugins.tritown.combat.PlayerStats.MAX_AGE
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.*

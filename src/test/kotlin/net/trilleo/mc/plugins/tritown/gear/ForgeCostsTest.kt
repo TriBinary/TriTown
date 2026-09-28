@@ -1,12 +1,7 @@
 package net.trilleo.mc.plugins.tritown.gear
 
 import net.trilleo.mc.plugins.tritown.combat.Stat
-import net.trilleo.mc.plugins.tritown.content.ForgeTuning
-import net.trilleo.mc.plugins.tritown.content.GearDef
-import net.trilleo.mc.plugins.tritown.content.GearSlot
-import net.trilleo.mc.plugins.tritown.content.GearTuning
-import net.trilleo.mc.plugins.tritown.content.LootTable
-import net.trilleo.mc.plugins.tritown.content.Rarity
+import net.trilleo.mc.plugins.tritown.content.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -24,9 +19,11 @@ class ForgeCostsTest {
         ),
     )
 
-    private fun def(tier: Int) = GearDef("test", GearSlot.WEAPON, tier, "IRON_SWORD", null, null, null, mapOf(Stat.DAMAGE to 1.0), null)
+    private fun def(tier: Int) =
+        GearDef("test", GearSlot.WEAPON, tier, "IRON_SWORD", null, null, null, mapOf(Stat.DAMAGE to 1.0), null)
 
-    private fun data(rarity: Rarity = Rarity.COMMON, stars: Int = 0) = GearData("test", rarity, stars, emptyMap(), null, 0)
+    private fun data(rarity: Rarity = Rarity.COMMON, stars: Int = 0) =
+        GearData("test", rarity, stars, emptyMap(), null, 0)
 
     @Test
     fun `essence is the grade a mob of the piece's tier drops`() {
@@ -45,7 +42,11 @@ class ForgeCostsTest {
         assertEquals(mapOf("dim-essence" to forge.upgradeEssence), first.items)
         assertEquals(mapOf("dim-essence" to forge.upgradeEssence * 3), third.items)
         assertEquals(forge.upgradeMoney * 3, third.money, 1e-9)
-        assertEquals(forge.upgradeMoney * forge.moneyGrowth * forge.moneyGrowth * forge.moneyGrowth * forge.moneyGrowth, firstAtFive.money, 1e-6)
+        assertEquals(
+            forge.upgradeMoney * forge.moneyGrowth * forge.moneyGrowth * forge.moneyGrowth * forge.moneyGrowth,
+            firstAtFive.money,
+            1e-6
+        )
     }
 
     @Test

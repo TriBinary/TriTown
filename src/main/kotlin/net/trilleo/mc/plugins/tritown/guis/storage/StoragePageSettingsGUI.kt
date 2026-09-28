@@ -45,22 +45,43 @@ class StoragePageSettingsGUI : PluginGUI(
         val page = storage.pageOrNull(target.page)
 
         GUIFrame.draw(inventory, BUTTONS + PREVIEW_SLOT + BACK_SLOT)
-        inventory.setItem(PREVIEW_SLOT, StorageRender.pageCard(player, page, target.page, current = false).also { item ->
-            item.editMeta { it.lore(null) }
-        })
+        inventory.setItem(
+            PREVIEW_SLOT,
+            StorageRender.pageCard(player, page, target.page, current = false).also { item ->
+                item.editMeta { it.lore(null) }
+            })
         inventory.setItem(
             SLOT_RENAME,
-            PanelRender.card(Material.NAME_TAG, player.tr("gui.storage-settings.rename"), listOf(player.tr("gui.storage-settings.rename-lore")))
+            PanelRender.card(
+                Material.NAME_TAG,
+                player.tr("gui.storage-settings.rename"),
+                listOf(player.tr("gui.storage-settings.rename-lore"))
+            )
         )
         inventory.setItem(
             SLOT_ICON,
-            PanelRender.card(Material.ITEM_FRAME, player.tr("gui.storage-settings.icon"), listOf(player.tr("gui.storage-settings.icon-lore")))
+            PanelRender.card(
+                Material.ITEM_FRAME,
+                player.tr("gui.storage-settings.icon"),
+                listOf(player.tr("gui.storage-settings.icon-lore"))
+            )
         )
         inventory.setItem(
             SLOT_RESET,
-            PanelRender.card(Material.BARRIER, player.tr("gui.storage-settings.reset"), listOf(player.tr("gui.storage-settings.reset-lore")))
+            PanelRender.card(
+                Material.BARRIER,
+                player.tr("gui.storage-settings.reset"),
+                listOf(player.tr("gui.storage-settings.reset-lore"))
+            )
         )
-        inventory.setItem(BACK_SLOT, PanelRender.card(Material.ARROW, player.tr("gui.storage-settings.back"), listOf(player.tr("gui.storage-settings.back-lore"))))
+        inventory.setItem(
+            BACK_SLOT,
+            PanelRender.card(
+                Material.ARROW,
+                player.tr("gui.storage-settings.back"),
+                listOf(player.tr("gui.storage-settings.back-lore"))
+            )
+        )
     }
 
     override fun onClick(event: InventoryClickEvent) {

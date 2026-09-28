@@ -232,7 +232,7 @@ storage:
 item-protection:
   enabled: true
   # Worlds where nothing is protected, such as a minigame or creative world.
-  disabled-worlds: []
+  disabled-worlds: [ ]
   # What a player drops can only be picked up by them.
   drops: true
   # What a player mines, harvests, shears or fishes up drops as theirs.
@@ -269,7 +269,7 @@ combat:
   enabled: true
   # Worlds where hits stay vanilla and mobs are not levelled, such as a minigame
   # world.
-  disabled-worlds: []
+  disabled-worlds: [ ]
   hud:
     # Show each player's health and Defense above the hotbar. Towny's own
     # notices can use the same line; if yours do, turn one of them off.
@@ -322,7 +322,7 @@ mobs:
     #   resources:
     #     base: 10
     #     cap: 40
-    worlds: {}
+    worlds: { }
   # How much more experience a mob drops for each level above 1, as a fraction.
   xp-per-level: 0.02
   # Show a levelled mob's level and health when a player looks at it.

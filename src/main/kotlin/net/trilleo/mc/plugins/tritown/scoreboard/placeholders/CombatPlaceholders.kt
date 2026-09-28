@@ -1,10 +1,6 @@
 package net.trilleo.mc.plugins.tritown.scoreboard.placeholders
 
-import net.trilleo.mc.plugins.tritown.combat.Combat
-import net.trilleo.mc.plugins.tritown.combat.CombatFormat
-import net.trilleo.mc.plugins.tritown.combat.CombatHealth
-import net.trilleo.mc.plugins.tritown.combat.PlayerStats
-import net.trilleo.mc.plugins.tritown.combat.Stat
+import net.trilleo.mc.plugins.tritown.combat.*
 import net.trilleo.mc.plugins.tritown.mobs.MobZones
 import net.trilleo.mc.plugins.tritown.scoreboard.PlaceholderEngine
 import net.trilleo.mc.plugins.tritown.scoreboard.PlayerContext

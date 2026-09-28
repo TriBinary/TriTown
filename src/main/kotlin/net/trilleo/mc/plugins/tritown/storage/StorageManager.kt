@@ -60,7 +60,11 @@ object StorageManager {
     fun start(storageStore: StorageStore, pluginLogger: Logger) {
         store = storageStore
         logger = pluginLogger
-        writer = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "TriTown-Storage").apply { isDaemon = true } }
+        writer = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "TriTown-Storage").apply {
+                isDaemon = true
+            }
+        }
         isReady = true
     }
 
@@ -227,7 +231,8 @@ object StorageManager {
     fun toDouble(money: Money): Double =
         if (CurrencyRegistry.isLoaded) CurrencyRegistry.primary.toDouble(money) else money.toDouble(DEFAULT_SCALE)
 
-    private fun scale(): Int = if (CurrencyRegistry.isLoaded) CurrencyRegistry.primary.fractionalDigits else DEFAULT_SCALE
+    private fun scale(): Int =
+        if (CurrencyRegistry.isLoaded) CurrencyRegistry.primary.fractionalDigits else DEFAULT_SCALE
 
     // ── Items ───────────────────────────────────────────────────────────
 

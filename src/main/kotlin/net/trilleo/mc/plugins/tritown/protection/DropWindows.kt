@@ -31,7 +31,14 @@ class DropWindows(private val clock: () -> Int, radius: Double = 2.0) {
         data class Owned(val owner: UUID) : Match
     }
 
-    private data class Window(val world: UUID, val x: Double, val y: Double, val z: Double, val owner: UUID?, val tick: Int)
+    private data class Window(
+        val world: UUID,
+        val x: Double,
+        val y: Double,
+        val z: Double,
+        val owner: UUID?,
+        val tick: Int
+    )
 
     private val radiusSquared = radius * radius
     private val windows = ArrayList<Window>()

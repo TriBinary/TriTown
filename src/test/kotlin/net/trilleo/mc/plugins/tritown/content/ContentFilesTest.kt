@@ -123,7 +123,8 @@ class ContentFilesTest {
 
     @Test
     fun `every piece has a tier from 1 to 10, and a recipe unless a custom mob drops it`() {
-        val dropped = bestiary.value.kinds.values.flatMap { it.loot }.filterIsInstance<LootEntry.Gear>().map { it.id }.toSet()
+        val dropped =
+            bestiary.value.kinds.values.flatMap { it.loot }.filterIsInstance<LootEntry.Gear>().map { it.id }.toSet()
         gear.value.gear.values.forEach { def ->
             assertTrue(def.recipe != null || def.id in dropped, "${def.id} has no recipe, and nothing drops it")
             assertTrue(def.tier in 1..10, "${def.id} is tier ${def.tier}")
@@ -148,6 +149,9 @@ class ContentFilesTest {
     private fun flatten(map: Map<*, *>, prefix: String = ""): Map<String, String> =
         map.entries.flatMap { (key, value) ->
             val path = prefix + key
-            if (value is Map<*, *>) flatten(value, "$path.").entries.map { it.toPair() } else listOf(path to value.toString())
+            if (value is Map<*, *>) flatten(
+                value,
+                "$path."
+            ).entries.map { it.toPair() } else listOf(path to value.toString())
         }.toMap()
 }

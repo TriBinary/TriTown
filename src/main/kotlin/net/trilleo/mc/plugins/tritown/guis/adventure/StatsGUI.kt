@@ -91,7 +91,12 @@ class StatsGUI : PluginGUI(
         ),
     )
 
-    private fun stat(viewer: Player, stat: Stat, sheet: StatSheet, breakdown: Map<StatSources.Source, StatSheet>): ItemStack {
+    private fun stat(
+        viewer: Player,
+        stat: Stat,
+        sheet: StatSheet,
+        breakdown: Map<StatSources.Source, StatSheet>
+    ): ItemStack {
         val lines = mutableListOf(viewer.tr(description(stat)))
         if (stat == Stat.DEFENSE) {
             val reduction = (1.0 - DamageMath.defenseMultiplier(sheet[stat])) * 100.0
@@ -111,7 +116,13 @@ class StatsGUI : PluginGUI(
         }
 
         return itemStack(icon(stat)) {
-            name(viewer.tr("gui.stats.stat-name", "stat" to viewer.tr(stat.key), "value" to CombatFormat.stat(stat, sheet[stat])))
+            name(
+                viewer.tr(
+                    "gui.stats.stat-name",
+                    "stat" to viewer.tr(stat.key),
+                    "value" to CombatFormat.stat(stat, sheet[stat])
+                )
+            )
             flag(ItemFlag.HIDE_ATTRIBUTES)
             meta { lore(LoreUtil.wrapLore(lines.joinToString("<newline>"))) }
         }

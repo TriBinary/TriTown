@@ -157,7 +157,14 @@ data class Balance(
             ),
             ranks = Ranks(
                 elite = Rank(chance = 3.0, minLevel = 5, health = 4.0, damage = 1.5, minAffixes = 1, maxAffixes = 2),
-                champion = Rank(chance = 0.4, minLevel = 15, health = 12.0, damage = 2.0, minAffixes = 2, maxAffixes = 3),
+                champion = Rank(
+                    chance = 0.4,
+                    minLevel = 15,
+                    health = 12.0,
+                    damage = 2.0,
+                    minAffixes = 2,
+                    maxAffixes = 3
+                ),
             ),
             affixes = AffixTuning(
                 armoredDefense = 150.0,
@@ -183,14 +190,41 @@ data class Balance(
                     Ability.CHARGE to ability(cooldown = 200, windup = 15, range = 16.0, damage = 6.0, power = 1.6),
                     Ability.VOLLEY to ability(cooldown = 140, windup = 10, range = 20.0, damage = 2.5, count = 5),
                     Ability.FIREBALL to ability(cooldown = 120, windup = 10, range = 24.0, count = 3),
-                    Ability.METEOR to ability(cooldown = 240, windup = 30, range = 20.0, radius = 2.5, damage = 6.0, count = 3),
-                    Ability.STORM to ability(cooldown = 240, windup = 30, range = 24.0, radius = 2.0, damage = 6.0, count = 3),
+                    Ability.METEOR to ability(
+                        cooldown = 240,
+                        windup = 30,
+                        range = 20.0,
+                        radius = 2.5,
+                        damage = 6.0,
+                        count = 3
+                    ),
+                    Ability.STORM to ability(
+                        cooldown = 240,
+                        windup = 30,
+                        range = 24.0,
+                        radius = 2.0,
+                        damage = 6.0,
+                        count = 3
+                    ),
                     Ability.ENSNARE to ability(cooldown = 200, windup = 10, range = 14.0, seconds = 2.0),
                     Ability.HOOK to ability(cooldown = 200, windup = 10, range = 16.0, damage = 2.0, power = 1.4),
                     Ability.SUMMON to ability(cooldown = 400, windup = 20, count = 2),
                     Ability.BULWARK to ability(cooldown = 400, seconds = 6.0, power = 200.0),
-                    Ability.FROST_NOVA to ability(cooldown = 240, windup = 20, radius = 5.0, damage = 5.0, seconds = 3.0),
-                    Ability.MIASMA to ability(cooldown = 260, windup = 10, range = 16.0, radius = 3.0, damage = 1.5, seconds = 6.0),
+                    Ability.FROST_NOVA to ability(
+                        cooldown = 240,
+                        windup = 20,
+                        radius = 5.0,
+                        damage = 5.0,
+                        seconds = 3.0
+                    ),
+                    Ability.MIASMA to ability(
+                        cooldown = 260,
+                        windup = 10,
+                        range = 16.0,
+                        radius = 3.0,
+                        damage = 1.5,
+                        seconds = 6.0
+                    ),
                     Ability.DRAIN to ability(cooldown = 240, range = 10.0, damage = 1.5, seconds = 3.0, power = 50.0),
                 ),
             ),

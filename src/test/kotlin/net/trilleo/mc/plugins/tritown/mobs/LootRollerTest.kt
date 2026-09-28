@@ -13,9 +13,30 @@ class LootRollerTest {
     private val table = LootTable(
         families = mapOf("ZOMBIE" to LootTable.Family("zombie", "grave-dust")),
         rules = LootTable.Rules(minLevel = 3, playerShare = 50.0, magicFindCap = 100.0),
-        normal = LootTable.Drop(chance = 4.0, minAmount = 1, maxAmount = 1, minEssence = 0, maxEssence = 0, gearChance = 0.0),
-        elite = LootTable.Drop(chance = 100.0, minAmount = 1, maxAmount = 3, minEssence = 1, maxEssence = 2, gearChance = 0.0),
-        champion = LootTable.Drop(chance = 100.0, minAmount = 3, maxAmount = 6, minEssence = 3, maxEssence = 5, gearChance = 1.0),
+        normal = LootTable.Drop(
+            chance = 4.0,
+            minAmount = 1,
+            maxAmount = 1,
+            minEssence = 0,
+            maxEssence = 0,
+            gearChance = 0.0
+        ),
+        elite = LootTable.Drop(
+            chance = 100.0,
+            minAmount = 1,
+            maxAmount = 3,
+            minEssence = 1,
+            maxEssence = 2,
+            gearChance = 0.0
+        ),
+        champion = LootTable.Drop(
+            chance = 100.0,
+            minAmount = 3,
+            maxAmount = 6,
+            minEssence = 3,
+            maxEssence = 5,
+            gearChance = 1.0
+        ),
         essence = listOf(
             LootTable.EssenceGrade("dim-essence", 15),
             LootTable.EssenceGrade("glowing-essence", 30),
@@ -43,7 +64,8 @@ class LootRollerTest {
     @Test
     fun `an elite always drops its material and essence in range`() {
         repeat(1_000) {
-            val drops = LootRoller.roll(table, "ZOMBIE", MobRank.ELITE, 10, 0.0, Random(it)).associate { d -> d.item to d.amount }
+            val drops = LootRoller.roll(table, "ZOMBIE", MobRank.ELITE, 10, 0.0, Random(it))
+                .associate { d -> d.item to d.amount }
             assertTrue(drops.getValue("grave-dust") in 1..3)
             assertTrue(drops.getValue("dim-essence") in 1..2)
         }
@@ -98,7 +120,9 @@ class LootRollerTest {
         val rate = { magicFind: Double ->
             val random = Random(11)
             val rolls = 200_000
-            (1..rolls).count { LootRoller.rollEntries(table, entries, 10, magicFind, random).isNotEmpty() } * 100.0 / rolls
+            (1..rolls).count {
+                LootRoller.rollEntries(table, entries, 10, magicFind, random).isNotEmpty()
+            } * 100.0 / rolls
         }
         assertClose(1.5, rate(0.0))
         assertClose(3.0, rate(100.0))
@@ -119,7 +143,8 @@ class LootRollerTest {
     private fun materialRate(magicFind: Double): Double {
         val random = Random(42)
         val rolls = 100_000
-        val drops = (1..rolls).count { LootRoller.roll(table, "ZOMBIE", MobRank.NORMAL, 10, magicFind, random).isNotEmpty() }
+        val drops =
+            (1..rolls).count { LootRoller.roll(table, "ZOMBIE", MobRank.NORMAL, 10, magicFind, random).isNotEmpty() }
         return drops * 100.0 / rolls
     }
 

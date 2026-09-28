@@ -1173,7 +1173,7 @@ gui:
     cancel: "<red><bold>取消</bold>"
     cancel-lore: "<gray>返回，不做任何修改。"
 
-# 商店在菜单之外发给玩家的消息。
+  # 商店在菜单之外发给玩家的消息。
   stats:
     title: "<dark_gray>我的属性"
     title-other: "<dark_gray>{name} 的属性"

@@ -4,18 +4,9 @@ import net.trilleo.mc.plugins.tritown.combat.*
 import net.trilleo.mc.plugins.tritown.content.Balance
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.gear.Gear
-import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
-import net.trilleo.mc.plugins.tritown.mobs.MobLoot
-import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
-import net.trilleo.mc.plugins.tritown.mobs.MobPower
-import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
+import net.trilleo.mc.plugins.tritown.mobs.*
 import org.bukkit.attribute.Attribute
-import org.bukkit.entity.AbstractArrow
-import org.bukkit.entity.ArmorStand
-import org.bukkit.entity.LivingEntity
-import org.bukkit.entity.Player
-import org.bukkit.entity.Projectile
-import org.bukkit.entity.Tameable
+import org.bukkit.entity.*
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -55,7 +46,12 @@ class DamageListener : Listener {
 
         val balance = ContentRegistry.balance
         val attacker = event.damageSource.causingEntity as? LivingEntity
-        if (victim is Player) hurtPlayer(event, victim, attacker, balance) else hurtMob(event, victim, attacker, balance)
+        if (victim is Player) hurtPlayer(event, victim, attacker, balance) else hurtMob(
+            event,
+            victim,
+            attacker,
+            balance
+        )
     }
 
     /**
@@ -95,7 +91,11 @@ class DamageListener : Listener {
             DamageMath.mobHit(event.damage, balance, profile.level, multiplier),
             PlayerStats.sheet(victim)[Stat.DEFENSE],
         )
-        applyWithoutArmor(event, victim, DamageMath.toVanilla(hit, CombatHealth.max(victim), CombatHealth.vanillaMax(victim)))
+        applyWithoutArmor(
+            event,
+            victim,
+            DamageMath.toVanilla(hit, CombatHealth.max(victim), CombatHealth.vanillaMax(victim))
+        )
     }
 
     private fun hurtMob(event: EntityDamageEvent, victim: LivingEntity, attacker: LivingEntity?, balance: Balance) {

@@ -1,11 +1,7 @@
 package net.trilleo.mc.plugins.tritown.gear
 
 import net.trilleo.mc.plugins.tritown.combat.Stat
-import net.trilleo.mc.plugins.tritown.content.GearDef
-import net.trilleo.mc.plugins.tritown.content.GearSlot
-import net.trilleo.mc.plugins.tritown.content.GearTuning
-import net.trilleo.mc.plugins.tritown.content.Rarity
-import net.trilleo.mc.plugins.tritown.content.ReforgeDef
+import net.trilleo.mc.plugins.tritown.content.*
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.random.Random
@@ -80,7 +76,8 @@ class GearStatsTest {
         val helmet = def(GearSlot.HELMET, 2, Stat.HEALTH to 1.0)
 
         val reforged = GearStats.of(sword, data(reforge = "sharp"), tuning, sharp)[Stat.CRIT_DAMAGE]
-        val expected = tuning.curve(Stat.CRIT_DAMAGE).value(tuning.points(GearSlot.WEAPON) * tuning.reforgeShare / 100.0, 2)
+        val expected =
+            tuning.curve(Stat.CRIT_DAMAGE).value(tuning.points(GearSlot.WEAPON) * tuning.reforgeShare / 100.0, 2)
         assertEquals(expected, reforged, 1e-9)
         assertEquals(0.0, GearStats.of(helmet, data(reforge = "sharp"), tuning, sharp)[Stat.CRIT_DAMAGE])
     }

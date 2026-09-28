@@ -224,7 +224,8 @@ sealed interface LootEntry {
 data class BestiaryCatalog(val kinds: Map<String, MobKindDef>, val rules: BossRules = BossRules.DEFAULT) {
 
     private val variants: Map<String, List<MobKindDef>> = kinds.values.filter { it.spawn != null }.groupBy { it.base }
-    private val bySigil: Map<String, MobKindDef> = kinds.values.mapNotNull { def -> def.boss?.let { it.sigil to def } }.toMap()
+    private val bySigil: Map<String, MobKindDef> =
+        kinds.values.mapNotNull { def -> def.boss?.let { it.sigil to def } }.toMap()
 
     /** The kinds that may take the place of a wild spawn of [type] (an `EntityType` name), in the file's order. */
     fun variantsFor(type: String): List<MobKindDef> = variants[type].orEmpty()

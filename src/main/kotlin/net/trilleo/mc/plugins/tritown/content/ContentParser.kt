@@ -188,7 +188,10 @@ object ContentParser {
             }
             val sigil = reader.text(path + "sigil")
             if (sigil == null || sigil !in items) {
-                reader.warn(path + "sigil", "'$sigil' is not an item in items.yml, so nothing could summon it; left out")
+                reader.warn(
+                    path + "sigil",
+                    "'$sigil' is not an item in items.yml, so nothing could summon it; left out"
+                )
                 continue
             }
             if (kinds.values.any { it.boss?.sigil == sigil }) {
@@ -201,7 +204,10 @@ object ContentParser {
         val named = kinds.mapValues { (id, def) ->
             if (def.minions == null || def.minions in kinds) return@mapValues def
             val section = if (def.boss != null) "bosses" else "variants"
-            reader.warn(listOf(section, id, "minions"), "'${def.minions}' is not a custom mob here; it calls its own kind")
+            reader.warn(
+                listOf(section, id, "minions"),
+                "'${def.minions}' is not a custom mob here; it calls its own kind"
+            )
             def.copy(minions = null)
         }
         return Result(BestiaryCatalog(named, bossRules(reader)), reader.warnings)
@@ -347,7 +353,12 @@ object ContentParser {
             slot to costume
         }.toMap()
 
-    private fun kindLoot(reader: YamlReader, path: List<String>, items: Set<String>, gear: Set<String>): List<LootEntry> =
+    private fun kindLoot(
+        reader: YamlReader,
+        path: List<String>,
+        items: Set<String>,
+        gear: Set<String>
+    ): List<LootEntry> =
         reader.sections(path).mapIndexedNotNull { index, section ->
             val entry = YamlReader(section)
             val at = path + "$index"

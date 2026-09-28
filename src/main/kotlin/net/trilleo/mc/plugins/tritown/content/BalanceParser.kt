@@ -120,7 +120,10 @@ object BalanceParser {
         val capName = reader.text(root + "refine-cap")
         val cap = capName?.let { name ->
             Rarity.of(name) ?: run {
-                reader.warn(root + "refine-cap", "no rarity is called '$name'; using ${default.refineCap.name.lowercase()}")
+                reader.warn(
+                    root + "refine-cap",
+                    "no rarity is called '$name'; using ${default.refineCap.name.lowercase()}"
+                )
                 null
             }
         } ?: default.refineCap

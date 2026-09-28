@@ -7,7 +7,6 @@ import net.trilleo.mc.plugins.tritown.enums.PagedLayout
 import net.trilleo.mc.plugins.tritown.gear.Forge
 import net.trilleo.mc.plugins.tritown.gear.ForgeCosts
 import net.trilleo.mc.plugins.tritown.gear.Gear
-import net.trilleo.mc.plugins.tritown.gear.GearText
 import net.trilleo.mc.plugins.tritown.guis.ConfirmGUI
 import net.trilleo.mc.plugins.tritown.guis.menu.MenuRender
 import net.trilleo.mc.plugins.tritown.registration.GUIManager
@@ -39,7 +38,8 @@ class ForgeRecipesGUI : PagedPluginGUI(
     override fun getItems(player: Player): List<ItemStack> =
         recipes.getOrPut(player.uniqueId) { craftable() }.mapNotNull { def -> render(player, def) }
 
-    override fun navButtons(player: Player): Map<Int, ItemStack> = mapOf(MenuRender.BACK_OFFSET to MenuRender.back(player))
+    override fun navButtons(player: Player): Map<Int, ItemStack> =
+        mapOf(MenuRender.BACK_OFFSET to MenuRender.back(player))
 
     override fun onNavClick(event: InventoryClickEvent, offset: Int) {
         val player = event.whoClicked as? Player ?: return

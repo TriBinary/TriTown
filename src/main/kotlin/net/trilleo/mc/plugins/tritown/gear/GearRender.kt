@@ -105,7 +105,8 @@ object GearRender {
 
     /** `★★★ RARE WEAPON`: the piece's stars, then its rarity and slot in the rarity's colour. */
     private fun footer(def: GearDef, data: GearData): Component {
-        val stars = if (data.stars > 0) Component.text("★".repeat(data.stars) + " ", NamedTextColor.GOLD) else Component.empty()
+        val stars =
+            if (data.stars > 0) Component.text("★".repeat(data.stars) + " ", NamedTextColor.GOLD) else Component.empty()
         return stars
             .append(text(data.rarity.key))
             .append(Component.space())

@@ -1,11 +1,6 @@
 package net.trilleo.mc.plugins.tritown.mobs
 
-import net.trilleo.mc.plugins.tritown.content.Balance
-import net.trilleo.mc.plugins.tritown.content.BestiaryCatalog
-import net.trilleo.mc.plugins.tritown.content.MobKindDef
-import net.trilleo.mc.plugins.tritown.content.SpawnPlace
-import net.trilleo.mc.plugins.tritown.content.SpawnRule
-import net.trilleo.mc.plugins.tritown.content.SpawnTime
+import net.trilleo.mc.plugins.tritown.content.*
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.test.Test
@@ -79,7 +74,8 @@ class MobRollTest {
 
     @Test
     fun `a world named in a spawn rule counts as well as its kind of world`() {
-        val catalog = BestiaryCatalog(mapOf("walker" to kind("walker", "ZOMBIE", chance = 100.0, worlds = setOf("mining"))))
+        val catalog =
+            BestiaryCatalog(mapOf("walker" to kind("walker", "ZOMBIE", chance = 100.0, worlds = setOf("mining"))))
 
         assertEquals("walker", MobRoll.kind(catalog, "ZOMBIE", 5, overworld.copy(world = "mining"), Random(7))?.id)
         assertEquals(null, MobRoll.kind(catalog, "ZOMBIE", 5, overworld, Random(7)))

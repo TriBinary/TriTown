@@ -1,10 +1,6 @@
 package net.trilleo.mc.plugins.tritown.gear
 
-import net.trilleo.mc.plugins.tritown.content.ForgeTuning
-import net.trilleo.mc.plugins.tritown.content.GearDef
-import net.trilleo.mc.plugins.tritown.content.GearTuning
-import net.trilleo.mc.plugins.tritown.content.LootTable
-import net.trilleo.mc.plugins.tritown.content.Rarity
+import net.trilleo.mc.plugins.tritown.content.*
 
 /**
  * What each thing the Forge does costs, worked out from `balance.yml` and the

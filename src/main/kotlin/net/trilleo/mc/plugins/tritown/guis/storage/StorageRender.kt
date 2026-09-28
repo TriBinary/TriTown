@@ -78,7 +78,11 @@ object StorageRender {
         lines += ""
         lines += viewer.tr(if (current) "gui.storage.overview-current" else "gui.storage.overview-open")
 
-        return PanelRender.card(icon(page), viewer.tr("gui.storage.overview-name", "name" to pageName(viewer, page, index)), lines)
+        return PanelRender.card(
+            icon(page),
+            viewer.tr("gui.storage.overview-name", "name" to pageName(viewer, page, index)),
+            lines
+        )
             .also { item -> if (current) item.editMeta { it.setEnchantmentGlintOverride(true) } }
     }
 

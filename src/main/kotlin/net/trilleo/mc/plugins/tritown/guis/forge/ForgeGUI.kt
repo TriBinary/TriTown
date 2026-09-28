@@ -75,9 +75,23 @@ class ForgeGUI : PluginGUI(
         }
         when (layouts[player.uniqueId]?.get(event.rawSlot) ?: return) {
             Action.CRAFT -> MenuRender.later(player) { ForgeRecipesGUI.show(player) }
-            Action.UPGRADE -> confirm(player, "gui.forge.upgrade-confirm", "forge.upgraded", ::upgradeCost, Forge::upgrade)
+            Action.UPGRADE -> confirm(
+                player,
+                "gui.forge.upgrade-confirm",
+                "forge.upgraded",
+                ::upgradeCost,
+                Forge::upgrade
+            )
+
             Action.REFINE -> confirm(player, "gui.forge.refine-confirm", "forge.refined", ::refineCost, Forge::refine)
-            Action.REFORGE -> confirm(player, "gui.forge.reforge-confirm", "forge.reforged", ::reforgeCost, Forge::reforge)
+            Action.REFORGE -> confirm(
+                player,
+                "gui.forge.reforge-confirm",
+                "forge.reforged",
+                ::reforgeCost,
+                Forge::reforge
+            )
+
             Action.SALVAGE -> confirm(player, "gui.forge.salvage-confirm", "forge.salvaged", { null }, Forge::salvage)
         }
     }
@@ -153,7 +167,8 @@ class ForgeGUI : PluginGUI(
         )
 
         Action.SALVAGE -> {
-            val returned = ForgeCosts.salvage(piece!!.def, piece.data, ContentRegistry.balance.forge, ContentRegistry.loot)
+            val returned =
+                ForgeCosts.salvage(piece!!.def, piece.data, ContentRegistry.balance.forge, ContentRegistry.loot)
             val lines = listOf(viewer.tr("gui.forge.salvage-lore")) + returned.map { (id, amount) ->
                 viewer.tr("gui.forge.salvage-item", "amount" to amount, "name" to GearText.item(viewer, id))
             }
@@ -166,7 +181,13 @@ class ForgeGUI : PluginGUI(
     }
 
     /** An action on the held piece: what it does, what it costs, and the click to do it. */
-    private fun card(viewer: Player, material: Material, nameKey: String, about: String, cost: ForgeCosts.Cost?): ItemStack {
+    private fun card(
+        viewer: Player,
+        material: Material,
+        nameKey: String,
+        about: String,
+        cost: ForgeCosts.Cost?
+    ): ItemStack {
         val lines = listOf(about, "") + cost?.let { ForgeRender.costLines(viewer, it) }.orEmpty() +
                 "" + viewer.tr("gui.forge.click-act")
         return PanelRender.card(material, viewer.tr(nameKey), lines)

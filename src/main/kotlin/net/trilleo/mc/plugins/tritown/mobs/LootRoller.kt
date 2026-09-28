@@ -63,7 +63,13 @@ object LootRoller {
      * chance multiplied by Magic Find like any other. Nothing below the table's
      * minimum level.
      */
-    fun rollEntries(table: LootTable, entries: List<LootEntry>, level: Int, magicFind: Double, random: Random): List<Won> {
+    fun rollEntries(
+        table: LootTable,
+        entries: List<LootEntry>,
+        level: Int,
+        magicFind: Double,
+        random: Random
+    ): List<Won> {
         if (level < table.rules.minLevel) return emptyList()
         val boost = boost(table, magicFind)
         return entries.mapNotNull { entry ->

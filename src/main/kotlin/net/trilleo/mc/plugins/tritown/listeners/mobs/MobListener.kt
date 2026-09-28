@@ -14,12 +14,8 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.event.entity.CreatureSpawnEvent
+import org.bukkit.event.entity.*
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
-import org.bukkit.event.entity.EntityChangeBlockEvent
-import org.bukkit.event.entity.EntityDeathEvent
-import org.bukkit.event.entity.EntityRegainHealthEvent
-import org.bukkit.event.entity.EntityTransformEvent
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -130,7 +126,11 @@ class MobListener : Listener {
             val drops = MobLoot.dropsFor(entity)
             event.drops += drops
             val killer = entity.killer
-            if (killer != null && profile.kind != null && profile.eligible) BestiaryRecords.credit(killer, profile.kind, drops)
+            if (killer != null && profile.kind != null && profile.eligible) BestiaryRecords.credit(
+                killer,
+                profile.kind,
+                drops
+            )
         }
         if (profile.level > 1) {
             event.droppedExp =

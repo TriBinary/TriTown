@@ -85,7 +85,12 @@ data class GearTuning(
             rollMax = 100,
             reforgeShare = 8.0,
             craftOdds = mapOf(Rarity.COMMON to 60.0, Rarity.UNCOMMON to 25.0, Rarity.RARE to 11.0, Rarity.EPIC to 4.0),
-            dropOdds = mapOf(Rarity.UNCOMMON to 45.0, Rarity.RARE to 35.0, Rarity.EPIC to 15.0, Rarity.LEGENDARY to 5.0),
+            dropOdds = mapOf(
+                Rarity.UNCOMMON to 45.0,
+                Rarity.RARE to 35.0,
+                Rarity.EPIC to 15.0,
+                Rarity.LEGENDARY to 5.0
+            ),
         )
     }
 }

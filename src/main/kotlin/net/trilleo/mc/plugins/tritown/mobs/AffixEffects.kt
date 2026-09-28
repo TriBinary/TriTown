@@ -46,7 +46,13 @@ object AffixEffects {
         if (profile.has(Affix.FRENZIED)) {
             mob.getAttribute(Attribute.MOVEMENT_SPEED)?.let { speed ->
                 speed.removeModifier(FRENZY)
-                speed.addModifier(AttributeModifier(FRENZY, tuning.frenziedSpeed / 100.0, AttributeModifier.Operation.ADD_SCALAR))
+                speed.addModifier(
+                    AttributeModifier(
+                        FRENZY,
+                        tuning.frenziedSpeed / 100.0,
+                        AttributeModifier.Operation.ADD_SCALAR
+                    )
+                )
             }
         }
         if (profile.rank == MobRank.CHAMPION) mob.isGlowing = true
@@ -73,7 +79,11 @@ object AffixEffects {
     fun afterHittingPlayer(mob: LivingEntity, profile: MobProfile, player: Player, dealt: Double) {
         val tuning = ContentRegistry.balance.affixes
         if (profile.has(Affix.VAMPIRIC) && !mob.isDead) {
-            val heal = DamageMath.toVanilla(dealt * tuning.vampiricHeal / 100.0, CombatHealth.max(mob), CombatHealth.vanillaMax(mob))
+            val heal = DamageMath.toVanilla(
+                dealt * tuning.vampiricHeal / 100.0,
+                CombatHealth.max(mob),
+                CombatHealth.vanillaMax(mob)
+            )
             mob.heal(heal.coerceAtMost(CombatHealth.vanillaMax(mob) - mob.health).coerceAtLeast(0.0))
         }
         if (profile.has(Affix.MOLTEN)) player.fireTicks = maxOf(player.fireTicks, tuning.moltenSeconds * TICKS)
@@ -122,9 +132,11 @@ object AffixEffects {
             world.getNearbyPlayers(center, radius).forEach { player ->
                 val falloff = 1.0 - player.location.distance(center) / radius
                 if (falloff <= 0.0) return@forEach
-                val blast = DamageSource.builder(DamageType.EXPLOSION).withCausingEntity(mob).withDirectEntity(mob).build()
+                val blast =
+                    DamageSource.builder(DamageType.EXPLOSION).withCausingEntity(mob).withDirectEntity(mob).build()
                 player.damage(tuning.volatilePower * VOLATILE_HIT * falloff, blast)
-                player.velocity = player.location.toVector().subtract(center.toVector()).normalizeOrZero().multiply(falloff)
+                player.velocity =
+                    player.location.toVector().subtract(center.toVector()).normalizeOrZero().multiply(falloff)
             }
         }, tuning.volatileDelayTicks.toLong())
     }
@@ -132,7 +144,19 @@ object AffixEffects {
     /** A ranked mob's twice-a-second turn: what it shows, and a blinker closing the distance. */
     fun tick(mob: LivingEntity, profile: MobProfile) {
         val center = mob.location.add(0.0, mob.height / 2, 0.0)
-        profile.affixes.forEach { affix -> particle(affix, mob)?.let { mob.world.spawnParticle(it, center, 1, 0.3, 0.4, 0.3, 0.0) } }
+        profile.affixes.forEach { affix ->
+            particle(affix, mob)?.let {
+                mob.world.spawnParticle(
+                    it,
+                    center,
+                    1,
+                    0.3,
+                    0.4,
+                    0.3,
+                    0.0
+                )
+            }
+        }
         if (profile.has(Affix.BLINKING)) blink(mob)
     }
 
@@ -149,7 +173,8 @@ object AffixEffects {
         val now = Bukkit.getCurrentTick()
         if (now - (lastBlink[mob.uniqueId] ?: Int.MIN_VALUE / 2) < tuning.blinkingCooldownTicks) return
 
-        val behind = target.location.clone().subtract(target.location.direction.setY(0).normalizeOrZero().multiply(BLINK_BEHIND))
+        val behind =
+            target.location.clone().subtract(target.location.direction.setY(0).normalizeOrZero().multiply(BLINK_BEHIND))
         if (!MobSetup.standable(behind)) return
         lastBlink[mob.uniqueId] = now
         mob.world.spawnParticle(Particle.PORTAL, mob.location.add(0.0, 1.0, 0.0), 30, 0.3, 0.6, 0.3, 0.5)
@@ -164,6 +189,7 @@ object AffixEffects {
         Affix.ENRAGED -> Particle.ANGRY_VILLAGER.takeIf {
             CombatHealth.fraction(mob) * 100.0 < ContentRegistry.balance.affixes.enragedBelow
         }
+
         Affix.MOLTEN -> Particle.FLAME
         Affix.FROSTBOUND -> Particle.SNOWFLAKE
         Affix.VENOMOUS -> Particle.ITEM_SLIME

@@ -8,11 +8,7 @@ import net.trilleo.mc.plugins.tritown.content.BossDef
 import net.trilleo.mc.plugins.tritown.content.ContentItems
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.content.MobKindDef
-import net.trilleo.mc.plugins.tritown.mobs.MobProfile
-import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
-import net.trilleo.mc.plugins.tritown.mobs.MobRank
-import net.trilleo.mc.plugins.tritown.mobs.MobSetup
-import net.trilleo.mc.plugins.tritown.mobs.MobZones
+import net.trilleo.mc.plugins.tritown.mobs.*
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import net.trilleo.mc.plugins.tritown.utils.InventoryUtil
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
@@ -47,7 +43,12 @@ object BossSummons {
         val boss = kind.boss ?: return
         val spot = spotFor(player)
         refusal(kind, boss, spot)?.let { key ->
-            player.sendPrefixed(player.tr("common.error", "message" to player.tr(key, "name" to BossFights.name(player, kind))))
+            player.sendPrefixed(
+                player.tr(
+                    "common.error",
+                    "message" to player.tr(key, "name" to BossFights.name(player, kind))
+                )
+            )
             return
         }
         if (!takeSigil(player, boss.sigil)) return
@@ -63,7 +64,10 @@ object BossSummons {
             !Combat.isActive(world) -> "boss.refused.inactive"
             MobZones.read(spot).town -> "boss.refused.town"
             !placeFits(boss, spot) -> "boss.refused.place"
-            BossFights.near(spot, crowd) || rituals.any { it.world == world && it.distanceSquared(spot) <= crowd * crowd } ->
+            BossFights.near(
+                spot,
+                crowd
+            ) || rituals.any { it.world == world && it.distanceSquared(spot) <= crowd * crowd } ->
                 "boss.refused.crowded"
 
             !roomFor(kind, spot, boss.place.water) -> "boss.refused.room"
@@ -120,7 +124,15 @@ object BossSummons {
             override fun run() {
                 if (elapsed < ticks) {
                     val rise = elapsed.toDouble() / ticks.coerceAtLeast(1) * RITUAL_HEIGHT
-                    spot.world.spawnParticle(Particle.SOUL_FIRE_FLAME, spot.clone().add(0.0, rise, 0.0), 8, 0.4, 0.1, 0.4, 0.01)
+                    spot.world.spawnParticle(
+                        Particle.SOUL_FIRE_FLAME,
+                        spot.clone().add(0.0, rise, 0.0),
+                        8,
+                        0.4,
+                        0.1,
+                        0.4,
+                        0.01
+                    )
                     spot.world.spawnParticle(Particle.SMOKE, spot, 4, 0.8, 0.05, 0.8, 0.01)
                     elapsed++
                     return

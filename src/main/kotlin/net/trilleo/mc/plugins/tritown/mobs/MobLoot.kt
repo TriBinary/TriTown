@@ -65,9 +65,13 @@ object MobLoot {
         val magicFind = PlayerStats.sheet(killer)[Stat.MAGIC_FIND]
         val drops = LootRoller.roll(table, mob.type.name, profile.rank, profile.level, magicFind, Random)
             .mapNotNull { drop -> ContentItems.create(drop.item, drop.amount) }
-        val gear = if (LootRoller.dropsGear(table, profile.rank, profile.level, magicFind, Random)) gearFor(profile.level, odds) else null
+        val gear = if (LootRoller.dropsGear(table, profile.rank, profile.level, magicFind, Random)) gearFor(
+            profile.level,
+            odds
+        ) else null
         val own = kind?.let {
-            LootRoller.rollEntries(table, it.loot, profile.level, magicFind, Random).mapNotNull { won -> stack(won, odds) }
+            LootRoller.rollEntries(table, it.loot, profile.level, magicFind, Random)
+                .mapNotNull { won -> stack(won, odds) }
         }.orEmpty()
         return drops + listOfNotNull(gear) + own
     }
@@ -98,7 +102,10 @@ object MobLoot {
             val magicFind = PlayerStats.sheet(player)[Stat.MAGIC_FIND]
             val own = LootRoller.rollEntries(table, kind.loot, profile.level, magicFind, Random)
                 .mapNotNull { stack(it, rules.gearOdds) }
-            val gear = if (LootRoller.chance(table, rules.gearChance, magicFind, Random)) gearFor(profile.level, rules.gearOdds) else null
+            val gear = if (LootRoller.chance(table, rules.gearChance, magicFind, Random)) gearFor(
+                profile.level,
+                rules.gearOdds
+            ) else null
             id to own + listOfNotNull(gear)
         }.toMap()
         return Spoils(rewards, short.toSet())
@@ -127,7 +134,12 @@ object MobLoot {
     /** What a line of a custom mob's own loot that came up is, as an item: gear at a rarity from [odds]. */
     private fun stack(won: LootRoller.Won, odds: Map<Rarity, Double>): ItemStack? = when (val entry = won.entry) {
         is LootEntry.Item -> ContentItems.create(entry.id, won.amount)
-        is LootEntry.Gear -> ContentRegistry.gear.gear[entry.id]?.let { def -> Gear.create(def, GearStats.pick(odds, Random)) }
+        is LootEntry.Gear -> ContentRegistry.gear.gear[entry.id]?.let { def ->
+            Gear.create(
+                def,
+                GearStats.pick(odds, Random)
+            )
+        }
     }
 
     fun forget(mob: UUID) = ledger.forget(mob)

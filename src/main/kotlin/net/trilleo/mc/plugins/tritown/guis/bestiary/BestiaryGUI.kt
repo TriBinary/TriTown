@@ -61,10 +61,18 @@ class BestiaryGUI : PagedPluginGUI(
             add(where(viewer, kind))
             if (kind.abilities.isNotEmpty() || boss?.phases.orEmpty().any { it.abilities.isNotEmpty() }) {
                 val abilities = (kind.abilities + boss?.phases.orEmpty().flatMap { it.abilities }).distinct()
-                add(viewer.tr("gui.bestiary.abilities", "abilities" to abilities.joinToString(", ") { viewer.tr(it.key) }))
+                add(
+                    viewer.tr(
+                        "gui.bestiary.abilities",
+                        "abilities" to abilities.joinToString(", ") { viewer.tr(it.key) })
+                )
             }
             if (kind.affixes.isNotEmpty()) {
-                add(viewer.tr("gui.bestiary.affixes", "affixes" to kind.affixes.sortedBy { it.ordinal }.joinToString(", ") { viewer.tr(it.key) }))
+                add(
+                    viewer.tr(
+                        "gui.bestiary.affixes",
+                        "affixes" to kind.affixes.sortedBy { it.ordinal }.joinToString(", ") { viewer.tr(it.key) })
+                )
             }
             add("")
             add(viewer.tr("gui.bestiary.kills", "amount" to record.kills, "stars" to "★".repeat(stars(record.kills))))
@@ -75,7 +83,12 @@ class BestiaryGUI : PagedPluginGUI(
             found.forEach { id -> add(viewer.tr("gui.bestiary.drop", "name" to dropName(viewer, id))) }
         }
         return itemStack(icon(kind)) {
-            name(viewer.tr(if (boss != null) "gui.bestiary.boss" else "gui.bestiary.variant", "name" to viewer.tr(kind.nameKey)))
+            name(
+                viewer.tr(
+                    if (boss != null) "gui.bestiary.boss" else "gui.bestiary.variant",
+                    "name" to viewer.tr(kind.nameKey)
+                )
+            )
             meta {
                 lore(LoreUtil.wrapLore(lines.joinToString("<newline>")))
                 if (boss != null) setEnchantmentGlintOverride(true)
@@ -85,7 +98,17 @@ class BestiaryGUI : PagedPluginGUI(
 
     private fun blank(viewer: Player, kind: MobKindDef): ItemStack = itemStack(Material.INK_SAC) {
         name(viewer.tr("gui.bestiary.unknown"))
-        meta { lore(LoreUtil.wrapLore(listOf(viewer.tr("gui.bestiary.unknown-lore"), "", where(viewer, kind)).joinToString("<newline>"))) }
+        meta {
+            lore(
+                LoreUtil.wrapLore(
+                    listOf(
+                        viewer.tr("gui.bestiary.unknown-lore"),
+                        "",
+                        where(viewer, kind)
+                    ).joinToString("<newline>")
+                )
+            )
+        }
     }
 
     /** Where a variant lives, or where a boss answers its sigil and at what level. */
@@ -134,7 +157,8 @@ class BestiaryGUI : PagedPluginGUI(
         }
     }
 
-    private fun kinds(): List<MobKindDef> = ContentRegistry.bestiary.kinds.values.sortedBy { if (it.boss != null) 1 else 0 }
+    private fun kinds(): List<MobKindDef> =
+        ContentRegistry.bestiary.kinds.values.sortedBy { if (it.boss != null) 1 else 0 }
 
     private fun icon(kind: MobKindDef): Material = Material.matchMaterial("${kind.base}_SPAWN_EGG") ?: Material.BOOK
 

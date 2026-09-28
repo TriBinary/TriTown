@@ -20,11 +20,7 @@ import net.trilleo.mc.plugins.tritown.utils.tr
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import org.bukkit.event.inventory.ClickType
-import org.bukkit.event.inventory.InventoryAction
-import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.inventory.InventoryCloseEvent
-import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.inventory.*
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.util.*
@@ -209,7 +205,15 @@ class StorageGUI : PluginGUI(
 
         when (slot) {
             SLOT_PREVIOUS -> if (view.page > 0) switchPage(player, view, view.page - 1)
-            SLOT_OVERVIEW -> leave(player) { StoragePagesGUI.show(player, view.owner, view.page, readOnly = !view.canEdit) }
+            SLOT_OVERVIEW -> leave(player) {
+                StoragePagesGUI.show(
+                    player,
+                    view.owner,
+                    view.page,
+                    readOnly = !view.canEdit
+                )
+            }
+
             SLOT_DEPOSIT -> if (view.canEdit) quickDeposit(player, view, storage)
             SLOT_SORT -> if (view.canEdit) sort(player, view, storage, everyPage = click.isShiftClick)
             SLOT_INFO -> leave(player) { back(player, view) }
@@ -346,7 +350,8 @@ class StorageGUI : PluginGUI(
             buttons[SLOT_UNPACK] = card(player, Material.SHULKER_BOX, "gui.storage.unpack", "gui.storage.unpack-lore")
         }
         if (canRename(player, view)) {
-            buttons[SLOT_SETTINGS] = card(player, Material.NAME_TAG, "gui.storage.settings", "gui.storage.settings-lore")
+            buttons[SLOT_SETTINGS] =
+                card(player, Material.NAME_TAG, "gui.storage.settings", "gui.storage.settings-lore")
         }
 
         val buyable = view.owner == player.uniqueId && view.canEdit

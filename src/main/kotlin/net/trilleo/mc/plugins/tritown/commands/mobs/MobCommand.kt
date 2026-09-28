@@ -46,7 +46,12 @@ class MobCommand : PluginCommand(
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         val options = when (args.size) {
             1 -> listOf(LEVEL, BALANCE, BOSSES, KINDS, SPAWN)
-            2 -> if (args[0].equals(SPAWN, ignoreCase = true)) ContentRegistry.bestiary.kinds.keys.toList() else emptyList()
+            2 -> if (args[0].equals(
+                    SPAWN,
+                    ignoreCase = true
+                )
+            ) ContentRegistry.bestiary.kinds.keys.toList() else emptyList()
+
             else -> emptyList()
         }
         return options.filter { it.startsWith(args.last(), ignoreCase = true) }
@@ -108,7 +113,8 @@ class MobCommand : PluginCommand(
         val type = EntityType.entries.firstOrNull { it.name == kind.base } ?: return
 
         val ahead = player.location.add(player.location.direction.setY(0).normalize().multiply(SPAWN_DISTANCE))
-        val at = if (ahead.block.isPassable && ahead.clone().add(0.0, 1.0, 0.0).block.isPassable) ahead else player.location
+        val at =
+            if (ahead.block.isPassable && ahead.clone().add(0.0, 1.0, 0.0).block.isPassable) ahead else player.location
         val spawned = if (kind.boss != null) BossSummons.spawn(kind, at, level, eligible = false)
         else MobSetup.spawn(at, type, level, kind)
         spawned ?: return

@@ -108,7 +108,10 @@ class BalanceSimulationTest {
             val level = tier * LEVELS_PER_TIER
             val onLevel = BalanceSimulator.gearRow(balance, level, tier)
             val behind = BalanceSimulator.gearRow(balance, level, tier - 1)
-            assertTrue(behind.hitsToKill <= onLevel.hitsToKill * 2.5, "a tier behind at $level needs ${behind.hitsToKill} swings")
+            assertTrue(
+                behind.hitsToKill <= onLevel.hitsToKill * 2.5,
+                "a tier behind at $level needs ${behind.hitsToKill} swings"
+            )
             assertTrue(behind.shareTaken <= 0.12, "a tier behind at $level takes ${behind.shareTaken} a hit")
         }
     }

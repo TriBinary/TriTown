@@ -29,7 +29,8 @@ object BestiaryRecords {
     fun of(player: Player, kind: String): Record {
         val entry = root(player).getAsJsonObject(kind) ?: return Record(0, emptySet())
         val kills = entry.get(KILLS)?.asInt ?: 0
-        val drops = entry.getAsJsonArray(DROPS)?.mapNotNull { runCatching { it.asString }.getOrNull() }?.toSet().orEmpty()
+        val drops =
+            entry.getAsJsonArray(DROPS)?.mapNotNull { runCatching { it.asString }.getOrNull() }?.toSet().orEmpty()
         return Record(kills, drops)
     }
 

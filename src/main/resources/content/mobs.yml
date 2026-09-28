@@ -12,46 +12,46 @@
 # drops no material, though a ranked one still drops essence.
 families:
   zombie:
-    mobs: [ZOMBIE, HUSK, ZOMBIE_VILLAGER]
+    mobs: [ ZOMBIE, HUSK, ZOMBIE_VILLAGER ]
     material: grave-dust
   skeleton:
-    mobs: [SKELETON, BOGGED]
+    mobs: [ SKELETON, BOGGED ]
     material: bone-shard
   spider:
-    mobs: [SPIDER, CAVE_SPIDER]
+    mobs: [ SPIDER, CAVE_SPIDER ]
     material: silk-strand
   creeper:
-    mobs: [CREEPER]
+    mobs: [ CREEPER ]
     material: volatile-powder
   stray:
-    mobs: [STRAY]
+    mobs: [ STRAY ]
     material: frost-shard
   drowned:
-    mobs: [DROWNED, GUARDIAN]
+    mobs: [ DROWNED, GUARDIAN ]
     material: tidal-pearl
   phantom:
-    mobs: [PHANTOM]
+    mobs: [ PHANTOM ]
     material: night-membrane
   raider:
-    mobs: [PILLAGER, VINDICATOR, EVOKER, RAVAGER, WITCH]
+    mobs: [ PILLAGER, VINDICATOR, EVOKER, RAVAGER, WITCH ]
     material: raider-mark
   piglin:
-    mobs: [PIGLIN, PIGLIN_BRUTE, ZOMBIFIED_PIGLIN, HOGLIN, ZOGLIN]
+    mobs: [ PIGLIN, PIGLIN_BRUTE, ZOMBIFIED_PIGLIN, HOGLIN, ZOGLIN ]
     material: gilded-tusk
   blaze:
-    mobs: [BLAZE, MAGMA_CUBE]
+    mobs: [ BLAZE, MAGMA_CUBE ]
     material: ember-core
   ghast:
-    mobs: [GHAST]
+    mobs: [ GHAST ]
     material: wailing-tear
   wither-skeleton:
-    mobs: [WITHER_SKELETON]
+    mobs: [ WITHER_SKELETON ]
     material: cinder-ash
   enderman:
-    mobs: [ENDERMAN, ENDERMITE]
+    mobs: [ ENDERMAN, ENDERMITE ]
     material: void-fragment
   shulker:
-    mobs: [SHULKER]
+    mobs: [ SHULKER ]
     material: rift-shell
 
 loot:
@@ -66,15 +66,15 @@ loot:
   # the percent chance of a finished piece of gear of the tier the mob's level is made for.
   normal:
     chance: 4
-    amount: [1, 1]
+    amount: [ 1, 1 ]
   elite:
     chance: 100
-    amount: [1, 3]
-    essence: [1, 2]
+    amount: [ 1, 3 ]
+    essence: [ 1, 2 ]
   champion:
     chance: 100
-    amount: [3, 6]
-    essence: [3, 5]
+    amount: [ 3, 6 ]
+    essence: [ 3, 5 ]
     gear-chance: 1
 
 # Which essence a ranked mob drops: the first grade whose max-level its level is within.

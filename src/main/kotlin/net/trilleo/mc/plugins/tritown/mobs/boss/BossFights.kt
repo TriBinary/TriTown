@@ -7,24 +7,13 @@ import net.trilleo.mc.plugins.tritown.content.BossDef
 import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.content.MobKindDef
 import net.trilleo.mc.plugins.tritown.gear.GearText
-import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
-import net.trilleo.mc.plugins.tritown.mobs.BestiaryRecords
-import net.trilleo.mc.plugins.tritown.mobs.MobKinds
-import net.trilleo.mc.plugins.tritown.mobs.MobLoot
-import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
-import net.trilleo.mc.plugins.tritown.mobs.MobProfiles
-import net.trilleo.mc.plugins.tritown.mobs.MobSetup
+import net.trilleo.mc.plugins.tritown.mobs.*
 import net.trilleo.mc.plugins.tritown.protection.ItemOwnership
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import net.trilleo.mc.plugins.tritown.utils.InventoryUtil
 import net.trilleo.mc.plugins.tritown.utils.sendPrefixed
 import net.trilleo.mc.plugins.tritown.utils.tr
-import org.bukkit.Bukkit
-import org.bukkit.GameMode
-import org.bukkit.Location
-import org.bukkit.NamespacedKey
-import org.bukkit.Particle
-import org.bukkit.Sound
+import org.bukkit.*
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
@@ -107,7 +96,10 @@ object BossFights {
             val arena = fighters(home, def.arena)
 
             showBars(fight, kind, def, home)
-            if (boss.world != home.world || boss.location.distance(home) > def.arena + rules.arenaMargin) takeHome(boss, home)
+            if (boss.world != home.world || boss.location.distance(home) > def.arena + rules.arenaMargin) takeHome(
+                boss,
+                home
+            )
             retarget(boss, arena)
             enterPhases(fight, kind, def)
 
@@ -232,7 +224,14 @@ object BossFights {
         def.phases.forEachIndexed { index, phase ->
             if (health >= phase.below || !fight.entered.add(index)) return@forEachIndexed
 
-            watchers(home(boss) ?: boss.location, def).forEach { it.sendPrefixed(it.tr(kind.phaseKey(index), "name" to name(it, kind))) }
+            watchers(home(boss) ?: boss.location, def).forEach {
+                it.sendPrefixed(
+                    it.tr(
+                        kind.phaseKey(index),
+                        "name" to name(it, kind)
+                    )
+                )
+            }
             boss.world.playSound(boss.location, Sound.ENTITY_WITHER_SPAWN, 0.6f, 1.2f)
 
             val profile = MobProfiles.of(boss)
@@ -258,7 +257,10 @@ object BossFights {
 
     private fun reward(player: Player, items: List<ItemStack>): String {
         val names = items.mapNotNull { GearText.stack(player, it) }
-        return if (names.isEmpty()) player.tr("boss.reward-empty") else player.tr("boss.reward", "items" to names.joinToString(", "))
+        return if (names.isEmpty()) player.tr("boss.reward-empty") else player.tr(
+            "boss.reward",
+            "items" to names.joinToString(", ")
+        )
     }
 
     private const val TICKS = 20

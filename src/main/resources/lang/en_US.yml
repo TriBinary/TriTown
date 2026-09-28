@@ -1173,7 +1173,7 @@ gui:
     cancel: "<red><bold>Cancel</bold>"
     cancel-lore: "<gray>Go back without changing anything."
 
-# Messages a shop sends to a player, outside the menus themselves.
+  # Messages a shop sends to a player, outside the menus themselves.
   stats:
     title: "<dark_gray>Your Stats"
     title-other: "<dark_gray>{name}'s Stats"

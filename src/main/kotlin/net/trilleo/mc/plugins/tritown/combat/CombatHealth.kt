@@ -21,7 +21,10 @@ object CombatHealth {
         entity.getAttribute(Attribute.MAX_HEALTH)?.value?.takeIf { it > 0.0 } ?: DamageMath.VANILLA_PLAYER_HEALTH
 
     fun max(entity: LivingEntity): Double {
-        if (entity is Player) return DamageMath.playerMaxHealth(PlayerStats.sheet(entity)[Stat.HEALTH], vanillaMax(entity))
+        if (entity is Player) return DamageMath.playerMaxHealth(
+            PlayerStats.sheet(entity)[Stat.HEALTH],
+            vanillaMax(entity)
+        )
         val balance = ContentRegistry.balance
         val profile = MobProfiles.of(entity)
         return DamageMath.mobMaxHealth(vanillaMax(entity), balance, profile.level, MobPower.health(profile, balance))
