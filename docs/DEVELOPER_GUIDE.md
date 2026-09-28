@@ -2504,13 +2504,15 @@ Every one of them opens at six rows. `MainMenuGUI` puts the profile alone at the
 up to four with `GUIFrame.spacedColumns`. **A button for something switched off or not permitted is left out, not
 greyed**, and each row is centred on what remains: the global shop only when shops are on and the viewer passes its
 gate, the storage only while `StorageManager.isAvailable`, trading only when `player-trades.enabled`, pay and the leaderboard only with the economy running and the
-command's permission (`CommandRegistrar.canRun`), the news only while `NewsManager.isAvailable`, the sidebar switch
+command's permission (`CommandRegistrar.canRun`), the news only while `NewsManager.isAvailable`, the Forge and the
+bestiary only where combat is on (the bestiary only when `bestiary.yml` defines a mob), the sidebar switch
 only while the sidebar runs, the admin panel only with `tritown.admin`, and the TownyMenu shortcut only when TownyMenu is enabled. Empty rows are dropped, so the menu
 never has a hole in it. The two list menus use `PagedLayout.CENTERED` and keep *Back* and one extra button either side
 of the page number (`MenuRender.BACK_OFFSET`, `EXTRA_OFFSET`).
 
 **The menu points the way; it does not do the work.** Each button runs the command or opens the menu that already owns
-the action — `/trades`, `/tritown storage`, `/trade <name>`, `/pay <name> <amount>`, `/tritown news` through `CommandRegistrar.run`, the admin panel,
+the action — `/trades`, `/tritown storage`, `/trade <name>`, `/pay <name> <amount>`, `/tritown news`, `/tritown forge`,
+`/tritown bestiary` through `CommandRegistrar.run`, the admin panel,
 TownyMenu through its own `/townymenu` — so there is exactly one place each rule and message lives. Paying asks for the
 amount with `ChatPrompt` and hands it to `/pay`, which validates it.
 
@@ -3393,9 +3395,11 @@ change to them is already on disk.
 
 Fights with mobs happen in RPG numbers: players and mobs have health pools in the hundreds and thousands, and hits come
 from stats. The core lives in `combat/` (stats, the pipeline's maths, the HUD) and `mobs/` (levels, profiles, custom
-mobs, nameplates), neither of which is scanned. The listeners are `listeners/combat/DamageListener`, `StatListener` and
-`listeners/mobs/MobListener`, the HUD task is `tasks/combat/CombatHudTask`, the menu is `guis/adventure/StatsGUI`, and
-the commands are `commands/adventure/StatsCommand` (`/tritown stats`) and `commands/mobs/MobCommand` (`/tritown mob`).
+mobs, nameplates), neither of which is scanned. The listeners are `listeners/combat/DamageListener`, `StatListener`,
+`listeners/mobs/MobListener` and `BossListener`, the tasks are `tasks/combat/CombatHudTask` and `tasks/mobs/MobTurnTask`,
+the menus are `guis/adventure/StatsGUI` and `guis/bestiary/BestiaryGUI`, and the commands are
+`commands/adventure/StatsCommand` (`/tritown stats`), `BestiaryCommand` (`/tritown bestiary`) and
+`commands/mobs/MobCommand` (`/tritown mob`).
 
 ### Vanilla health is the truth
 
@@ -3633,6 +3637,19 @@ bar colour and `phases`. They live in `mobs/boss/`.
 `/tritown mob spawn <boss>` calls a boss up at its level, not eligible, for testing; `/tritown mob bosses` prints each
 boss against one player in a kit of its tier, reading its kind's vanilla health and hit off an entity made with
 `createEntity`.
+
+### The bestiary
+
+`mobs/BestiaryRecords` keeps what each player has found of the custom mobs in their player data, under `bestiary`: per
+kind id, the kills and the ids of every drop it gave them (an item's id, or `gear:` and a piece's). `MobListener.onDeath`
+credits the killer of an eligible custom mob with its drops; `BossFights.defeated` credits every contributor to a boss,
+those short of a share with no drops.
+
+`guis/bestiary/BestiaryGUI` (`/tritown bestiary`, no permission node, or the main menu's **Bestiary** button, shown
+where combat is on) lists every kind, variants and then bosses. One the viewer has not slain is a blank page that says
+where it lives or how it is summoned; one they have shows its description, where it lives or its level and sigil, its
+abilities (a boss's phases' too) and affixes, the kills — a star at 10, 100 and 1,000 — and which of its own `loot`
+lines they have found. It reads and never acts. Abilities are named by `Ability.key` (`mob.ability.*`).
 
 ### Loot
 

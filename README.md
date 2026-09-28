@@ -17,7 +17,7 @@ run `/tt menu`, for everything TriTown offers in one place. Your profile sits at
 leaderboard rank, town and nation — and below it are your town at a glance with a shortcut into
 [TownyMenu](https://github.com/Trilleo/TownyMenu), your storage, the global shop, a list of the players near enough to trade with
 (anyone waiting for your answer first), a list of players to pay, the richest players as heads, the server's vital signs,
-the Forge, the server news, a sidebar switch, and the admin panel for those allowed it. Anything switched off on the server, or that you may not
+the Forge, the server news, your bestiary, a sidebar switch, and the admin panel for those allowed it. Anything switched off on the server, or that you may not
 use, is simply left out, and what remains is centred. The item cannot be moved, dropped, stored, crafted with or handed
 to anything, a copy made any other way is deleted within a second, and it is taken off you when you log out, so there
 is nothing to duplicate and nothing left behind if TriTown is ever removed.
@@ -486,6 +486,13 @@ and which can be mythic. Sigils never work in a town, and a boss never teleports
 
 `mobs.bosses.enabled` turns summoning off, and `mobs.bosses.announce-range` sets who hears of a boss. `/tt mob bosses`
 shows each boss against one player in a kit of its tier, and `/tt mob spawn <boss>` calls one up to test.
+
+### The bestiary
+
+`/tt bestiary`, or **Bestiary** in the main menu, keeps a page for every custom mob and boss. Until you slay one, its
+page is blank but for where to look. After that it shows what it is, where it lives or how it is summoned, its
+abilities and affixes, how many you have slain — with a star at 10, 100 and 1,000 — and which of its own loot you have
+found so far.
 
 ### Gear and the Forge
 

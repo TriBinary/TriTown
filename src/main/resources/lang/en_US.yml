@@ -181,6 +181,10 @@ command:
     given: "Gave <white>{amount}x {id}</white> to <white>{name}</white>."
     list: "<white>{amount}</white> items: <gray>{ids}"
 
+  bestiary:
+    description: "See the server's own mobs you have met"
+    players-only: "<red>The bestiary is a menu, so only players can open it."
+
   forge:
     description: "Craft and improve gear"
     players-only: "<red>The Forge is a menu, so only players can open it."
@@ -400,6 +404,9 @@ gui:
     profile-stats: "<yellow>Click <gray>to see your combat stats"
     forge: "<gold><bold>Forge</bold></gold>"
     forge-lore: "<gray>Craft gear from what mobs drop, and make it stronger."
+    bestiary: "<dark_aqua><bold>Bestiary</bold></dark_aqua>"
+    bestiary-lore: "<gray>Every one of the server's own mobs you have slain, and what each gave you."
+    bestiary-found: "<gray>Found: <white>{found}</white>/<white>{total}"
     town: "<green><bold>Town</bold></green>"
     town-name: "<gray>Town: <white>{town}</white>"
     town-residents: "<gray>Residents: <white>{amount}</white>"
@@ -1193,6 +1200,28 @@ gui:
       weapon: "Weapon"
       effects: "Effects"
 
+  bestiary:
+    title: "<dark_gray>Bestiary"
+    variant: "<gold>{name}"
+    boss: "<red>☠ {name}"
+    lore: "<gray><italic>{lore}"
+    unknown: "<dark_gray>???"
+    unknown-lore: "<gray>You have not slain this one yet."
+    lives: "<gray>Lives in {worlds}, from level <white>{min}</white> to <white>{max}</white>."
+    summoned: "<gray>A level <white>{level}</white> boss, summoned with {sigil}<gray>."
+    abilities: "<gray>Abilities: <white>{abilities}"
+    affixes: "<gray>Affixes: <yellow>{affixes}"
+    kills: "<gray>Slain: <white>{amount}</white> <gold>{stars}"
+    drops: "<gray>Its own loot you have found: <white>{found}</white>/<white>{total}"
+    drop: "<dark_gray> · </dark_gray>{name}"
+    progress: "<aqua><bold>Found {found} of {total}"
+    progress-lore: "<gray>Slay one of each to fill in its page. A star marks every 10, 100 and 1,000 slain."
+    world:
+      normal: "the Overworld"
+      nether: "the Nether"
+      end: "the End"
+      any: "any world"
+
   forge:
     title: "<dark_gray>The Forge"
     craft: "<gold><bold>Craft</bold></gold>"
@@ -1359,6 +1388,23 @@ mob:
     summoner: "Summoner"
     blinking: "Blinking"
     warded: "Warded"
+
+  # What a custom mob can do, as the bestiary lists it.
+  ability:
+    leap: "Leap"
+    slam: "Slam"
+    charge: "Charge"
+    volley: "Volley"
+    fireball: "Fireball"
+    meteor: "Meteor"
+    storm: "Storm"
+    ensnare: "Ensnare"
+    hook: "Hook"
+    summon: "Summon"
+    bulwark: "Bulwark"
+    frost-nova: "Frost Nova"
+    miasma: "Miasma"
+    drain: "Drain"
 
   # The custom mobs in plugins/TriTown/content/bestiary.yml, by id. The name is on the mob's nameplate, in the server's
   # language like the rest of it; the description is what the bestiary says of it.

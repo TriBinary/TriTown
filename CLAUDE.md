@@ -79,8 +79,8 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── enums/                   # AccountType, FlowCategory, StatsWindow, TransactionType, FillMode, …
 ├── gear/                    # Gear: its data, stats, drawing and refreshing, the Forge and its costs (not scanned)
 ├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI); admin/ is the panel,
-│                            # menu/ the main menu, news/ the news, forge/ the Forge; ConfirmGUI asks before the
-│                            # irreversible
+│                            # menu/ the main menu, news/ the news, forge/ the Forge, bestiary/ the bestiary;
+│                            # ConfirmGUI asks before the irreversible
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
@@ -410,6 +410,8 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
 - **A boss's loot is personal**, rolled per contributor in `MobLoot.bossRewards` and never added to its death drops.
   A piece of gear with no recipe is signature gear: only the loot that names it drops it.
 - **A new boss is held to `BossBalanceTest`**, and its kind needs vanilla numbers there.
+- **The bestiary only reads.** `BestiaryRecords` is credited from `MobListener.onDeath` and `BossFights.defeated`
+  alone; the menu never changes a record, and nothing a record holds is a reward.
 
 ## Working with Gear
 

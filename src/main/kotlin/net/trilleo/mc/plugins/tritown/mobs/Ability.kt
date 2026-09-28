@@ -48,6 +48,25 @@ enum class Ability {
     /** Latches on to its target and drinks its health back. */
     DRAIN;
 
+    /** The translation key naming the ability, spelled out so the language test can see it. */
+    val key: String
+        get() = when (this) {
+            LEAP -> "mob.ability.leap"
+            SLAM -> "mob.ability.slam"
+            CHARGE -> "mob.ability.charge"
+            VOLLEY -> "mob.ability.volley"
+            FIREBALL -> "mob.ability.fireball"
+            METEOR -> "mob.ability.meteor"
+            STORM -> "mob.ability.storm"
+            ENSNARE -> "mob.ability.ensnare"
+            HOOK -> "mob.ability.hook"
+            SUMMON -> "mob.ability.summon"
+            BULWARK -> "mob.ability.bulwark"
+            FROST_NOVA -> "mob.ability.frost-nova"
+            MIASMA -> "mob.ability.miasma"
+            DRAIN -> "mob.ability.drain"
+        }
+
     /** Its name in the content files: `frost-nova`. */
     val configName: String
         get() = name.lowercase().replace('_', '-')

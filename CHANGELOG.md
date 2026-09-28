@@ -84,6 +84,10 @@
       which can drop as mythic.
     + Server owners tune them in `bestiary.yml`, switch them off with `mobs.bosses.enabled`, and see each against a
       kit of its tier with `/tritown mob bosses`. `/tritown mob spawn <boss>` calls one up to test, dropping nothing.
++ Added the **bestiary**, opened with `/tritown bestiary` or from the main menu: a page for every custom mob and boss.
+    + A page stays blank, but for where to look, until you slay one. Then it shows what it is, where it lives or how
+      it is summoned, its abilities and affixes, how many you have slain, and which of its own loot you have found.
+    + A star marks every 10, 100 and 1,000 of one you slay.
 + Added three stats: **Speed** (capped by `combat.speed-cap`, since it is the one players feel), **Vitality** (more from
   regeneration and healing potions) and **Magic Find**, which now also helps a champion's gear drop.
 + Server owners tune every piece in `plugins/TriTown/content/gear.yml`, and gear's budget and the Forge's prices in

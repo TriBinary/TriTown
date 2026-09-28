@@ -4,6 +4,7 @@ import com.palmergames.bukkit.towny.TownyAPI
 import net.trilleo.mc.plugins.tritown.combat.Combat
 import net.trilleo.mc.plugins.tritown.config.ShopSettings
 import net.trilleo.mc.plugins.tritown.config.StorageSettings
+import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.economy.BaltopCache
 import net.trilleo.mc.plugins.tritown.economy.CurrencyRegistry
 import net.trilleo.mc.plugins.tritown.economy.EconomyService
@@ -11,6 +12,7 @@ import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.guis.admin.AdminPanelGUI
 import net.trilleo.mc.plugins.tritown.guis.admin.PanelRender
 import net.trilleo.mc.plugins.tritown.guis.storage.StorageRender
+import net.trilleo.mc.plugins.tritown.mobs.BestiaryRecords
 import net.trilleo.mc.plugins.tritown.news.NewsManager
 import net.trilleo.mc.plugins.tritown.news.NewsReadState
 import net.trilleo.mc.plugins.tritown.registration.CommandRegistrar
@@ -54,7 +56,9 @@ class MainMenuGUI : PluginGUI(
     fillMode = FillMode.NONE,
 ) {
 
-    private enum class Button { PROFILE, TOWN, STORAGE, SHOP, TRADE, PAY, LEADERBOARD, SERVER, FORGE, NEWS, SIDEBAR, ADMIN, CLOSE }
+    private enum class Button {
+        PROFILE, TOWN, STORAGE, SHOP, TRADE, PAY, LEADERBOARD, SERVER, FORGE, NEWS, BESTIARY, SIDEBAR, ADMIN, CLOSE
+    }
 
     /** Which button each slot holds, per viewer, since the buttons shown depend on who is looking. */
     private val layouts = ConcurrentHashMap<UUID, Map<Int, Button>>()
@@ -81,6 +85,7 @@ class MainMenuGUI : PluginGUI(
             Button.LEADERBOARD -> MenuRender.later(player) { LeaderboardGUI.show(player) }
             Button.NEWS -> MenuRender.later(player) { CommandRegistrar.run(player, "news") }
             Button.FORGE -> MenuRender.later(player) { CommandRegistrar.run(player, "forge") }
+            Button.BESTIARY -> MenuRender.later(player) { CommandRegistrar.run(player, "bestiary") }
             Button.ADMIN -> MenuRender.later(player) { GUIManager.open(player, AdminPanelGUI.ID) }
             Button.CLOSE -> MenuRender.later(player) { player.closeInventory() }
             Button.SIDEBAR -> {
@@ -125,6 +130,7 @@ class MainMenuGUI : PluginGUI(
             ),
             listOfNotNull(
                 Button.NEWS.takeIf { NewsManager.isAvailable },
+                Button.BESTIARY.takeIf { Combat.isActive(player.world) && ContentRegistry.bestiary.kinds.isNotEmpty() },
                 Button.SIDEBAR.takeIf { ScoreboardService.isRunning },
                 Button.ADMIN.takeIf { player.hasPermission(AdminPanelGUI.PERMISSION) },
             ),
@@ -165,6 +171,7 @@ class MainMenuGUI : PluginGUI(
         Button.SIDEBAR -> sidebar(player)
         Button.ADMIN -> card(player, Material.COMMAND_BLOCK, "gui.menu.admin", "gui.menu.admin-lore")
         Button.FORGE -> card(player, Material.SMITHING_TABLE, "gui.menu.forge", "gui.menu.forge-lore")
+        Button.BESTIARY -> bestiary(player)
         Button.CLOSE -> itemStack(Material.BARRIER) { name(player.tr("gui.menu.close")) }
     }
 
@@ -325,6 +332,20 @@ class MainMenuGUI : PluginGUI(
                 item.editMeta { it.setEnchantmentGlintOverride(true) }
             }
         }
+    }
+
+    /** How much of the bestiary the viewer has filled in. */
+    private fun bestiary(player: Player): ItemStack {
+        val kinds = ContentRegistry.bestiary.kinds.keys
+        val found = kinds.count { BestiaryRecords.of(player, it).kills > 0 }
+        val lines = listOf(
+            player.tr("gui.menu.bestiary-lore"),
+            "",
+            player.tr("gui.menu.bestiary-found", "found" to found, "total" to kinds.size),
+            "",
+            player.tr("gui.admin.click-open"),
+        )
+        return PanelRender.card(Material.WRITABLE_BOOK, player.tr("gui.menu.bestiary"), lines)
     }
 
     private fun sidebar(player: Player): ItemStack {

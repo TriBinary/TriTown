@@ -181,6 +181,10 @@ command:
     given: "已将 <white>{amount}x {id}</white> 发给 <white>{name}</white>。"
     list: "共 <white>{amount}</white> 种物品：<gray>{ids}"
 
+  bestiary:
+    description: "查看你遇到过的服务器专属怪物"
+    players-only: "<red>图鉴是一个菜单，只有玩家才能打开。"
+
   forge:
     description: "打造与强化装备"
     players-only: "<red>锻造台是菜单，只有玩家能打开。"
@@ -399,6 +403,9 @@ gui:
     profile-stats: "<yellow>点击<gray>查看你的战斗属性"
     forge: "<gold><bold>锻造台</bold></gold>"
     forge-lore: "<gray>用怪物的掉落物打造装备，并让它变得更强。"
+    bestiary: "<dark_aqua><bold>图鉴</bold></dark_aqua>"
+    bestiary-lore: "<gray>你击杀过的每一种服务器专属怪物，以及它们给了你什么。"
+    bestiary-found: "<gray>已发现：<white>{found}</white>/<white>{total}"
     town: "<green><bold>城镇</bold></green>"
     town-name: "<gray>城镇：<white>{town}</white>"
     town-residents: "<gray>居民：<white>{amount}</white>"
@@ -1193,6 +1200,28 @@ gui:
       weapon: "武器"
       effects: "状态效果"
 
+  bestiary:
+    title: "<dark_gray>图鉴"
+    variant: "<gold>{name}"
+    boss: "<red>☠ {name}"
+    lore: "<gray><italic>{lore}"
+    unknown: "<dark_gray>???"
+    unknown-lore: "<gray>你还没有击杀过它。"
+    lives: "<gray>栖息于{worlds}，等级 <white>{min}</white> 至 <white>{max}</white>。"
+    summoned: "<gray><white>{level}</white> 级首领，用{sigil}<gray>召唤。"
+    abilities: "<gray>技能：<white>{abilities}"
+    affixes: "<gray>词缀：<yellow>{affixes}"
+    kills: "<gray>已击杀：<white>{amount}</white> <gold>{stars}"
+    drops: "<gray>已发现的专属战利品：<white>{found}</white>/<white>{total}"
+    drop: "<dark_gray> · </dark_gray>{name}"
+    progress: "<aqua><bold>已发现 {found}/{total}"
+    progress-lore: "<gray>每种击杀一只即可填满它的一页。每击杀 10、100、1,000 只各得一颗星。"
+    world:
+      normal: "主世界"
+      nether: "下界"
+      end: "末地"
+      any: "任意世界"
+
   forge:
     title: "<dark_gray>锻造台"
     craft: "<gold><bold>打造</bold></gold>"
@@ -1358,6 +1387,23 @@ mob:
     summoner: "召唤"
     blinking: "闪现"
     warded: "护盾"
+
+  # 自定义怪物的技能，按图鉴的写法列出。
+  ability:
+    leap: "飞扑"
+    slam: "震地"
+    charge: "冲锋"
+    volley: "箭雨"
+    fireball: "火球"
+    meteor: "陨石"
+    storm: "雷暴"
+    ensnare: "缠网"
+    hook: "钩拽"
+    summon: "召唤"
+    bulwark: "壁垒"
+    frost-nova: "冰霜新星"
+    miasma: "瘴气"
+    drain: "汲取"
 
   # plugins/TriTown/content/bestiary.yml 中的自定义怪物，按 id 排列。名字显示在怪物的名牌上，与名牌其余部分一样使用服务器的语言；
   # 描述是图鉴中对它的介绍。

@@ -124,7 +124,14 @@ class MobListener : Listener {
         val profile = MobProfiles.of(entity)
         AffixEffects.onDeath(entity, profile)
         AbilityEffects.forget(entity.uniqueId)
-        if (BossFights.isBoss(entity)) BossFights.defeated(entity) else event.drops += MobLoot.dropsFor(entity)
+        if (BossFights.isBoss(entity)) {
+            BossFights.defeated(entity)
+        } else {
+            val drops = MobLoot.dropsFor(entity)
+            event.drops += drops
+            val killer = entity.killer
+            if (killer != null && profile.kind != null && profile.eligible) BestiaryRecords.credit(killer, profile.kind, drops)
+        }
         if (profile.level > 1) {
             event.droppedExp =
                 (event.droppedExp * (1.0 + MobSettings.snapshot.xpPerLevel * (profile.level - 1))).roundToInt()

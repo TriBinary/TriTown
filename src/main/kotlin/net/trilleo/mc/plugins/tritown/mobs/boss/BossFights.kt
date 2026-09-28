@@ -8,6 +8,7 @@ import net.trilleo.mc.plugins.tritown.content.ContentRegistry
 import net.trilleo.mc.plugins.tritown.content.MobKindDef
 import net.trilleo.mc.plugins.tritown.gear.GearText
 import net.trilleo.mc.plugins.tritown.mobs.AffixEffects
+import net.trilleo.mc.plugins.tritown.mobs.BestiaryRecords
 import net.trilleo.mc.plugins.tritown.mobs.MobKinds
 import net.trilleo.mc.plugins.tritown.mobs.MobLoot
 import net.trilleo.mc.plugins.tritown.mobs.MobNameplate
@@ -122,6 +123,7 @@ object BossFights {
      * [boss] has died: its bar goes, its fall is announced, and every player
      * who earned a share is given theirs — where it fell if they are near, or
      * straight into their inventory if not. Nothing drops for anyone else.
+     * Everyone who took part counts it slain in their bestiary.
      */
     fun defeated(boss: LivingEntity) {
         release(boss.uniqueId)
@@ -143,8 +145,13 @@ object BossFights {
                 items.forEach { ItemOwnership.dropFor(player, it, at) }
             } else InventoryUtil.give(player, items)
             player.sendPrefixed(reward(player, items))
+            BestiaryRecords.credit(player, kind.id, items)
         }
-        spoils.shortOfShare.forEach { id -> Bukkit.getPlayer(id)?.let { it.sendPrefixed(it.tr("boss.no-share")) } }
+        spoils.shortOfShare.forEach { id ->
+            val player = Bukkit.getPlayer(id) ?: return@forEach
+            player.sendPrefixed(player.tr("boss.no-share"))
+            BestiaryRecords.credit(player, kind.id, emptyList())
+        }
     }
 
     /** Tells everyone within `announce-range` of [at] what [line] says to them. */
