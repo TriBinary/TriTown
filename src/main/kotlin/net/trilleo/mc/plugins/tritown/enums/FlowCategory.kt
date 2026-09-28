@@ -25,6 +25,9 @@ enum class FlowCategory {
     /** Pages of a player's storage, bought from the server. Always a sink. */
     STORAGE,
 
+    /** Crafting, upgrading, refining and reforging gear at the Forge. Always a sink. */
+    GEAR,
+
     /** Anything Towny moved: bank deposits and withdrawals, plot sales, upkeep, taxes. */
     TOWNY,
 
@@ -46,6 +49,7 @@ enum class FlowCategory {
             STARTING_BALANCE -> "money.flow.starting-balance"
             SHOP -> "money.flow.shop"
             STORAGE -> "money.flow.storage"
+            GEAR -> "money.flow.gear"
             TOWNY -> "money.flow.towny"
             ADMIN -> "money.flow.admin"
             PAYMENT -> "money.flow.payment"
@@ -54,6 +58,13 @@ enum class FlowCategory {
         }
 
     companion object {
+
+        private val GEAR_REASONS = setOf(
+            TransactionReason.GEAR_CRAFT,
+            TransactionReason.GEAR_UPGRADE,
+            TransactionReason.GEAR_REFINE,
+            TransactionReason.GEAR_REFORGE,
+        )
 
         /**
          * The category a transaction recorded with [source] and [reason] belongs
@@ -70,11 +81,13 @@ enum class FlowCategory {
                 key == TransactionReason.STARTING_BALANCE -> STARTING_BALANCE
                 key == TransactionReason.SHOP_BUY || key == TransactionReason.SHOP_SELL -> SHOP
                 key == TransactionReason.STORAGE_PAGE -> STORAGE
+                key in GEAR_REASONS -> GEAR
                 key == TransactionReason.TOWNY || key == TransactionReason.TOWN_DELETED -> TOWNY
                 key == TransactionReason.ADMIN_SET || key == TransactionReason.ADMIN_RESET -> ADMIN
                 key == TransactionReason.PAYMENT || key == TransactionReason.TRADE -> PAYMENT
                 source == EconomyContext.SOURCE_SHOP -> SHOP
                 source == EconomyContext.SOURCE_STORAGE -> STORAGE
+                source == EconomyContext.SOURCE_GEAR -> GEAR
                 source == EconomyContext.SOURCE_TOWNY -> TOWNY
                 key == TransactionReason.EXTERNAL -> EXTERNAL
                 else -> OTHER

@@ -16,8 +16,13 @@ class LangFilesTest {
     private val english = languages.getValue("en_US")
     private val config = loadConfig()
 
-    /** Keys built at runtime (`"money.source.$source"`), which the source scan cannot see. */
-    private val dynamicPrefixes = listOf("command.", "money.source.")
+    /**
+     * Keys built at runtime (`"money.source.$source"`), which the source scan
+     * cannot see. Content items', gear's and custom mobs' keys are held to the
+     * content files instead, by `ContentFilesTest`.
+     */
+    private val dynamicPrefixes =
+        listOf("command.", "money.source.", "item.", "gear.item.", "gear.reforge.", "mob.kind.")
 
     private val keyLiteral = Regex("\"([a-z][a-z0-9-]*(?:\\.[a-z0-9-]+)+)\"")
     private val placeholder = Regex("\\{([a-z]+)}")
@@ -61,14 +66,17 @@ class LangFilesTest {
      *
      * `config.yml`'s own paths are subtracted, because a settings block and a
      * translation section can share a name — `scoreboard` is both — and code
-     * naming a setting is not using a translation.
+     * naming a setting is not using a translation. So are file names, which a
+     * section can share too: `gear.yml` is a content file, not a key.
      */
     private fun usedKeys(): Set<String> {
         val sections = english.keys.map { it.substringBefore('.') }.toSet()
         val inCode = File("src/main/kotlin").walk()
             .filter { it.extension == "kt" }
             .flatMap { file -> keyLiteral.findAll(comment.replace(file.readText(), "")).map { it.groupValues[1] } }
-        return (inCode + sidebarKeys()).filter { it.substringBefore('.') in sections }.toSet() - configPaths()
+        return (inCode + sidebarKeys())
+            .filter { it.substringBefore('.') in sections && !it.endsWith(".yml") }
+            .toSet() - configPaths()
     }
 
     /**

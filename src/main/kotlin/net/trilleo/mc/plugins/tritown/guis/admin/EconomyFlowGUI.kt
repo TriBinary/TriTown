@@ -174,6 +174,7 @@ class EconomyFlowGUI : PagedPluginGUI(
         FlowCategory.STARTING_BALANCE -> Material.EGG
         FlowCategory.SHOP -> Material.EMERALD
         FlowCategory.STORAGE -> Material.ENDER_CHEST
+        FlowCategory.GEAR -> Material.SMITHING_TABLE
         FlowCategory.TOWNY -> Material.BELL
         FlowCategory.ADMIN -> Material.COMMAND_BLOCK
         FlowCategory.PAYMENT -> Material.ENDER_PEARL
@@ -195,6 +196,7 @@ class EconomyFlowGUI : PagedPluginGUI(
         FlowCategory.STARTING_BALANCE -> "gui.admin-flow.about-starting-balance"
         FlowCategory.SHOP -> "gui.admin-flow.about-shop"
         FlowCategory.STORAGE -> "gui.admin-flow.about-storage"
+        FlowCategory.GEAR -> "gui.admin-flow.about-gear"
         FlowCategory.TOWNY -> "gui.admin-flow.about-towny"
         FlowCategory.ADMIN -> "gui.admin-flow.about-admin"
         FlowCategory.PAYMENT -> "gui.admin-flow.about-payment"

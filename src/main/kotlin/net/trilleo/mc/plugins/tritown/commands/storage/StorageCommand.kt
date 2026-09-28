@@ -69,7 +69,13 @@ class StorageCommand : PluginCommand(
             return
         }
         val owner = name?.let(::resolve) ?: run {
-            player.sendPrefixed(error(player, "command.storage.not-found", "name" to ComponentUtil.escape(name.orEmpty())))
+            player.sendPrefixed(
+                error(
+                    player,
+                    "command.storage.not-found",
+                    "name" to ComponentUtil.escape(name.orEmpty())
+                )
+            )
             return
         }
         StorageGUI.open(player, owner)

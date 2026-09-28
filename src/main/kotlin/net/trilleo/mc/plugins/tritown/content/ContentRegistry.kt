@@ -1,0 +1,167 @@
+package net.trilleo.mc.plugins.tritown.content
+
+import io.papermc.paper.registry.RegistryAccess
+import io.papermc.paper.registry.RegistryKey
+import org.bukkit.Material
+import org.bukkit.NamespacedKey
+import org.bukkit.entity.EntityType
+import org.bukkit.entity.Mob
+import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.plugin.java.JavaPlugin
+import org.yaml.snakeyaml.Yaml
+import java.io.File
+
+/**
+ * The content files: what the combat layer is made of and tuned with.
+ *
+ * | File           | Holds                                                   |
+ * |:---------------|:--------------------------------------------------------|
+ * | `balance.yml`  | [Balance]: the numbers every fight is worked out with   |
+ * | `items.yml`    | [ContentItemDef]s: materials, essence                   |
+ * | `mobs.yml`     | [LootTable]: which mob drops what                       |
+ * | `gear.yml`     | [GearCatalog]: gear, its recipes, and reforges          |
+ * | `bestiary.yml` | [BestiaryCatalog]: custom mobs                          |
+ *
+ * They live in `plugins/TriTown/content/`, copied from the jar on first start
+ * the way the language files are, and `/tritown reload` reads them again. What
+ * each describes is swapped in whole, so nothing ever sees half of an edit.
+ *
+ * A file that cannot be read keeps what was loaded before it — nothing, or the
+ * bundled balance, the first time — and says so in the console, so a typo made
+ * while the server is running never takes combat down with it.
+ */
+object ContentRegistry {
+
+    private const val FOLDER = "content"
+    private const val BALANCE = "balance.yml"
+    private const val ITEMS = "items.yml"
+    private const val MOBS = "mobs.yml"
+    private const val GEAR = "gear.yml"
+    private const val BESTIARY = "bestiary.yml"
+
+    @Volatile
+    private var currentBalance: Balance? = null
+
+    /** The combat tuning in force; the bundled defaults until [load] has run. */
+    val balance: Balance
+        get() = currentBalance ?: Balance.DEFAULT
+
+    @Volatile
+    var items: Map<String, ContentItemDef> = emptyMap()
+        private set
+
+    @Volatile
+    var loot: LootTable = LootTable.EMPTY
+        private set
+
+    @Volatile
+    var gear: GearCatalog = GearCatalog.EMPTY
+        private set
+
+    @Volatile
+    var bestiary: BestiaryCatalog = BestiaryCatalog.EMPTY
+        private set
+
+    fun load(plugin: JavaPlugin) {
+        val folder = File(plugin.dataFolder, FOLDER)
+        listOf(BALANCE, ITEMS, MOBS, GEAR, BESTIARY).forEach {
+            if (!File(folder, it).exists()) plugin.saveResource("$FOLDER/$it", false)
+        }
+
+        read(plugin, File(folder, BALANCE))?.let { root ->
+            val result = BalanceParser.parse(root)
+            report(plugin, BALANCE, result.warnings)
+            currentBalance = result.balance
+        }
+
+        read(plugin, File(folder, ITEMS))?.let { root ->
+            val result = ContentParser.items(root)
+            val unknownModels = result.value.values
+                .filter { Material.matchMaterial(it.model) == null }
+                .map { "items.${it.id}.model: '${it.model}' is not a vanilla item, so it will look broken" }
+            report(plugin, ITEMS, result.warnings + unknownModels)
+            items = result.value
+        }
+
+        read(plugin, File(folder, MOBS))?.let { root ->
+            val result = ContentParser.loot(root, items.keys)
+            val kinds = EntityType.entries.map { it.name }.toSet()
+            val unknownMobs = result.value.families.keys
+                .filter { it !in kinds }
+                .map { "families: '$it' is not a kind of mob" }
+            report(plugin, MOBS, result.warnings + unknownMobs)
+            loot = result.value
+        }
+
+        read(plugin, File(folder, GEAR))?.let { root ->
+            val result = ContentParser.gear(root, items.keys)
+            val usable = result.value.gear.filterValues { def -> baseProblem(def) == null }
+            val problems = result.value.gear.values.mapNotNull { def ->
+                baseProblem(def)?.let { "gear.${def.id}.base: $it; left out" }
+            } + result.value.gear.values.mapNotNull { def ->
+                def.model?.takeIf { Material.matchMaterial(it) == null }
+                    ?.let { "gear.${def.id}.model: '$it' is not a vanilla item, so it will look broken" }
+            }
+            report(plugin, GEAR, result.warnings + problems)
+            gear = result.value.copy(gear = usable)
+        }
+
+        read(plugin, File(folder, BESTIARY))?.let { root ->
+            val result = ContentParser.bestiary(root, items.keys, gear.gear.keys)
+            val kinds = result.value.kinds.values
+            val usable = kinds.filter { baseProblem(it) == null }.associateBy { it.id }
+            val problems = kinds.mapNotNull { def -> baseProblem(def)?.let { "${def.id}.base: $it; left out" } } +
+                    kinds.flatMap(::lookProblems)
+            report(plugin, BESTIARY, result.warnings + problems)
+            bestiary = BestiaryCatalog(usable)
+        }
+    }
+
+    /** Why [def]'s base cannot be a custom mob, or `null` if it can. */
+    private fun baseProblem(def: MobKindDef): String? {
+        val type = EntityType.entries.firstOrNull { it.name == def.base } ?: return "'${def.base}' is not a kind of mob"
+        val mob = type.entityClass?.let { Mob::class.java.isAssignableFrom(it) } == true
+        return if (!mob || !type.isSpawnable) "${type.name} is not a mob that can be spawned" else null
+    }
+
+    /** Biomes that do not exist and costume items that are not items, which only look wrong. */
+    private fun lookProblems(def: MobKindDef): List<String> {
+        val biomes = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME)
+        val unknownBiomes = def.spawn?.biomes.orEmpty()
+            .filter { key -> NamespacedKey.fromString(key)?.let(biomes::get) == null }
+            .map { "${def.id}.spawn.biomes: '$it' is not a biome, so it never matches" }
+        val unknownItems = def.equipment.values.filterIsInstance<Costume.Vanilla>()
+            .filter { Material.matchMaterial(it.material)?.isItem != true }
+            .map { "${def.id}.equipment: '${it.material.lowercase()}' is not a vanilla item; left bare" }
+        return unknownBiomes + unknownItems
+    }
+
+    /** Why [def]'s base item cannot be worn or held where its slot says, or `null` if it can. */
+    private fun baseProblem(def: GearDef): String? {
+        val base = Material.matchMaterial(def.base)?.takeIf { it.isItem }
+            ?: return "'${def.base}' is not a vanilla item"
+        val wanted = when (def.slot) {
+            GearSlot.WEAPON, GearSlot.BOW -> EquipmentSlot.HAND
+            GearSlot.HELMET -> EquipmentSlot.HEAD
+            GearSlot.CHESTPLATE -> EquipmentSlot.CHEST
+            GearSlot.LEGGINGS -> EquipmentSlot.LEGS
+            GearSlot.BOOTS -> EquipmentSlot.FEET
+        }
+        if (base.equipmentSlot != wanted) return "${base.name} is not worn as ${def.slot.name.lowercase()}"
+        if (def.slot == GearSlot.BOW && base != Material.BOW && base != Material.CROSSBOW) {
+            return "${base.name} is not a bow or crossbow"
+        }
+        return null
+    }
+
+    private fun report(plugin: JavaPlugin, file: String, warnings: List<String>) {
+        warnings.forEach { plugin.logger.warning("$FOLDER/$file: $it") }
+    }
+
+    private fun read(plugin: JavaPlugin, file: File): Map<*, *>? = try {
+        file.reader(Charsets.UTF_8).use { Yaml().load<Any?>(it) } as? Map<*, *> ?: emptyMap<Any, Any>()
+    } catch (e: Exception) {
+        plugin.logger.severe("$FOLDER/${file.name} could not be read, so what was loaded before stays in force: ${e.message}")
+        null
+    }
+}

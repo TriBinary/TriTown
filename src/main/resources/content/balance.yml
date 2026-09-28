@@ -1,0 +1,219 @@
+# TriTown - Combat balance
+#
+# The numbers the combat layer is tuned with. /tritown reload reads this file again. A value that is missing or unusable
+# falls back to the bundled default, and the console says which.
+#
+# How it fits together: every living thing has an RPG health pool, drawn over its vanilla hearts. Vanilla health stays
+# the truth — the pool is the same fraction full as the hearts — so potions, regeneration, totems and deaths all work as
+# they always have. Only hits between a player and a mob, or between mobs, are worked out in RPG numbers. Hits between
+# players, and everything the world does (falling, lava, drowning), are left to vanilla.
+
+# RPG health per vanilla half-heart at level 1. A player's 20 vanilla health is 100 RPG health at the default, a vanilla
+# iron sword hits for 30, and a zombie has 100. At level 1 with vanilla gear the game plays exactly like vanilla,
+# whatever this is.
+lens: 5
+
+# What every player has before any gear.
+player:
+  health: 100
+  # Percent chance for a hit on a mob to be critical.
+  crit-chance: 20
+  # Percent more damage a critical hit does.
+  crit-damage: 50
+
+# A vanilla jump attack adds this much crit chance, instead of vanilla's flat 50% more damage.
+jump-crit-chance: 25
+
+# Strength that one level of a potion effect is worth. Strength adds to the damage a player does to mobs by this many
+# percent; Weakness takes it away.
+effects:
+  strength-per-level: 40
+  weakness-per-level: 40
+
+# How mobs grow with their level. A level-L mob has growth^(L-1) times the health and damage of a level-1 one: with
+# these, a level-30 zombie has about 34x the health and hits about 16x as hard.
+mobs:
+  health-growth: 1.13
+  damage-growth: 1.10
+
+# How vanilla armor becomes Defense. Each worn piece gives this much Defense per point of armor and of toughness. Every
+# point of Defense takes a share off a mob's hit: 100 Defense halves it, 300 leaves a quarter. At the defaults a full
+# iron set is 120 Defense and a full diamond set 320, which is what vanilla's armor gives against a zombie.
+vanilla:
+  armor-point: 8
+  toughness-point: 20
+  # Magic Find each level of Looting on the held weapon gives.
+  looting-magic-find: 10
+  # What a vanilla bow or crossbow counts as for what it shoots: an attack damage, as a sword's is, so a vanilla bow
+  # shoots like an iron sword swings. A shot is measured against a fully drawn arrow's vanilla damage.
+  bow-attack: 5
+  arrow-reference: 6
+
+# Wild mobs that spawn at or above min-level can spawn ranked instead, chance percent of the time. A rank multiplies a
+# mob's health and hits, and gives it affixes: between min-affixes and max-affixes of them, picked at random. The
+# champion roll comes first.
+ranks:
+  elite:
+    chance: 3
+    min-level: 5
+    health: 4
+    damage: 1.5
+    min-affixes: 1
+    max-affixes: 2
+  champion:
+    chance: 0.4
+    min-level: 15
+    health: 12
+    damage: 2
+    min-affixes: 2
+    max-affixes: 3
+
+# What each affix does. Percentages are percentages and durations seconds, unless they say ticks.
+affixes:
+  # Armored: Defense the mob has, the way a player's armor works against mobs.
+  armored-defense: 150
+  # Frenzied: how much faster it moves.
+  frenzied-speed: 30
+  # Vampiric: how much of the damage it deals it heals.
+  vampiric-heal: 25
+  # Enraged: below this share of its health, its hits land harder by enraged-damage.
+  enraged-below: 30
+  enraged-damage: 50
+  # Molten sets you on fire, Frostbound slows you and Venomous poisons you, for this long.
+  molten-seconds: 2
+  frostbound-seconds: 3
+  venomous-seconds: 3
+  # Volatile: explodes where it died this long after dying, as hard as this. A creeper is 3. Blocks are never broken.
+  volatile-power: 2.5
+  volatile-delay-ticks: 30
+  # Summoner: once below this share of its health, calls this many of its kind to its side.
+  summoner-below: 50
+  summoner-minions: 2
+  # Blinking: steps in behind its target when it is further away than this, at most once per cooldown.
+  blinking-range: 6
+  blinking-cooldown-ticks: 100
+
+# What the abilities custom mobs have (see bestiary.yml) are worth. A mob uses one when its target is where the ability
+# can reach, no sooner than its cooldown-ticks after the last time, and always with a warning first: windup-ticks of
+# particles and sound. Damage is in the units of a level-1 mob's vanilla hit — a zombie's is 3 — so the mob's level,
+# rank and kind grow it like any other hit of its own, and Defense takes its share. Only players are ever hit.
+abilities:
+  # The least time between any two abilities of one mob.
+  global-cooldown-ticks: 40
+  # Pounces on a target further than 4 blocks and within range, hurting players within radius where it lands.
+  leap: { cooldown-ticks: 160, windup-ticks: 8, range: 12, radius: 2.5, damage: 4 }
+  # Rears up, then a shockwave hurts players within radius and throws them up by power.
+  slam: { cooldown-ticks: 200, windup-ticks: 20, radius: 5, damage: 6, power: 0.8 }
+  # Lowers its head, then dashes at a target within range at power, hitting everyone it runs through once.
+  charge: { cooldown-ticks: 200, windup-ticks: 15, range: 16, damage: 6, power: 1.6 }
+  # Looses count arrows in a fan at a target within range, each hitting for damage.
+  volley: { cooldown-ticks: 140, windup-ticks: 10, range: 20, damage: 2.5, count: 5 }
+  # Hurls count fireballs at a target within range. They hit as a blaze's do, and set no blocks alight.
+  fireball: { cooldown-ticks: 120, windup-ticks: 10, range: 24, count: 3 }
+  # Marks count spots on and around a target within range, then fire lands on each, hurting players within radius.
+  meteor: { cooldown-ticks: 240, windup-ticks: 30, range: 20, radius: 2.5, damage: 6, count: 3 }
+  # As meteor, with lightning, which sets nothing alight.
+  storm: { cooldown-ticks: 240, windup-ticks: 30, range: 24, radius: 2, damage: 6, count: 3 }
+  # Spits a web at a target within range, slowing it almost to a stop for seconds.
+  ensnare: { cooldown-ticks: 200, windup-ticks: 10, range: 14, seconds: 2 }
+  # Drags a target further than 5 blocks and within range towards itself at up to power, hurting it a little.
+  hook: { cooldown-ticks: 200, windup-ticks: 10, range: 16, damage: 2, power: 1.4 }
+  # Calls minions to its side until count of them are alive. They are its own kind unless bestiary.yml names another.
+  summon: { cooldown-ticks: 400, windup-ticks: 20, count: 2 }
+  # Once hurt, braces itself: power more Defense for seconds.
+  bulwark: { cooldown-ticks: 400, seconds: 6, power: 200 }
+  # A burst that hurts players within radius and slows them for seconds.
+  frost-nova: { cooldown-ticks: 240, windup-ticks: 20, radius: 5, damage: 5, seconds: 3 }
+  # Leaves a cloud of radius where a target within range stands, hurting players in it twice a second for seconds.
+  miasma: { cooldown-ticks: 260, windup-ticks: 10, range: 16, radius: 3, damage: 1.5, seconds: 6 }
+  # Latches on to a target within range for seconds, hurting it twice a second and healing power percent of it.
+  drain: { cooldown-ticks: 240, range: 10, damage: 1.5, seconds: 3, power: 50 }
+
+# What gear is worth. Every piece of a slot and tier has the same points, spent on stats by the weights gear.yml gives
+# it, so no piece is stronger than its tier allows however it is shaped.
+gear:
+  # Points a piece has to spend on its stats, by where it goes.
+  slot-points:
+    weapon: 100
+    bow: 100
+    helmet: 50
+    chestplate: 80
+    leggings: 70
+    boots: 40
+  # What 100 points buy of each stat on tier-1 gear, and how many times more each tier above buys. A stat that is a
+  # percentage, such as crit chance, does not grow: it is capped anyway.
+  stats:
+    health:
+      per-100: 120
+      growth: 1.5
+    defense:
+      per-100: 100
+      growth: 1.3
+    damage:
+      per-100: 50
+      growth: 1.7
+    strength:
+      per-100: 85
+      growth: 1.4
+    crit-chance:
+      per-100: 20
+      growth: 1
+    crit-damage:
+      per-100: 80
+      growth: 1.25
+    speed:
+      per-100: 10
+      growth: 1
+    vitality:
+      per-100: 40
+      growth: 1.05
+    magic-find:
+      per-100: 30
+      growth: 1.05
+  # What each rarity multiplies a piece's stats by. A step up in rarity is worth far less than a tier.
+  rarity:
+    common: 1
+    uncommon: 1.06
+    rare: 1.12
+    epic: 1.2
+    legendary: 1.3
+    mythic: 1.4
+  # Percent more base stats each star of an upgrade gives, and the most stars a piece can have.
+  star-bonus: 4
+  max-stars: 5
+  # Each stat of a new piece rolls a quality between these, in percent, shown on it.
+  roll: [ 90, 100 ]
+  # A reforge is worth this percent of the piece's points, spent on its own stats.
+  reforge-share: 8
+  # The rarities the Forge crafts at, and a champion's gear drops at, weighted.
+  craft-odds:
+    common: 60
+    uncommon: 25
+    rare: 11
+    epic: 4
+  drop-odds:
+    uncommon: 45
+    rare: 35
+    epic: 15
+    legendary: 5
+
+# What the Forge charges. Money is multiplied by money-growth for every tier above the first. Essence is the grade a
+# mob of the piece's tier drops (see mobs.yml).
+forge:
+  money-growth: 1.5
+  # Each star costs this, times the star's number: the third star costs three times the first.
+  upgrade:
+    essence: 2
+    money: 100
+  # Each step of rarity costs this, times the step's number. The Forge refines no higher than refine-cap; anything
+  # rarer only ever drops.
+  refine:
+    essence: 6
+    money: 400
+  refine-cap: legendary
+  # A new reforge, rolled at random from those the piece can take.
+  reforge:
+    essence: 1
+    money: 150
+  # Salvaging gives back this much essence for each step of rarity the piece has, and one more for each star.
+  salvage-essence: 2

@@ -1,0 +1,113 @@
+# TriTown - Items
+#
+# The materials mobs drop, and the essence ranked mobs drop besides. /tritown reload reads this file again. mobs.yml
+# says which mob drops what.
+#
+# Each item looks like the vanilla item its model names, but is none of them: it cannot be crafted with, placed, eaten
+# or used. Its name and description are item.<id>.name and item.<id>.lore in the language files, and its name takes the
+# colour of its rarity: common, uncommon, rare, epic, legendary or mythic. glint makes it shimmer like an enchanted item.
+#
+# An id is lower-case letters, digits and dashes, and must never change once players hold the item: it is what the item
+# is. Take an item out and the copies players hold stay as they are, but nothing drops or uses it any more.
+items:
+  # From Overworld mobs.
+  grave-dust:
+    model: gunpowder
+    rarity: common
+  bone-shard:
+    model: bone_meal
+    rarity: common
+  silk-strand:
+    model: string
+    rarity: common
+  volatile-powder:
+    model: redstone
+    rarity: uncommon
+  frost-shard:
+    model: prismarine_shard
+    rarity: uncommon
+  tidal-pearl:
+    model: prismarine_crystals
+    rarity: uncommon
+  night-membrane:
+    model: phantom_membrane
+    rarity: uncommon
+  raider-mark:
+    model: flint
+    rarity: uncommon
+
+  # From Nether mobs.
+  gilded-tusk:
+    model: gold_nugget
+    rarity: rare
+  ember-core:
+    model: fire_charge
+    rarity: rare
+  wailing-tear:
+    model: ghast_tear
+    rarity: rare
+  cinder-ash:
+    model: black_dye
+    rarity: rare
+
+  # From End mobs.
+  void-fragment:
+    model: ender_pearl
+    rarity: epic
+  rift-shell:
+    model: shulker_shell
+    rarity: epic
+
+  # Trophies, from the server's own mobs (bestiary.yml).
+  hollow-marrow:
+    model: bone
+    rarity: uncommon
+  abyssal-scale:
+    model: turtle_scute
+    rarity: rare
+  warhog-hide:
+    model: leather
+    rarity: rare
+  null-shard:
+    model: echo_shard
+    rarity: epic
+
+  # Sigils, which summon the bosses of bestiary.yml. The custom mobs of each boss's region drop them.
+  grave-sigil:
+    model: skeleton_skull
+    rarity: rare
+    glint: true
+  brood-sigil:
+    model: fermented_spider_eye
+    rarity: rare
+    glint: true
+  tide-sigil:
+    model: heart_of_the_sea
+    rarity: epic
+    glint: true
+  cinder-sigil:
+    model: wither_skeleton_skull
+    rarity: epic
+    glint: true
+  void-sigil:
+    model: ender_eye
+    rarity: legendary
+    glint: true
+
+  # Essence, from elites and champions. Its grade follows the mob's level.
+  dim-essence:
+    model: glowstone_dust
+    rarity: uncommon
+    glint: true
+  glowing-essence:
+    model: glow_ink_sac
+    rarity: rare
+    glint: true
+  radiant-essence:
+    model: amethyst_shard
+    rarity: epic
+    glint: true
+  astral-essence:
+    model: nether_star
+    rarity: legendary
+    glint: true

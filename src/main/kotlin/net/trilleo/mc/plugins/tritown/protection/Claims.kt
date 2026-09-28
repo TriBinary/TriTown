@@ -3,11 +3,7 @@ package net.trilleo.mc.plugins.tritown.protection
 import io.papermc.paper.block.TileStateInventoryHolder
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
-import org.bukkit.block.Block
-import org.bukkit.block.Campfire
-import org.bukkit.block.Chest
-import org.bukkit.block.DoubleChest
-import org.bukkit.block.TileState
+import org.bukkit.block.*
 import org.bukkit.entity.*
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.Inventory
@@ -86,8 +82,14 @@ object Claims {
         }
 
         val vacancy: () -> Boolean = when (state) {
-            is TileStateInventoryHolder -> { { vacant(state.inventory) } }
-            is Campfire -> { { (0 until state.size).all { state.getItem(it)?.isEmpty ?: true } } }
+            is TileStateInventoryHolder -> {
+                { vacant(state.inventory) }
+            }
+
+            is Campfire -> {
+                { (0 until state.size).all { state.getItem(it)?.isEmpty ?: true } }
+            }
+
             else -> return null
         }
         return ClaimHolder(state.persistentDataContainer, location, vacancy)
@@ -95,9 +97,18 @@ object Claims {
 
     fun of(entity: Entity): ClaimHolder? {
         val vacancy: () -> Boolean = when {
-            entity is ItemFrame -> { { entity.item.isEmpty } }
-            entity is ArmorStand -> { { EquipmentSlot.entries.all { slot -> isBare(entity, slot) } } }
-            entity is Allay -> { { entity.equipment.itemInMainHand.isEmpty && vacant(entity.inventory) } }
+            entity is ItemFrame -> {
+                { entity.item.isEmpty }
+            }
+
+            entity is ArmorStand -> {
+                { EquipmentSlot.entries.all { slot -> isBare(entity, slot) } }
+            }
+
+            entity is Allay -> {
+                { entity.equipment.itemInMainHand.isEmpty && vacant(entity.inventory) }
+            }
+
             entity is Mob && entity !is Enemy && MOUNT_SLOTS.any(entity::canUseEquipmentSlot) -> {
                 {
                     MOUNT_SLOTS.all { slot -> isBare(entity, slot) } &&
@@ -105,7 +116,10 @@ object Claims {
                 }
             }
 
-            entity is Vehicle && entity is InventoryHolder -> { { vacant(entity.inventory) } }
+            entity is Vehicle && entity is InventoryHolder -> {
+                { vacant(entity.inventory) }
+            }
+
             else -> return null
         }
         return ClaimHolder(entity.persistentDataContainer, entity.location, vacancy)

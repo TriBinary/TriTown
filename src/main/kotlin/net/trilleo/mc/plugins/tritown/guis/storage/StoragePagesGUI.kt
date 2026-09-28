@@ -95,7 +95,8 @@ class StoragePagesGUI : PagedPluginGUI(
         contexts.remove(event.player.uniqueId)?.let { StorageManager.unloadIfIdle(it.owner) }
     }
 
-    private fun canBuy(player: Player, context: Context): Boolean = context.owner == player.uniqueId && !context.readOnly
+    private fun canBuy(player: Player, context: Context): Boolean =
+        context.owner == player.uniqueId && !context.readOnly
 
     companion object {
         const val ID = "storage-pages"

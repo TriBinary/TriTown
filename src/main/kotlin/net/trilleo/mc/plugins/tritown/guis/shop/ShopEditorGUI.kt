@@ -255,7 +255,7 @@ class ShopEditorGUI : PagedPluginGUI(
         shop.entries += entry
         ShopManager.save()
 
-        player.sendPrefixed(player.tr("shop.editor.entry-added", "item" to ShopRender.itemName(entry.item)))
+        player.sendPrefixed(player.tr("shop.editor.entry-added", "item" to ShopRender.itemName(player, entry.item)))
         ShopRender.navigate { ShopEntryGUI.show(player, shop, entry) }
     }
 

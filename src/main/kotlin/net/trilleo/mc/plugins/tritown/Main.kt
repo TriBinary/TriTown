@@ -2,7 +2,12 @@ package net.trilleo.mc.plugins.tritown
 
 import com.palmergames.bukkit.towny.TownyEconomyHandler
 import net.milkbowl.vault.economy.Economy
+import net.trilleo.mc.plugins.tritown.combat.DamageIndicators
+import net.trilleo.mc.plugins.tritown.combat.PlayerStats
+import net.trilleo.mc.plugins.tritown.combat.SpeedSync
 import net.trilleo.mc.plugins.tritown.config.*
+import net.trilleo.mc.plugins.tritown.content.ContentRegistry
+import net.trilleo.mc.plugins.tritown.content.ItemRedraw
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
 import net.trilleo.mc.plugins.tritown.data.ServerDataManager
 import net.trilleo.mc.plugins.tritown.economy.*
@@ -13,6 +18,8 @@ import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
 import net.trilleo.mc.plugins.tritown.guis.storage.StorageGUI
 import net.trilleo.mc.plugins.tritown.menu.MenuItem
+import net.trilleo.mc.plugins.tritown.mobs.ActiveMobs
+import net.trilleo.mc.plugins.tritown.mobs.MobKinds
 import net.trilleo.mc.plugins.tritown.news.NewsManager
 import net.trilleo.mc.plugins.tritown.news.storage.JsonNewsStorage
 import net.trilleo.mc.plugins.tritown.registration.*
@@ -50,7 +57,7 @@ class Main : JavaPlugin() {
     override fun onLoad() {
         instance = this
         pluginConfig = PluginConfig(this)
-        Lang.load(this, pluginConfig.language)
+        Lang.load(this, pluginConfig.language, pluginConfig.itemLanguage)
 
         val settings = EconomySettings.load(pluginConfig)
         if (!settings.enabled) {
@@ -112,6 +119,12 @@ class Main : JavaPlugin() {
         ProtectionSettings.load(pluginConfig)
         MainMenuSettings.load(pluginConfig, logger)
 
+        ContentRegistry.load(this)
+        CombatSettings.load(pluginConfig)
+        MobSettings.load(pluginConfig)
+        // Once the content is loaded, since a shop's copy of an item is redrawn from it.
+        ShopManager.redrawItems()
+
         // Before the registrars, like the shops: the main menu reads a player's storage as it is drawn.
         StorageSettings.load(pluginConfig)
         if (StorageSettings.snapshot.enabled) StorageManager.start(JsonStorageStore(dataFolder, logger), logger)
@@ -142,7 +155,7 @@ class Main : JavaPlugin() {
     fun reload() {
         pluginConfig.reload()
         MessageUtil.init(pluginConfig.messagePrefix)
-        Lang.load(this, pluginConfig.language)
+        Lang.load(this, pluginConfig.language, pluginConfig.itemLanguage)
 
         val settings = EconomySettings.load(pluginConfig)
         if (settings.enabled) {
@@ -164,6 +177,19 @@ class Main : JavaPlugin() {
         TradeSettings.load(pluginConfig)
         TownSettings.load(pluginConfig)
         ProtectionSettings.load(pluginConfig)
+
+        ContentRegistry.load(this)
+        CombatSettings.load(pluginConfig)
+        MobSettings.load(pluginConfig)
+        // The balance, or what a stat is worth, may have changed under every cached sheet, and
+        // under every piece of gear anyone is carrying; the content or the item language, under
+        // every item TriTown drew.
+        PlayerStats.invalidateAll()
+        server.onlinePlayers.forEach { player -> ItemRedraw.refreshAll(player.inventory) }
+        ShopManager.redrawItems()
+        // A custom mob's size and speed are attribute modifiers, which only change when they are put on again.
+        ActiveMobs.all().filter { it.isValid }.forEach(MobKinds::refresh)
+
         // Only the settings, as with the shops: the storage files are never re-read while players hold them open.
         StorageSettings.load(pluginConfig)
         // Only the settings, as with the shops: every change to a post is already on disk.
@@ -194,6 +220,8 @@ class Main : JavaPlugin() {
 
         // So no menu item is saved into an inventory and left behind once TriTown is gone.
         MenuItem.stripAll()
+        DamageIndicators.clearAll()
+        server.onlinePlayers.forEach(SpeedSync::clear)
 
         ShopManager.shutdown()
 

@@ -2,6 +2,127 @@
 
 ## Unreleased
 
+## Version 1.5.0
+
+### New Features
+
+#### Combat
+
++ Fights with mobs now happen in RPG numbers. You have 100 health drawn over your ten hearts, a level-1 zombie has 100,
+  and hits come from your stats.
+    + **Health**, **Defense**, **Damage**, **Strength**, **Crit Chance** and **Crit Damage**. Your armor gives Defense,
+      your weapon Damage, and the Strength effect Strength. Jump attacks add to your crit chance.
+    + See yours, and where each comes from, with `/tritown stats` or by clicking your profile in the main menu. Add a
+      name to see another player's.
+    + Your health and Defense sit above your hotbar, and every hit you land floats its damage up from the mob.
+    + At level 1 with vanilla gear the game plays exactly as vanilla does.
+    + None of it applies between players: a fight between players, or with a player's pet, is vanilla. So is everything
+      the world does to you, such as falling, lava and drowning.
++ Wild mobs are now levelled by where they spawn. Each ring further from a world's spawn is harder, the Nether and the
+  End start higher, and night and going below Y 0 add to it.
+    + A level grows a mob's health, its hits and the experience it drops. Looking at a levelled mob shows its level and
+      health.
+    + Town claims are always level 1, and so is every mob from a spawner, an egg or a command, so farms work as they do
+      in vanilla. Traps and fire only ever hurt a mob as much as they would at level 1.
+    + The sidebar's wilderness line shows the level where you stand.
++ Wild mobs can now spawn as **elites** (★, from level 5) and **champions** (★★, from level 15): much tougher, harder
+  hitting, and with one to three affixes named on the mob.
+    + Armored, Frenzied, Vampiric, Enraged, Molten, Frostbound, Venomous, Volatile (explodes a moment after dying),
+      Summoner, Blinking (steps in behind you) and Warded (shrugs off arrows until hit in melee).
+    + Champions glow, and ranked mobs always show their nameplate. Bosses such as the Warden never spawn ranked.
++ Wild mobs now drop **materials** from level 3: Grave Dust, Bone Shards, Ember Cores, Void Fragments and ten more, one
+  for each family of mob. Elites and champions always drop theirs, along with **essence** whose grade follows the
+  mob's level.
+    + A new stat, **Magic Find**, makes a normal mob's material likelier. Looting gives some.
+    + Only a mob that spawned in the wild drops any of it, and only when players dealt at least half its damage, so traps
+      and lava pits earn nothing. The drops are the killer's.
+    + Materials look like the vanilla item they are modelled on but are inert: they cannot be crafted with, placed or
+      used. They and gear are written in one language for everyone, set by the new `item-language` in `config.yml`
+      (by default the same as `language`); shop prices, messages and the storage overview still name them in each
+      player's own.
+    + Administrators hand them out with `/tritown item give <player> <id> [amount]` (`tritown.item.admin`), and set
+      which mob drops what in `plugins/TriTown/content/mobs.yml`.
++ Added **gear**: ten tiers, each made for mobs up to six times its level, in six rarities from common to mythic.
+    + An armor set for every tier — Gravewalker, Bonecaller, Widowsilk, Tidecaller, Emberforged, Warhide, Ashen
+      Knight, Riftwalker, Voidstride and Starfall — and a weapon for every tier, with bows, a crossbow and a trident
+      among them.
+    + A tier is worth about twice the one before, and every piece of a slot and tier is worth the same however its
+      stats are shared out. Gear never wears out.
+    + Between players a piece is exactly the vanilla item it is made of, and its tooltip says which.
+    + Champions sometimes drop a finished piece of their tier.
++ Added **the Forge**, opened with `/tritown forge` or from the main menu. It crafts gear from materials, essence and
+  money at a random rarity, and on the piece in your hand it can:
+    + **Upgrade** it, up to five stars of 4% more stats each;
+    + **Refine** it one step of rarity, up to legendary — mythic only ever drops;
+    + **Reforge** it with a new named bonus such as Sharp or Titanic;
+    + **Salvage** it for essence.
++ Added **custom mobs**: thirteen of the server's own, who now and then take the place of a wild mob of their kind.
+    + The Gravewalker, Crypt Ghoul, Bonecaller Sentry, Frost Revenant, Widow Stalker, Silkweaver and Hexbinder in the
+      Overworld, the Tidecaller in its seas, the Crimson Warhog, Pyromancer and Ashen Legionnaire in the Nether, and
+      the Voidstalker and Starborn Sentinel in the End.
+    + Each has its own name on its nameplate, its own size and speed, affixes it always has, and a look of its own —
+      many wear the gear of their region, which they sometimes drop.
+    + They are tougher than their kind and drop more of its materials besides. Voidstalkers and Starborn Sentinels
+      drop **Rift Shells**, which until now no mob could.
+    + Bonecaller Sentries, Tidecallers, Crimson Warhogs and Voidstalkers drop **trophies** — Hollow Marrow, Abyssal
+      Scales, Warhog Hide and Null Shards — which the Bonecaller, Tidecaller, Warhide and Riftwalker armor of tiers
+      2, 4, 6 and 8 is forged from.
+    + Each fights with **abilities** of its own: Leap, Slam, Charge, Volley, Fireball, Meteor, Storm, Ensnare, Hook,
+      Summon, Bulwark, Frost Nova, Miasma and Drain. Every one is warned of with particles and sound before it lands,
+      breaks no blocks, and only ever hurts players.
+    + Like every wild mob, they never spawn in a town, from a spawner or from an egg. They may still be elites or
+      champions.
+    + Server owners tune them in `plugins/TriTown/content/bestiary.yml`, or turn them off with `mobs.custom.enabled`.
+      `/tritown mob spawn <kind> [level]` calls one up to look at, dropping nothing extra, and `/tritown mob kinds`
+      lists them (`tritown.mob.admin`).
++ Added **bosses**: the Grave Lord, the Broodmother, the Tide Tyrant, the Cinder Warlord and the Void Herald.
+    + Each is summoned with its **sigil**, which the custom mobs of its region now and then drop. Raise one in the
+      right place — the Broodmother answers only deep underground, the Tide Tyrant only from the water — and after a
+      short ritual the boss rises in front of you. Sigils never work in a town.
+    + A boss fights in an arena around where it rose, with a boss bar for everyone nearby, abilities of its own, and
+      phases as its health falls: it calls minions, grows new affixes and learns new tricks. It gives up and leaves if
+      nobody stays to fight it.
+    + Everyone who dealt at least a tenth of its health gets **their own share** of the spoils, dropped where it fell
+      for them alone: materials, trophies, essence, perhaps a piece of gear of its tier, and perhaps a piece of its
+      **signature gear** — ten pieces that only bosses drop, such as the Gravelord's Crown and the Eclipse Scythe, and
+      which can drop as mythic.
+    + Server owners tune them in `bestiary.yml`, switch them off with `mobs.bosses.enabled`, and see each against a
+      kit of its tier with `/tritown mob bosses`. `/tritown mob spawn <boss>` calls one up to test, dropping nothing.
++ Added the **bestiary**, opened with `/tritown bestiary` or from the main menu: a page for every custom mob and boss.
+    + A page stays blank, but for where to look, until you slay one. Then it shows what it is, where it lives or how
+      it is summoned, its abilities and affixes, how many you have slain, and which of its own loot you have found.
+    + A star marks every 10, 100 and 1,000 of one you slay.
++ Added three stats: **Speed** (capped by `combat.speed-cap`, since it is the one players feel), **Vitality** (more from
+  regeneration and healing potions) and **Magic Find**, which now also helps a champion's gear drop.
++ Server owners tune every piece in `plugins/TriTown/content/gear.yml`, and gear's budget and the Forge's prices in
+  `balance.yml`. A change reaches every piece already out there. `/tritown item give <player> <id> [rarity]` hands out
+  gear, and `/tritown mob balance` now shows each level against a full kit of the gear made for it.
+
++ Server owners tune it all in `plugins/TriTown/content/balance.yml`, and set the rings per kind of world, or per world,
+  under `mobs.levels` in `config.yml`. `/tritown mob balance` shows what the numbers make of each level, and
+  `/tritown mob level` shows the level where you stand and why (`tritown.mob.admin`).
++ Added the sidebar markers `%health%`, `%max_health%`, `%defense%`, `%mob_level%` and `%danger%`.
+
+#### Economy
+
++ The Forge is a new money sink, listed as **The Forge** in the admin panel's economy breakdown and in `/eco history`.
+
+### Improvements
+
+#### Main Menu
+
++ The leaderboard and the list of players to trade with or pay now fill from the top-left like every other list,
+  instead of gathering a short page in the middle.
+
+### Technical Details
+
+#### Misc
+
++ Removed `LangTranslator`. Paper never translates anything inside an item for each player, so gear and content items
+  are written in the item language through `Lang.item`, stamped with `Lang.itemRevision`, and redrawn by `ItemRedraw`
+  from `ItemRefreshListener` (formerly `GearRefreshListener`), on reload, and over every shop's items.
++ Removed `PagedLayout.CENTERED` and `GUIFrame.centeredSlots`: every paged list fills from the top-left.
+
 ## Version 1.4.0
 
 ### New Features

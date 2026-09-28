@@ -22,6 +22,10 @@ import java.io.File
  * sender.sendPrefixed(sender.tr("command.reload.done"))
  * ```
  *
+ * Items are the exception to reading in your own language: the server cannot
+ * show an item's text to each player differently, so everything drawn on an
+ * item is in the one item language ([item]).
+ *
  * Loaded translations are read from Towny's threads through the Vault economy,
  * so [load] publishes an immutable snapshot rather than mutating one in place.
  */
@@ -42,8 +46,23 @@ object Lang {
     @Volatile
     private var configured = AUTO
 
-    /** Loads every language file; [language] is `auto` (client locale) or a language id that everyone sees. */
-    fun load(plugin: JavaPlugin, language: String) {
+    @Volatile
+    private var itemLanguage = fallback
+
+    /**
+     * A stamp of the item language's text, the same from one start to the next,
+     * which changes whenever anything drawn on an item could read differently.
+     */
+    @Volatile
+    var itemRevision: Int = 0
+        private set
+
+    /**
+     * Loads every language file. [language] is `auto` (client locale) or a
+     * language id that everyone sees; [items] is the language items are written
+     * in, or `auto` for [language]'s, and English when that is `auto` too.
+     */
+    fun load(plugin: JavaPlugin, language: String, items: String) {
         val folder = File(plugin.dataFolder, "lang")
         BUNDLED.forEach { if (!File(folder, "$it.yml").exists()) plugin.saveResource("lang/$it.yml", false) }
 
@@ -60,6 +79,14 @@ object Lang {
         if (!language.equals(AUTO, ignoreCase = true) && match(language) == null) {
             plugin.logger.warning("Unknown language '$language' in config.yml; using $DEFAULT.")
         }
+
+        if (!items.equals(AUTO, ignoreCase = true) && match(items) == null) {
+            plugin.logger.warning("Unknown item-language '$items' in config.yml; items follow language instead.")
+        }
+        itemLanguage = listOf(items, language).firstNotNullOfOrNull { id ->
+            id.takeUnless { it.equals(AUTO, ignoreCase = true) }?.let(::match)
+        } ?: fallback
+        itemRevision = 31 * itemLanguage.id.hashCode() + itemLanguage.values.hashCode()
     }
 
     /** Ids of every loaded language file, such as `en_US`, sorted by file name. */
@@ -76,14 +103,23 @@ object Lang {
     fun find(sender: CommandSender?, key: String): String? = language(sender).values[key]
 
     /**
+     * The translation of [key] in the item language, for text drawn on an item.
+     * An item is one object seen by everyone, so it is written once, in one
+     * language, and every copy stays identical.
+     */
+    fun item(key: String): String = itemLanguage.values[key] ?: key
+
+    /**
      * The id of the language [sender] reads, such as `zh_CN` — the same one [tr]
      * picks, so text kept outside the language files can follow it.
      */
     fun idFor(sender: CommandSender?): String = language(sender).id
 
-    private fun language(sender: CommandSender?): Language {
-        val id =
-            if (configured.equals(AUTO, ignoreCase = true)) (sender as? Player)?.locale()?.toString() else configured
+    private fun language(sender: CommandSender?): Language = language((sender as? Player)?.locale()?.toString())
+
+    /** The language for a client asking for [clientLocale], whatever `language` in `config.yml` makes of it. */
+    private fun language(clientLocale: String?): Language {
+        val id = if (configured.equals(AUTO, ignoreCase = true)) clientLocale else configured
         return id?.let(::match) ?: fallback
     }
 

@@ -8,10 +8,7 @@ import com.palmergames.bukkit.towny.huds.providers.ServerHUD
 import net.kyori.adventure.text.Component
 import net.trilleo.mc.plugins.tritown.config.ScoreboardSettings
 import net.trilleo.mc.plugins.tritown.data.PlayerDataManager
-import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.EconomyPlaceholders
-import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.NationPlaceholders
-import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.PlotPlaceholders
-import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.TownPlaceholders
+import net.trilleo.mc.plugins.tritown.scoreboard.placeholders.*
 import net.trilleo.mc.plugins.tritown.utils.ComponentUtil
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -281,5 +278,6 @@ object ScoreboardService {
         NationPlaceholders.register()
         PlotPlaceholders.register()
         EconomyPlaceholders.register()
+        CombatPlaceholders.register()
     }
 }

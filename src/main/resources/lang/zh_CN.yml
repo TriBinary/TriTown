@@ -23,6 +23,9 @@ command:
     news: "公告"
     storage: "仓库"
     protection: "物品保护"
+    adventure: "冒险"
+    mobs: "怪物"
+    items: "物品"
 
   help:
     header: "TriTown 命令"
@@ -144,6 +147,48 @@ command:
     public: "<gray>它不归属任何人：所有人都可以使用。"
     owner: "它归属于 <white>{name}</white>。"
     released: "已解除 <white>{name}</white> 的归属。现在所有人都可以使用。"
+
+  stats:
+    description: "查看你的战斗属性"
+    players-only: "<red>属性在菜单中显示，只有玩家能打开。"
+    unavailable: "<red>这个世界没有开启战斗属性。"
+    not-found: "<red><white>{name}</white> 不在线。"
+
+  mob:
+    description: "查看怪物等级与战斗平衡"
+    usage: "<red>用法：<white>/tritown mob <level|balance|kinds|spawn <kind> [level]></white>"
+    players-only: "<red>要在游戏中站在某处才能查看那里的等级。"
+    inactive: "<red>这个世界的怪物没有等级。"
+    level: "在这里生成的怪物为 <white>{level}</white> 级。"
+    level-town: "<gray> · 城镇领地内始终为 1 级。"
+    level-hub: "<gray> · 这里是出生区域，保持基础等级。"
+    level-ring: "<gray> · 距出生点第 <white>{ring}</white> 圈。"
+    level-night: "<gray> · 现在是夜晚，等级更高。"
+    level-deep: "<gray> · 位于 Y 0 以下，等级更高。"
+    balance-header: "各等级的僵尸对上一整套为该等级打造的稀有 ★★★ 装备："
+    balance-row: "<gray>Lv <white>{level}</white> <dark_gray>（{tier} 阶）</dark_gray>：<red>{health}❤</red>，每击 <red>{hit}</red> · <white>{hits}</white> 下击杀 · 每击扣除生命的 <white>{percent}%</white>"
+    kinds: "共 <white>{amount}</white> 种自定义怪物：<gray>{ids}"
+    unknown-kind: "<red>没有名为 <white>{id}</white> 的自定义怪物。<gray>/tritown mob kinds</gray> 会列出全部。"
+    spawned: "已召出一只 <white>{level}</white> 级的 <white>{name}</white>。它只会掉落原版战利品。"
+    bosses-header: "各首领在其等级下，对上一名身着该阶稀有 ★★★ 整套装备的玩家："
+    bosses-row: "<gray>{name} <dark_gray>（Lv {level}，{tier} 阶）</dark_gray>：<red>{health}❤</red>，每击 <red>{hit}</red> · 单人需 <white>{hits}</white> 下 · 每击扣除生命的 <white>{percent}%</white>"
+
+  item:
+    description: "发放服务器自己的物品"
+    usage: "<red>用法：<white>/tritown item <give <player> <id> [amount]|list></white>"
+    not-found: "<red><white>{name}</white> 不在线。"
+    unknown: "<red>没有物品 <white>{id}</white>。<gray>/tritown item list</gray> 会列出所有物品。"
+    given: "已将 <white>{amount}x {id}</white> 发给 <white>{name}</white>。"
+    list: "共 <white>{amount}</white> 种物品：<gray>{ids}"
+
+  bestiary:
+    description: "查看你遇到过的服务器专属怪物"
+    players-only: "<red>图鉴是一个菜单，只有玩家才能打开。"
+
+  forge:
+    description: "打造与强化装备"
+    players-only: "<red>锻造台是菜单，只有玩家能打开。"
+    unavailable: "<red>这个世界的锻造台已关闭。"
 
   trades:
     description: "打开服务器的全局商店"
@@ -296,12 +341,17 @@ money:
     shop-sell: "在 {shop} 出售"
     trade: "玩家交易"
     storage-page: "仓库第 {page} 页"
+    gear-craft: "打造 {item}"
+    gear-upgrade: "升星 {item}"
+    gear-refine: "精炼 {item}"
+    gear-reforge: "重铸 {item}"
 
   # 资金的来源与去向，管理面板按此归类统计。
   flow:
     starting-balance: "新玩家"
     shop: "商店"
     storage: "仓库页"
+    gear: "锻造台"
     towny: "Towny"
     admin: "管理操作"
     payment: "玩家转账"
@@ -315,6 +365,7 @@ money:
     towny: "Towny"
     shop: "商店"
     storage: "仓库"
+    gear: "锻造台"
 
   account-type:
     player: "玩家"
@@ -349,6 +400,12 @@ gui:
     profile-rank: "<gray>财富排行：<white>第 {rank} 名</white>"
     profile-town: "<gray>城镇：<white>{town}</white>"
     profile-nation: "<gray>国家：<white>{nation}</white>"
+    profile-stats: "<yellow>点击<gray>查看你的战斗属性"
+    forge: "<gold><bold>锻造台</bold></gold>"
+    forge-lore: "<gray>用怪物的掉落物打造装备，并让它变得更强。"
+    bestiary: "<dark_aqua><bold>图鉴</bold></dark_aqua>"
+    bestiary-lore: "<gray>你击杀过的每一种服务器专属怪物，以及它们给了你什么。"
+    bestiary-found: "<gray>已发现：<white>{found}</white>/<white>{total}"
     town: "<green><bold>城镇</bold></green>"
     town-name: "<gray>城镇：<white>{town}</white>"
     town-residents: "<gray>居民：<white>{amount}</white>"
@@ -596,6 +653,7 @@ gui:
     about-starting-balance: "<dark_gray>每名新玩家只发放一次。"
     about-shop: "<dark_gray>服务器自己的商店卖出与回收。"
     about-storage: "<dark_gray>玩家购买更多仓库页。"
+    about-gear: "<dark_gray>玩家在锻造台打造、升星、精炼和重铸装备。"
     about-towny: "<dark_gray>维护费、税收、地块交易与银行存取。"
     about-admin: "<dark_gray>管理员发放、收回、设定或重置余额。"
     about-payment: "<dark_gray>玩家之间的转账。"
@@ -1115,7 +1173,87 @@ gui:
     cancel: "<red><bold>取消</bold>"
     cancel-lore: "<gray>返回，不做任何修改。"
 
-# 商店在菜单之外发给玩家的消息。
+  # 商店在菜单之外发给玩家的消息。
+  stats:
+    title: "<dark_gray>我的属性"
+    title-other: "<dark_gray>{name} 的属性"
+    profile: "<gold><bold>我的属性</bold></gold>"
+    profile-other: "<gold><bold>{name}</bold></gold>"
+    profile-health: "<red>❤ {health}<dark_gray>/</dark_gray>{max}</red>"
+    profile-pvp: "<dark_gray>属性只对怪物生效，玩家之间的战斗与原版相同。"
+    stat-name: "{stat} <white>{value}"
+    source-line: "<dark_gray>• <gray>{source}：<white>{value}"
+    defense-reduction: "<gray>怪物对你的伤害减少 <white>{percent}%</white>。"
+    about:
+      health: "<gray>怪物需要打掉你多少生命。它显示在你的红心上，红心始终与它保持同样的比例。"
+      defense: "<gray>减少怪物每次攻击的伤害，100 点防御可减半。"
+      damage: "<gray>你的武器为每次攻击怪物增加的伤害。"
+      strength: "<gray>按其数值的百分比提高你对怪物的每次伤害。"
+      crit-chance: "<gray>攻击怪物时触发暴击的几率，跳劈会提高它。"
+      crit-damage: "<gray>暴击额外造成的伤害。"
+      speed: "<gray>让你移动得更快。这是唯一一项在玩家之间也生效的属性，所以服务器为它设了上限。"
+      vitality: "<gray>让自然恢复和治疗药水恢复更多生命。"
+      magic-find: "<gray>提高怪物掉落其材料的几率。抢夺附魔会提高它。"
+    source:
+      base: "基础"
+      armor: "盔甲"
+      weapon: "武器"
+      effects: "状态效果"
+
+  bestiary:
+    title: "<dark_gray>图鉴"
+    variant: "<gold>{name}"
+    boss: "<red>☠ {name}"
+    lore: "<gray><italic>{lore}"
+    unknown: "<dark_gray>???"
+    unknown-lore: "<gray>你还没有击杀过它。"
+    lives: "<gray>栖息于{worlds}，等级 <white>{min}</white> 至 <white>{max}</white>。"
+    summoned: "<gray><white>{level}</white> 级首领，用{sigil}<gray>召唤。"
+    abilities: "<gray>技能：<white>{abilities}"
+    affixes: "<gray>词缀：<yellow>{affixes}"
+    kills: "<gray>已击杀：<white>{amount}</white> <gold>{stars}"
+    drops: "<gray>已发现的专属战利品：<white>{found}</white>/<white>{total}"
+    drop: "<dark_gray> · </dark_gray>{name}"
+    progress: "<aqua><bold>已发现 {found}/{total}"
+    progress-lore: "<gray>每种击杀一只即可填满它的一页。每击杀 10、100、1,000 只各得一颗星。"
+    world:
+      normal: "主世界"
+      nether: "下界"
+      end: "末地"
+      any: "任意世界"
+
+  forge:
+    title: "<dark_gray>锻造台"
+    craft: "<gold><bold>打造</bold></gold>"
+    craft-lore: "<gray>用怪物的掉落物打造新装备。"
+    upgrade: "<yellow><bold>升星</bold></yellow>"
+    upgrade-lore: "<gray>增加一颗星：属性 <white>+{bonus}%</white>。<dark_gray>（{stars}/{max}）"
+    refine: "<aqua><bold>精炼</bold></aqua>"
+    refine-lore: "<gray>将稀有度从 {from}<gray> 提升到 {to}<gray>。"
+    reforge: "<light_purple><bold>重铸</bold></light_purple>"
+    reforge-lore: "<gray>随机赋予一个新的重铸。<dark_gray>当前：{reforge}"
+    salvage: "<red><bold>分解</bold></red>"
+    salvage-lore: "<gray>将它永久分解为："
+    salvage-item: "<dark_gray>• <white>{amount}x</white> {name}"
+    click-act: "<yellow>点击<gray>执行"
+    empty: "<gray>手中没有装备"
+    empty-lore: "<gray>在主手拿着一件装备，即可对它升星、精炼、重铸或分解。"
+    cost-item: "<green>✔ <white>{have}<gray>/{need} {name}"
+    cost-item-missing: "<red>✘ <white>{have}<gray>/{need} {name}"
+    cost-money: "<green>✔ <gold>{amount}"
+    cost-money-missing: "<red>✘ <gold>{amount}"
+    confirm: "<green><bold>确认</bold></green>"
+    upgrade-confirm: "<dark_gray>为这件装备升星？"
+    refine-confirm: "<dark_gray>精炼这件装备？"
+    reforge-confirm: "<dark_gray>重铸这件装备？"
+    salvage-confirm: "<dark_gray>永久分解这件装备？"
+
+  forge-recipes:
+    title: "<dark_gray>锻造台：打造"
+    tier: "<gray>阶级 <white>{tier}"
+    click: "<yellow>点击<gray>打造"
+    confirm: "<dark_gray>打造这件装备？"
+
 shop:
   traded: "以 <gold>{price}</gold> 成交 <white>{amount}个</white> {item}。"
   traded-items: "成交 <white>{amount}个</white> {item}。"
@@ -1203,6 +1341,477 @@ trade:
     shutdown: "<gray>服务器正在关闭，交易已取消，你放上的东西都已退回。"
 
 
+# 战斗。各项属性在任何地方都以这里的符号和颜色显示。
+combat:
+  stat:
+    health: "<red>❤ 生命值"
+    defense: "<green>❈ 防御"
+    damage: "<red>⚔ 伤害"
+    strength: "<dark_red>❁ 力量"
+    crit-chance: "<blue>☣ 暴击率"
+    crit-damage: "<blue>☠ 暴击伤害"
+    speed: "<white>✦ 速度"
+    vitality: "<dark_red>♨ 活力"
+    magic-find: "<aqua>✯ 魔法寻宝"
+
+  hud:
+    bar: "<red>❤ {health}/{max}</red>      <green>❈ {defense}"
+
+  # 从被击中的怪物身上飘起。附近的人看到的是同一个，所以使用服务器的语言。
+  indicator:
+    hit: "<gray>{amount}"
+    crit: "<gradient:#ffff55:#ffaa00:#ff5555>✧{amount}✧</gradient>"
+
+mob:
+  # 有等级的怪物的名字。所有人看到的是同一个，所以使用服务器的语言。{name} 是怪物的种类，由每位玩家的客户端以自己的语言显示。
+  # {badge} 是等阶的标记，{affixes} 按 affix-name 的写法列出每个词缀。
+  nameplate: "<dark_gray>[<gray>Lv{level}<dark_gray>] {badge}{affixes}<red>{name} <green>{health}<dark_gray>/<green>{max}<red>❤"
+  affix-name: "<yellow>{name} "
+  # 自定义怪物自己的名字，代替其种类的名字。
+  kind-name: "<#f0c060>{name}"
+
+  rank:
+    elite: "<gold>★ "
+    champion: "<light_purple>★★ "
+    boss: "<dark_red>☠ "
+
+  affix:
+    armored: "重甲"
+    frenzied: "迅捷"
+    vampiric: "吸血"
+    enraged: "暴怒"
+    molten: "熔火"
+    frostbound: "霜缚"
+    venomous: "剧毒"
+    volatile: "爆裂"
+    summoner: "召唤"
+    blinking: "闪现"
+    warded: "护盾"
+
+  # 自定义怪物的技能，按图鉴的写法列出。
+  ability:
+    leap: "飞扑"
+    slam: "震地"
+    charge: "冲锋"
+    volley: "箭雨"
+    fireball: "火球"
+    meteor: "陨石"
+    storm: "雷暴"
+    ensnare: "缠网"
+    hook: "钩拽"
+    summon: "召唤"
+    bulwark: "壁垒"
+    frost-nova: "冰霜新星"
+    miasma: "瘴气"
+    drain: "汲取"
+
+  # plugins/TriTown/content/bestiary.yml 中的自定义怪物，按 id 排列。名字显示在怪物的名牌上，与名牌其余部分一样使用服务器的语言；
+  # 描述是图鉴中对它的介绍。
+  kind:
+    gravewalker:
+      name: "墓行者"
+      lore: "它穿着下葬时的盔甲爬了出来。"
+    crypt-ghoul:
+      name: "墓穴食尸鬼"
+      lore: "沙漠留下的一切，它都吃。"
+    bonecaller-sentry:
+      name: "唤骨哨兵"
+      lore: "它仍在为一位早已死去的领主守望。"
+    frost-revenant:
+      name: "霜寒亡魂"
+      lore: "它把坟墓的寒意带进每一场战斗。"
+    widow-stalker:
+      name: "寡妇潜猎者"
+      lore: "早在你看见它之前，它就在盯着你了。"
+    silkweaver:
+      name: "织丝蛛"
+      lore: "小巧，迅捷，而且从不落单太久。"
+    hexbinder:
+      name: "咒缚女巫"
+      lore: "她的药水是你最不需要担心的。"
+    tidecaller:
+      name: "唤潮者"
+      lore: "它一呼唤，大海便会回应。"
+    crimson-warhog:
+      name: "绯红战猪"
+      lore: "绯红森林里最老、也最暴躁的一头。"
+    pyromancer:
+      name: "炎术师"
+      lore: "一只学会了瞄准的烈焰人。"
+    ashen-legionnaire:
+      name: "灰烬军团兵"
+      lore: "要塞最后的忠诚士兵之一。"
+    voidstalker:
+      name: "虚空潜行者"
+      lore: "你一转开视线，它就已经在你身后。"
+    starborn-sentinel:
+      name: "星裔哨兵"
+      lore: "它守护着世界的边缘——防的是你。"
+    grave-lord:
+      name: "墓王"
+      lore: "从此处到地平线间每一座坟墓的主人。"
+      phase-1: "{name} <gray>唤起了亡者！"
+      phase-2: "{name} <gray>陷入了狂怒！"
+    broodmother:
+      name: "巢母"
+      lore: "世间一切蛛网之母。"
+      phase-1: "{name} <gray>放出了它的幼崽！"
+      phase-2: "{name} <gray>疯狂地爬动起来！"
+    tide-tyrant:
+      name: "潮汐暴君"
+      lore: "大海有史以来最残酷的君王。"
+      phase-1: "{name} <gray>掀起了潮水！"
+      phase-2: "{name} <gray>如海上风暴般狂怒！"
+    cinder-warlord:
+      name: "余烬督军"
+      lore: "要塞的最后一位将军。"
+      phase-1: "{name} <gray>召集军团，举起了盾牌！"
+      phase-2: "{name} <gray>燃起了烈焰！"
+    void-herald:
+      name: "虚空使者"
+      lore: "它替群星之外的虚无发声。"
+      phase-1: "{name} <gray>撕开了虚空！"
+      phase-2: "{name} <gray>让天空坠落！"
+
+
+
+# 首领战，从召唤到倒下。{name} 使用 boss.name 的写法。
+boss:
+  name: "<red>☠ {name}</red>"
+  # 首领竞技场附近的每位玩家看到的首领血条，使用各自的语言。
+  bar: "☠ {name} · Lv{level}"
+  subtitle: "<gray>等级 {level}"
+  ritual: "<gray>印记闪耀，{name} <gray>正在苏醒……"
+  summoned: "<white>{player}</white> <gray>召唤了 {name}<gray>！"
+  defeated: "{name} <gray>倒在了 <white>{players}</white> 手下！"
+  defeated-alone: "{name} <gray>倒下了。"
+  departed: "{name} <gray>等得不耐烦，离开了。"
+  reward: "你分得的战利品：{items}"
+  reward-empty: "<gray>这一次，你分得的战利品一无所获。"
+  no-share: "<gray>你造成的伤害不足，没有分到战利品。"
+  refused:
+    disabled: "本服务器无法召唤首领。"
+    inactive: "在这个世界里，没有东西回应印记。"
+    town: "{name} 不会在城镇中被召唤。"
+    place: "{name} 无法在这里被召唤。印记上写明了地点。"
+    crowded: "附近已有另一位首领，无法在此召唤 {name}。"
+    room: "这里没有足够的空间容纳 {name}。"
+
+# plugins/TriTown/content/items.yml 中的物品，按 id 排列。名称会使用物品稀有度的颜色，所以名称本身不带颜色。
+# 每行描述请保持简短：它是物品提示框中的一行。
+item:
+  grave-dust:
+    name: "墓土"
+    lore: "从行尸身上刮下的尘土。"
+  bone-shard:
+    name: "碎骨"
+    lore: "从骷髅骨架上崩下的碎片。"
+  silk-strand:
+    name: "蛛丝"
+    lore: "比寻常蛛网更坚韧的丝线。"
+  volatile-powder:
+    name: "不稳定火药"
+    lore: "余温未散，轻拿轻放。"
+  frost-shard:
+    name: "霜晶碎片"
+    lore: "握在手中也不会融化。"
+  tidal-pearl:
+    name: "潮汐珍珠"
+    lore: "一颗珠子里藏着大海的重量。"
+  night-membrane:
+    name: "夜幕薄膜"
+    lore: "取自猎捕失眠者的怪物。"
+  raider-mark:
+    name: "袭击者徽记"
+    lore: "袭击村庄之人的随身之物。"
+  gilded-tusk:
+    name: "镀金獠牙"
+    lore: "黄金，以及曾以此为傲的某物。"
+  ember-core:
+    name: "余烬之核"
+    lore: "烈焰人的心脏，仍在燃烧。"
+  wailing-tear:
+    name: "哀嚎之泪"
+    lore: "贴近耳边，仍能听见啜泣。"
+  cinder-ash:
+    name: "余烬骨灰"
+    lore: "凋灵骷髅骨头燃尽后的残余。"
+  void-fragment:
+    name: "虚空碎片"
+    lore: "群星之间那片虚无的一角。"
+  rift-shell:
+    name: "裂隙之壳"
+    lore: "打开它，里面是别处。"
+  hollow-marrow:
+    name: "空洞骨髓"
+    lore: "哨兵最后的力量，至今仍在嗡鸣。"
+  abyssal-scale:
+    name: "深渊之鳞"
+    lore: "来自某个比你潜得深得多的东西。"
+  warhog-hide:
+    name: "战猪皮"
+    lore: "硬到能挡开剑刃——大多数时候。"
+  null-shard:
+    name: "虚无碎片"
+    lore: "它毫无重量，却会把光一并带走。"
+  grave-sigil:
+    name: "墓之印记"
+    lore: "在主世界的荒野中举起它，召唤墓王。"
+  brood-sigil:
+    name: "巢之印记"
+    lore: "在 Y 40 以下举起它，召唤巢母。"
+  tide-sigil:
+    name: "潮之印记"
+    lore: "在主世界的水中举起它，召唤潮汐暴君。"
+  cinder-sigil:
+    name: "烬之印记"
+    lore: "在下界举起它，召唤余烬督军。"
+  void-sigil:
+    name: "虚空印记"
+    lore: "在末地举起它，召唤虚空使者。"
+  dim-essence:
+    name: "黯淡精华"
+    lore: "从强者身上汲取的力量。"
+  glowing-essence:
+    name: "辉光精华"
+    lore: "从更强者身上汲取的力量。"
+  radiant-essence:
+    name: "璀璨精华"
+    lore: "从最强者身上汲取的力量。"
+  astral-essence:
+    name: "星界精华"
+    lore: "来自世界尽头之外的力量。"
+
+# 物品提示框底部的标签。
+rarity:
+  common: "<white><bold>普通"
+  uncommon: "<green><bold>优秀"
+  rare: "<blue><bold>稀有"
+  epic: "<dark_purple><bold>史诗"
+  legendary: "<gold><bold>传说"
+  mythic: "<light_purple><bold>神话"
+
+
+# 锻造台完成某项操作后告诉玩家的话，或无法完成的原因。
+forge:
+  crafted: "你打造出了 {name}。"
+  upgraded: "{name} 现在拥有 <gold>{stars}★</gold>。"
+  refined: "{name} 现在是 {rarity}<reset> 品质。"
+  reforged: "它现在是 {name}。"
+  salvaged: "你将 {name} 分解成了 {items}。"
+  error:
+    not-gear: "请在主手拿着一件装备。"
+    maxed: "它已经无法再强化了。"
+    missing-items: "你缺少所需的部分材料。"
+    cannot-afford: "你付不起这笔钱。"
+    unavailable: "锻造台现在无法这么做。"
+
+# plugins/TriTown/content/gear.yml 中的装备，按 id 排列。名称会使用装备稀有度的颜色，所以名称本身不带颜色。
+# 每行描述请保持简短：它是装备提示框中的一行。
+gear:
+  # 它的部位，显示在提示框底部的稀有度之后。
+  slot:
+    weapon: "武器"
+    bow: "弓"
+    helmet: "头盔"
+    chestplate: "胸甲"
+    leggings: "护腿"
+    boots: "靴子"
+  # 后接这件装备在玩家之间视为的原版物品。
+  pvp: "对玩家时："
+  reforge:
+    sharp: "锋利"
+    heroic: "英勇"
+    fierce: "凶猛"
+    deadly: "致命"
+    titanic: "泰坦"
+    sturdy: "坚固"
+    hardy: "强健"
+    swift: "轻捷"
+    lucky: "幸运"
+  item:
+    gravewalker-blade:
+      name: "墓行者之刃"
+      lore: "在墓碑上磨利。"
+    gravewalker-helmet:
+      name: "墓行者头盔"
+      lore: "为在他人长眠之处挖掘者所戴。"
+    gravewalker-chestplate:
+      name: "墓行者胸甲"
+      lore: "沾满了百座坟墓的泥土。"
+    gravewalker-leggings:
+      name: "墓行者护腿"
+      lore: "它们从不厌倦行走。"
+    gravewalker-boots:
+      name: "墓行者靴子"
+      lore: "踏上任何墓穴的台阶都悄无声息。"
+    bonecaller-bow:
+      name: "唤骨长弓"
+      lore: "弓弦在风中嗡鸣，如同一副肋骨。"
+    bonecaller-helmet:
+      name: "唤骨头盔"
+      lore: "亡者靠近时，它会咯咯作响。"
+    bonecaller-chestplate:
+      name: "唤骨锁甲"
+      lore: "肋骨般的纹路，一如它的上一位主人。"
+    bonecaller-leggings:
+      name: "唤骨护腿"
+      lore: "永不疲倦的关节。"
+    bonecaller-boots:
+      name: "唤骨靴子"
+      lore: "只留下尘土，不留下脚印。"
+    frostbite-edge:
+      name: "霜咬之刃"
+      lore: "冷到足以灼伤。"
+    widowsilk-helmet:
+      name: "寡妇丝兜帽"
+      lore: "于黑暗中织成，为黑暗而生。"
+    widowsilk-chestplate:
+      name: "寡妇丝背心"
+      lore: "轻得让你忘了自己穿着它。"
+    widowsilk-leggings:
+      name: "寡妇丝护腿"
+      lore: "每一根丝都曾是一张陷阱。"
+    widowsilk-boots:
+      name: "寡妇丝靴子"
+      lore: "如蜘蛛落足般轻柔。"
+    tidecaller-trident:
+      name: "唤潮三叉戟"
+      lore: "它记得自己分开过的每一道浪。"
+    tidecaller-helmet:
+      name: "唤潮头盔"
+      lore: "大海仍在其中咆哮。"
+    tidecaller-chestplate:
+      name: "唤潮鳞甲"
+      lore: "永不生锈的鳞片。"
+    tidecaller-leggings:
+      name: "唤潮护腿"
+      lore: "为涉水而生，而非奔跑。"
+    tidecaller-boots:
+      name: "唤潮靴子"
+      lore: "总是有点潮湿。"
+    emberbrand:
+      name: "余烬烙刃"
+      lore: "战斗过后，它的刃口仍久久发光。"
+    emberforged-helmet:
+      name: "余烬锻造头盔"
+      lore: "锻造它的熔炉余温未散。"
+    emberforged-chestplate:
+      name: "余烬锻造胸甲"
+      lore: "在要塞的铁砧上锤打而成。"
+    emberforged-leggings:
+      name: "余烬锻造护腿"
+      lore: "每一步都迸出火星。"
+    emberforged-boots:
+      name: "余烬锻造战靴"
+      lore: "它们留下焦黑的脚印。"
+    wailing-arbalest:
+      name: "哀嚎劲弩"
+      lore: "每一支弩箭都伴着尖啸离弦。"
+    warhide-helmet:
+      name: "战皮头盔"
+      lore: "獠牙附赠。"
+    warhide-chestplate:
+      name: "战皮胸甲"
+      lore: "缝自一张不甘被剥下的皮。"
+    warhide-leggings:
+      name: "战皮护腿"
+      lore: "绯红森林的气息仍附着其上。"
+    warhide-boots:
+      name: "战皮重靴"
+      lore: "你每走一步，大地都知道。"
+    ashen-greatsword:
+      name: "灰烬巨剑"
+      lore: "对未曾赢得它的人来说太过沉重。"
+    ashen-helmet:
+      name: "灰烬骑士头盔"
+      lore: "曾有一位骑士戴过它，如今他只剩下灰烬。"
+    ashen-chestplate:
+      name: "灰烬骑士胸甲"
+      lore: "被熏得漆黑，也因此更加坚固。"
+    ashen-leggings:
+      name: "灰烬骑士护腿"
+      lore: "即便无人穿着，它们也在行进。"
+    ashen-boots:
+      name: "灰烬骑士战靴"
+      lore: "每一步都飘起煤灰。"
+    riftpiercer:
+      name: "裂隙穿刺者"
+      lore: "它的箭在离弦之前便已抵达。"
+    riftwalker-helmet:
+      name: "裂隙行者兜帽"
+      lore: "它总比你早一刻看见。"
+    riftwalker-chestplate:
+      name: "裂隙行者胸甲"
+      lore: "在裂隙的一侧比另一侧更重。"
+    riftwalker-leggings:
+      name: "裂隙行者护腿"
+      lore: "每一步都比应有的更远一点。"
+    riftwalker-boots:
+      name: "裂隙行者战靴"
+      lore: "它们走过没有地面的地方。"
+    voidreaver:
+      name: "虚空收割者"
+      lore: "它斩开万物之间的空隙。"
+    voidstride-helmet:
+      name: "虚空行者之冠"
+      lore: "它能看见站在你身后的东西。"
+    voidstride-chestplate:
+      name: "虚空行者甲壳"
+      lore: "任何东西都无法长久地抓住它。"
+    voidstride-leggings:
+      name: "虚空行者护腿"
+      lore: "每一步都落得比该落的更远一些。"
+    voidstride-boots:
+      name: "虚空行者之履"
+      lore: "如末影人一般行走。"
+    starfall-blade:
+      name: "星陨之刃"
+      lore: "它落在哪里，天空便追随到哪里。"
+    starfall-helmet:
+      name: "星陨头环"
+      lore: "献给在末地坚持到最后之人的王冠。"
+    starfall-chestplate:
+      name: "星陨神铠"
+      lore: "由坠落太远的星辰锻成。"
+    starfall-leggings:
+      name: "星陨护腿"
+      lore: "即使在虚空中也熠熠生辉。"
+    starfall-boots:
+      name: "星陨疾靴"
+      lore: "大地只是一个建议。"
+    gravelord-crown:
+      name: "墓王之冠"
+      lore: "沉甸甸地刻满了逝者的名字。"
+    sepulcher-cleaver:
+      name: "墓穴劈斧"
+      lore: "它劈开过上百座坟墓，也封上过更多。"
+    broodfang:
+      name: "巢牙"
+      lore: "毒液仍未干涸。"
+    widowmantle:
+      name: "寡妇斗篷"
+      lore: "由巢母亲自吐出的丝织成。"
+    tyrants-harpoon:
+      name: "暴君鱼叉"
+      lore: "它身后拖着整片大海。"
+    crown-of-tides:
+      name: "潮汐之冠"
+      lore: "潮水随佩戴者起落。"
+    warlords-brand:
+      name: "督军烙刃"
+      lore: "锻造于要塞最后的火焰之中。"
+    cinder-aegis:
+      name: "余烬神盾甲"
+      lore: "甲片之间的余烬仍在发光。"
+    eclipse-scythe:
+      name: "日蚀镰刀"
+      lore: "它收割光芒。"
+    herald-crown:
+      name: "使者之冠"
+      lore: "戴上它的人会听见虚空的低语。"
+
+
 scoreboard:
   # 服务器名称。各帧之间只有渐变相位不同，循环播放时高光会从名称上扫过。
   title:
@@ -1233,12 +1842,15 @@ scoreboard:
     plot-nation: "  <gray>国家 <white>%plot_nation%"
     plot-summary: "  <white>%plot_type%<dark_gray> · <gray>%plot_owner%"
     plot-price: "  <gray>出售中 <green>%plot_price%"
-    wilderness: "  <dark_green>荒野"
+    wilderness: "  <dark_green>荒野%danger%"
     coords: "  <gray>区块 <white>%plot_coords%"
     balance: "  <gray>余额 <white>%balance%"
     enemy-warning: "<dark_red>» <bold>敌对领地</bold> «"
     townless-hint: "  <yellow>你还没有城镇"
     townless-action: "  <gray>使用 <white>/tm<gray> 加入一个"
+
+  # 填入 %danger%：玩家所在处的荒野有多危险。
+  danger: "<dark_gray> · <red>☠ Lv {level}"
 
   warning:
     ruined: "已废墟"

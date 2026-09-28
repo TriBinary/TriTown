@@ -1,0 +1,428 @@
+# TriTown - Bestiary
+#
+# The server's own mobs. /tritown reload reads this file again, and a change reaches every one already out there: a
+# custom mob only remembers which one it is. Turn them off with mobs.custom.enabled in config.yml.
+#
+# A variant is a vanilla kind of mob with a name, a look and loot of its own. Now and then one takes the place of a wild
+# spawn of its kind: only a mob that spawned in the wild, so never one in a town, from a spawner, an egg or a command.
+#
+#   base       the vanilla kind it is, such as zombie. It only ever takes the place of a spawn of that kind
+#   spawn      where it lives, and how often it appears there:
+#                worlds    kinds of world (normal, nether, the_end) or world names; left out for any
+#                biomes    biomes such as desert or minecraft:swamp; left out for any
+#                levels    [lowest, highest] level it spawns at
+#                time      any, day or night (the Overworld's)
+#                min-y     the lowest height it spawns at, and max-y the highest; left out for any
+#                chance    percent of the wild spawns of its kind that fit all of the above and become it. Each variant
+#                          of a kind rolls in the order this file lists them, and the first to succeed takes the spawn
+#   rankable   whether it may still spawn as an elite or a champion; true when left out
+#   health     what it multiplies the health its level gives its kind by; 1 when left out
+#   damage     what it multiplies its hits by; 1 when left out
+#   defense    Defense it has, as a player's armor works against mobs: 100 halves each hit
+#   speed      percent faster it moves; below 0 is slower
+#   scale      its size, where 1 is its kind's. It is bigger to hit, too
+#   knockback  percent of knockback it shrugs off, up to 100
+#   affixes    affixes it always has (see balance.yml), on top of any its rank rolls
+#   abilities  what it does in a fight: leap, slam, charge, volley, fireball, meteor, storm, ensnare, hook, summon,
+#              bulwark, frost-nova, miasma or drain. What each does, and how hard, is in balance.yml
+#   minions    the id of the custom mob its summon calls; its own kind when left out
+#   equipment  what it wears and holds, by slot (head, chest, legs, feet, hand, off-hand): gear:<id> for a piece of gear's
+#              look, or a vanilla item such as golden_helmet. Only ever a look: it gives the mob no armor or damage and
+#              never drops. Illagers, witches, spiders and endermen show none of it
+#   loot       what it drops on top of its family's material (mobs.yml) and its rank's essence, each line rolled on its
+#              own, chance percent of the time, with the killer's Magic Find:
+#                {item: <id>, chance: 25, amount: [1, 2]}    an item from items.yml
+#                {gear: <id>, chance: 0.5}                   a piece of gear, at a rarity from drop-odds in balance.yml
+#
+# Its drops follow the same rules as every wild mob's (mobs.yml): players must have dealt enough of its damage. Its name
+# and description are mob.kind.<id>.name and mob.kind.<id>.lore in the language files. An id is lower-case letters,
+# digits and dashes, is shared by variants and bosses, and must never change once the mob is out there.
+#
+# A boss is summoned by a player with its sigil, an item from items.yml that the variants of its region drop. It takes
+# everything a variant does but spawn and rankable, and besides:
+#
+#   level      the level it always is, which decides its tier of gear and its essence
+#   sigil      the item that summons it. Right-clicking one takes it and, after a short ritual, the boss rises a few
+#              blocks in front of the player
+#   place      where it may be summoned: worlds (as for a variant), water: true to be summoned from water, and max-y
+#   arena      how far from where it was summoned it fights, in blocks. It is taken back if pulled out, and leaves if
+#              nobody is in it for idle-seconds
+#   bar        the colour of its boss bar: pink, blue, red, green, yellow, purple or white
+#   phases     what changes as its health falls below each percent: affixes and abilities it gains for good, and
+#              minions it calls at once, announced as mob.kind.<id>.phase-1, phase-2 and so on
+#   loot       rolled once for each player who dealt at least contributor-share of its health, with their own Magic
+#              Find. Its gear drops at the rarities of gear-odds below, mythic among them
+#
+# A boss is never ranked, never despawns while its fight lasts, glows, and never teleports or goes through a portal.
+rules:
+  # Percent of a boss's health a player must have dealt to earn a share of its loot.
+  contributor-share: 10
+  # A contributor this close to where a boss fell finds their share there, as theirs alone. Further off, it goes
+  # straight to them.
+  loot-range: 48
+  # A boss with nobody in its arena for this long leaves, and its sigil is gone.
+  idle-seconds: 120
+  # How long a sigil's ritual takes before the boss rises.
+  ritual-seconds: 3
+  # How far past its arena a boss may be pulled before it is taken back.
+  arena-margin: 8
+  # Percent chance each share also holds a finished piece of the boss's tier, at gear-odds.
+  gear-chance: 25
+  # The rarities a boss's gear drops at, weighted. The only way to a mythic piece besides a champion.
+  gear-odds:
+    rare: 40
+    epic: 35
+    legendary: 20
+    mythic: 5
+
+variants:
+  # ── The Overworld ─────────────────────────────────────────────────────────────────────────────────────────────────
+  gravewalker:
+    base: zombie
+    spawn: { worlds: [ normal ], levels: [ 3, 14 ], chance: 6 }
+    health: 1.8
+    damage: 1.2
+    defense: 40
+    scale: 1.05
+    knockback: 20
+    abilities: [ leap ]
+    equipment:
+      head: gear:gravewalker-helmet
+      chest: gear:gravewalker-chestplate
+      feet: gear:gravewalker-boots
+      hand: gear:gravewalker-blade
+    loot:
+      - { item: grave-sigil, chance: 1.5 }
+      - { item: grave-dust, chance: 25, amount: [ 1, 2 ] }
+      - { gear: gravewalker-blade, chance: 0.5 }
+
+  crypt-ghoul:
+    base: husk
+    spawn: { worlds: [ normal ], levels: [ 6, 16 ], chance: 10 }
+    health: 1.4
+    damage: 1.15
+    speed: 25
+    scale: 0.85
+    affixes: [ vampiric ]
+    abilities: [ leap ]
+    loot:
+      - { item: grave-sigil, chance: 1 }
+      - { item: grave-dust, chance: 30, amount: [ 1, 2 ] }
+
+  bonecaller-sentry:
+    base: skeleton
+    spawn: { worlds: [ normal ], levels: [ 6, 16 ], chance: 6 }
+    health: 1.6
+    damage: 1.2
+    defense: 30
+    abilities: [ volley ]
+    equipment:
+      head: gear:bonecaller-helmet
+      chest: gear:bonecaller-chestplate
+      hand: gear:bonecaller-bow
+    loot:
+      - { item: hollow-marrow, chance: 25, amount: [ 1, 2 ] }
+      - { item: bone-shard, chance: 30, amount: [ 1, 2 ] }
+      - { gear: bonecaller-bow, chance: 0.5 }
+
+  frost-revenant:
+    base: stray
+    spawn: { worlds: [ normal ], levels: [ 10, 22 ], chance: 10 }
+    health: 1.8
+    damage: 1.25
+    defense: 30
+    speed: 10
+    scale: 1.1
+    knockback: 20
+    affixes: [ frostbound ]
+    abilities: [ frost-nova ]
+    equipment:
+      hand: gear:frostbite-edge
+    loot:
+      - { item: frost-shard, chance: 35, amount: [ 1, 2 ] }
+      - { gear: frostbite-edge, chance: 0.4 }
+
+  widow-stalker:
+    base: spider
+    spawn: { worlds: [ normal ], levels: [ 12, 24 ], chance: 5, min-y: 40 }
+    health: 2.0
+    damage: 1.25
+    defense: 20
+    speed: 15
+    scale: 1.35
+    knockback: 30
+    abilities: [ ensnare, leap ]
+    loot:
+      - { item: brood-sigil, chance: 1.5 }
+      - { item: silk-strand, chance: 35, amount: [ 1, 3 ] }
+      - { item: night-membrane, chance: 10 }
+
+  silkweaver:
+    base: spider
+    spawn: { worlds: [ normal ], levels: [ 14, 26 ], chance: 8, max-y: 0 }
+    health: 1.4
+    damage: 1.2
+    speed: 20
+    scale: 0.7
+    affixes: [ venomous ]
+    abilities: [ miasma ]
+    loot:
+      - { item: brood-sigil, chance: 1 }
+      - { item: silk-strand, chance: 30, amount: [ 1, 2 ] }
+
+  hexbinder:
+    base: witch
+    spawn: { worlds: [ normal ], biomes: [ swamp, mangrove_swamp ], levels: [ 12, 30 ], chance: 15 }
+    health: 1.8
+    damage: 1.2
+    defense: 40
+    abilities: [ drain, ensnare ]
+    loot:
+      - { item: tide-sigil, chance: 0.5 }
+      - { item: raider-mark, chance: 30, amount: [ 1, 2 ] }
+
+  tidecaller:
+    base: drowned
+    spawn: { worlds: [ normal ], levels: [ 16, 30 ], chance: 8 }
+    health: 2.0
+    damage: 1.25
+    defense: 40
+    scale: 1.1
+    knockback: 20
+    abilities: [ hook ]
+    equipment:
+      head: gear:tidecaller-helmet
+      hand: gear:tidecaller-trident
+    loot:
+      - { item: tide-sigil, chance: 1.5 }
+      - { item: abyssal-scale, chance: 25, amount: [ 1, 2 ] }
+      - { item: tidal-pearl, chance: 30, amount: [ 1, 2 ] }
+      - { gear: tidecaller-trident, chance: 0.4 }
+
+  # ── The Nether ────────────────────────────────────────────────────────────────────────────────────────────────────
+  crimson-warhog:
+    base: hoglin
+    spawn: { worlds: [ nether ], levels: [ 18, 36 ], chance: 8 }
+    health: 2.2
+    damage: 1.3
+    defense: 60
+    speed: 10
+    scale: 1.3
+    knockback: 60
+    abilities: [ charge ]
+    loot:
+      - { item: warhog-hide, chance: 25, amount: [ 1, 2 ] }
+      - { item: gilded-tusk, chance: 35, amount: [ 1, 3 ] }
+
+  pyromancer:
+    base: blaze
+    spawn: { worlds: [ nether ], levels: [ 22, 40 ], chance: 8 }
+    health: 1.8
+    damage: 1.3
+    defense: 30
+    scale: 1.2
+    knockback: 30
+    affixes: [ molten ]
+    abilities: [ fireball, meteor ]
+    loot:
+      - { item: cinder-sigil, chance: 1 }
+      - { item: ember-core, chance: 35, amount: [ 1, 2 ] }
+
+  ashen-legionnaire:
+    base: wither_skeleton
+    spawn: { worlds: [ nether ], levels: [ 30, 45 ], chance: 8 }
+    health: 2.2
+    damage: 1.3
+    defense: 50
+    scale: 1.15
+    knockback: 40
+    affixes: [ armored ]
+    abilities: [ charge, slam ]
+    equipment:
+      head: gear:ashen-helmet
+      chest: gear:ashen-chestplate
+      hand: gear:ashen-greatsword
+    loot:
+      - { item: cinder-sigil, chance: 1.5 }
+      - { item: cinder-ash, chance: 35, amount: [ 1, 2 ] }
+      - { gear: ashen-greatsword, chance: 0.3 }
+
+  # ── The End ───────────────────────────────────────────────────────────────────────────────────────────────────────
+  voidstalker:
+    base: enderman
+    spawn: { worlds: [ the_end ], levels: [ 30, 60 ], chance: 5 }
+    health: 2.0
+    damage: 1.3
+    defense: 40
+    scale: 1.05
+    knockback: 30
+    affixes: [ blinking ]
+    abilities: [ hook, drain ]
+    loot:
+      - { item: void-sigil, chance: 1 }
+      - { item: null-shard, chance: 25, amount: [ 1, 2 ] }
+      - { item: void-fragment, chance: 30, amount: [ 1, 2 ] }
+      - { item: rift-shell, chance: 20 }
+
+  starborn-sentinel:
+    base: enderman
+    spawn: { worlds: [ the_end ], levels: [ 48, 60 ], chance: 6 }
+    health: 2.5
+    damage: 1.35
+    defense: 60
+    scale: 1.2
+    knockback: 50
+    affixes: [ warded ]
+    abilities: [ storm, bulwark ]
+    loot:
+      - { item: void-sigil, chance: 2 }
+      - { item: rift-shell, chance: 30, amount: [ 1, 2 ] }
+      - { item: void-fragment, chance: 30, amount: [ 1, 2 ] }
+
+bosses:
+  grave-lord:
+    base: zombie
+    level: 12
+    sigil: grave-sigil
+    place: { worlds: [ normal ] }
+    arena: 24
+    bar: red
+    health: 20
+    damage: 3
+    defense: 60
+    speed: 5
+    scale: 1.8
+    knockback: 80
+    abilities: [ slam, leap, summon ]
+    minions: gravewalker
+    phases:
+      - { below: 60, affixes: [ frenzied ], summon: 3 }
+      - { below: 25, affixes: [ enraged ], abilities: [ charge ] }
+    equipment:
+      head: gear:gravelord-crown
+      chest: gear:gravewalker-chestplate
+      legs: gear:gravewalker-leggings
+      feet: gear:gravewalker-boots
+      hand: gear:sepulcher-cleaver
+    loot:
+      - { item: grave-dust, chance: 100, amount: [ 6, 10 ] }
+      - { item: bone-shard, chance: 100, amount: [ 3, 6 ] }
+      - { item: hollow-marrow, chance: 60, amount: [ 1, 3 ] }
+      - { item: dim-essence, chance: 100, amount: [ 3, 5 ] }
+      - { gear: gravelord-crown, chance: 12 }
+      - { gear: sepulcher-cleaver, chance: 12 }
+      - { item: grave-sigil, chance: 5 }
+
+  broodmother:
+    base: spider
+    level: 24
+    sigil: brood-sigil
+    place: { worlds: [ normal ], max-y: 40 }
+    arena: 20
+    bar: green
+    health: 25
+    damage: 4
+    defense: 40
+    speed: 10
+    scale: 2.6
+    knockback: 90
+    abilities: [ ensnare, miasma, leap, summon ]
+    minions: silkweaver
+    phases:
+      - { below: 50, affixes: [ venomous ], summon: 4 }
+      - { below: 20, affixes: [ frenzied ] }
+    loot:
+      - { item: silk-strand, chance: 100, amount: [ 8, 14 ] }
+      - { item: night-membrane, chance: 60, amount: [ 2, 4 ] }
+      - { item: glowing-essence, chance: 100, amount: [ 3, 5 ] }
+      - { gear: broodfang, chance: 12 }
+      - { gear: widowmantle, chance: 12 }
+      - { item: brood-sigil, chance: 5 }
+
+  tide-tyrant:
+    base: drowned
+    level: 30
+    sigil: tide-sigil
+    place: { worlds: [ normal ], water: true }
+    arena: 28
+    bar: blue
+    health: 24
+    damage: 3
+    defense: 50
+    scale: 2.2
+    knockback: 90
+    abilities: [ hook, storm, frost-nova, summon ]
+    minions: tidecaller
+    phases:
+      - { below: 50, abilities: [ volley ], summon: 3 }
+      - { below: 25, affixes: [ enraged ] }
+    equipment:
+      head: gear:crown-of-tides
+      chest: gear:tidecaller-chestplate
+      hand: gear:tyrants-harpoon
+    loot:
+      - { item: tidal-pearl, chance: 100, amount: [ 6, 12 ] }
+      - { item: abyssal-scale, chance: 70, amount: [ 2, 4 ] }
+      - { item: glowing-essence, chance: 100, amount: [ 4, 6 ] }
+      - { gear: tyrants-harpoon, chance: 12 }
+      - { gear: crown-of-tides, chance: 12 }
+      - { item: tide-sigil, chance: 5 }
+
+  cinder-warlord:
+    base: wither_skeleton
+    level: 42
+    sigil: cinder-sigil
+    place: { worlds: [ nether ] }
+    arena: 24
+    bar: yellow
+    health: 22
+    damage: 4.5
+    defense: 70
+    scale: 1.6
+    knockback: 90
+    abilities: [ charge, slam, fireball ]
+    minions: ashen-legionnaire
+    phases:
+      - { below: 60, abilities: [ bulwark ], summon: 2 }
+      - { below: 30, affixes: [ enraged, molten ], abilities: [ meteor ] }
+    equipment:
+      head: gear:ashen-helmet
+      chest: gear:cinder-aegis
+      legs: gear:ashen-leggings
+      feet: gear:ashen-boots
+      hand: gear:warlords-brand
+    loot:
+      - { item: cinder-ash, chance: 100, amount: [ 8, 14 ] }
+      - { item: ember-core, chance: 60, amount: [ 3, 6 ] }
+      - { item: warhog-hide, chance: 50, amount: [ 1, 3 ] }
+      - { item: radiant-essence, chance: 100, amount: [ 3, 5 ] }
+      - { gear: warlords-brand, chance: 10 }
+      - { gear: cinder-aegis, chance: 10 }
+      - { item: cinder-sigil, chance: 5 }
+
+  void-herald:
+    base: enderman
+    level: 60
+    sigil: void-sigil
+    place: { worlds: [ the_end ] }
+    arena: 28
+    bar: purple
+    health: 12
+    damage: 1.8
+    defense: 80
+    scale: 1.7
+    knockback: 100
+    affixes: [ blinking ]
+    abilities: [ drain, storm, hook, summon ]
+    minions: voidstalker
+    phases:
+      - { below: 66, abilities: [ bulwark ], summon: 3 }
+      - { below: 33, affixes: [ enraged ], abilities: [ meteor ] }
+    loot:
+      - { item: void-fragment, chance: 100, amount: [ 10, 16 ] }
+      - { item: rift-shell, chance: 100, amount: [ 4, 8 ] }
+      - { item: null-shard, chance: 70, amount: [ 2, 4 ] }
+      - { item: astral-essence, chance: 100, amount: [ 3, 6 ] }
+      - { gear: eclipse-scythe, chance: 8 }
+      - { gear: herald-crown, chance: 8 }
+      - { item: void-sigil, chance: 4 }

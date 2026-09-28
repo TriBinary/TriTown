@@ -9,7 +9,7 @@ reduce boilerplate and provide commonly needed functionality out of the box.
 | `CountdownUtil` | Per-player countdown with configurable display and sound               |
 | `TeamUtil`      | Custom team management with server-data persistence                    |
 | `TagUtil`       | Per-player string tag management with player-data persistence          |
-| `Lang`          | Translations: per-player language files and the `tr()` helper          |
+| `Lang`          | Translations: per-player language files, `tr()`, and the item language |
 | `MessageUtil`   | Prefix-decorated message sender for any command sender                 |
 | `ChatPrompt`    | Asks a player a question in chat and hands the answer back             |
 | `EconomyUtil`   | Economy access: balances, withdrawals, deposits, transfers, formatting |
@@ -374,9 +374,11 @@ has to follow.
 
 | Method                               | Description                                                                                          |
 |:-------------------------------------|:-----------------------------------------------------------------------------------------------------|
-| `Lang.load(plugin, language)`        | Copies the bundled files to `plugins/TriTown/lang/` if missing and loads every language file.        |
+| `Lang.load(plugin, language, items)` | Copies the bundled files to `plugins/TriTown/lang/` if missing and loads every language file.        |
 | `Lang.tr(sender, key, vararg args)`  | The translation of `key` for `sender`, with `{name}` placeholders filled; the key itself if missing. |
 | `Lang.find(sender, key)`             | The raw translation, or `null` when no language defines `key` (for runtime-built keys).              |
+| `Lang.item(key)`                     | The translation of `key` in the item language, for text drawn on an item; the key itself if missing. |
+| `Lang.itemRevision`                  | A stamp of the item language's text, stable across restarts, that changes when item text could.      |
 | `Lang.idFor(sender)`                 | The id of the language `sender` reads, as `tr` picks it, for text kept outside the language files.   |
 | `Lang.ids`                           | Ids of every loaded language file (`en_US`, `zh_CN`, and any the server owner added).                |
 | `CommandSender.tr(key, vararg args)` | Extension shorthand for `Lang.tr(this, key, *args)`.                                                 |
@@ -395,6 +397,27 @@ val line = player.tr("command.balance.yours", "balance" to EconomyUtil.format(ba
 
 Values are MiniMessage with `{placeholder}` arguments, and arguments are inserted verbatim — escape player-written text
 with `MiniMessage.miniMessage().escapeTags(...)` before passing it.
+
+---
+
+### The item language
+
+An item is stored once but seen by everyone who holds it, trades for it or looks at it in a shop, and Paper never
+translates anything inside an item for each player — its network encoding switches server-side translation off. So
+text on an item is written in one language, the one `item-language` in `config.yml` names (`auto` follows `language`,
+and English when that is `auto` too), through `Lang.item`:
+
+```kotlin
+stack.setData(DataComponentTypes.ITEM_NAME, ComponentUtil.parse(Lang.item("item.grave-dust.name")).applyFallbackStyle(NamedTextColor.WHITE))
+```
+
+- **Every copy is identical**, so they stack wherever they came from. Never write a single player's `tr` into a stack
+  that can reach another player.
+- **Stamp what you drew with `Lang.itemRevision`**, and redraw when it changes: gear and content items do this through
+  `ItemRedraw` (see [Item redraws](DEVELOPER_GUIDE.md#item-redraws)).
+- **Keep such text free of arguments.** Compose a line from components instead — a translated label followed by a
+  plain number — rather than filling `{placeholders}`.
+- A vanilla key such as the base item's name can still be a `Component.translatable`: the client knows those itself.
 
 ---
 

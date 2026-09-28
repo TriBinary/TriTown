@@ -257,7 +257,10 @@ class ContainerProtectionListener : Listener {
         if (event.action != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return null
         val block = event.clickedBlock ?: return null
         if (Protection.settings(block.world)?.containers != true) return null
-        return block.takeIf { block.getState(false).let { it is DecoratedPot || it is ChiseledBookshelf || it is Shelf || it is Jukebox || it is Campfire } }
+        return block.takeIf {
+            block.getState(false)
+                .let { it is DecoratedPot || it is ChiseledBookshelf || it is Shelf || it is Jukebox || it is Campfire }
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
@@ -278,6 +281,7 @@ class ContainerProtectionListener : Listener {
     }
 
     private companion object {
-        val FACES = listOf(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST)
+        val FACES =
+            listOf(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST)
     }
 }

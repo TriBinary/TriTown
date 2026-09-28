@@ -23,7 +23,9 @@ object StorageItems {
 
     /** By material, then by name, so like sits beside like and a renamed stack keeps its place. */
     val order: Comparator<ItemStack> = compareBy<ItemStack> { it.type.name }
-        .thenBy { stack -> stack.itemMeta?.displayName()?.let(PlainTextComponentSerializer.plainText()::serialize) ?: "" }
+        .thenBy { stack ->
+            stack.itemMeta?.displayName()?.let(PlainTextComponentSerializer.plainText()::serialize) ?: ""
+        }
         .thenByDescending { it.amount }
 
     /**

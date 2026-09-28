@@ -45,7 +45,11 @@ class AdminStorageGUI : PagedPluginGUI(
     override fun getItems(player: Player): List<ItemStack> {
         if (!StorageManager.isAvailable) {
             return listOf(
-                PanelRender.card(Material.BARRIER, player.tr("gui.admin-storage.disabled"), listOf(player.tr("gui.admin-storage.disabled-lore")))
+                PanelRender.card(
+                    Material.BARRIER,
+                    player.tr("gui.admin-storage.disabled"),
+                    listOf(player.tr("gui.admin-storage.disabled-lore"))
+                )
             )
         }
         val summaries = snapshots[player.uniqueId].orEmpty()
@@ -121,7 +125,11 @@ class AdminStorageGUI : PagedPluginGUI(
         )
         if (player.hasPermission(StorageCommand.ADMIN_PERMISSION)) lines += player.tr("gui.admin-storage.click-edit")
 
-        return MenuRender.head(Bukkit.getOfflinePlayer(summary.owner), player.tr("gui.admin-storage.owner", "name" to StorageRender.ownerName(summary.owner)), lines)
+        return MenuRender.head(
+            Bukkit.getOfflinePlayer(summary.owner),
+            player.tr("gui.admin-storage.owner", "name" to StorageRender.ownerName(summary.owner)),
+            lines
+        )
     }
 
     companion object {

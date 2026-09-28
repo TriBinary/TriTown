@@ -37,9 +37,12 @@ object ItemOwnership {
      * Never drop an item for a player with `dropItemNaturally` alone: anyone
      * standing nearby could take it.
      */
-    fun dropFor(player: Player, stack: ItemStack): Item =
-        player.world.dropItemNaturally(player.location, stack) { item ->
-            if (Protection.settings(player.world) != null) bind(item, player.uniqueId)
+    fun dropFor(player: Player, stack: ItemStack): Item = dropFor(player, stack, player.location)
+
+    /** Drops [stack] at [at] as [player]'s: a boss's loot, which falls where the boss did. */
+    fun dropFor(player: Player, stack: ItemStack, at: Location): Item =
+        at.world.dropItemNaturally(at, stack) { item ->
+            if (Protection.settings(at.world) != null) bind(item, player.uniqueId)
         }
 
     /** Drops spawning near [location] this tick or the next belong to [owner]. */

@@ -86,7 +86,11 @@ class ContainerLockListener : Listener {
         val inTop = event.rawSlot in 0 until top.size
         val fills = when (event.action) {
             InventoryAction.MOVE_TO_OTHER_INVENTORY -> !inTop
-            InventoryAction.HOTBAR_SWAP, InventoryAction.HOTBAR_MOVE_AND_READD -> inTop && swapsSomethingIn(player, event)
+            InventoryAction.HOTBAR_SWAP, InventoryAction.HOTBAR_MOVE_AND_READD -> inTop && swapsSomethingIn(
+                player,
+                event
+            )
+
             in TAKING -> false
             else -> inTop
         }

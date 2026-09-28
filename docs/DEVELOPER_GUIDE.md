@@ -2,7 +2,7 @@
 
 This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, work
 with **translations** and the **configuration** system using TriTown's registration system, and how to build on
-**Towny**, the **Vault economy**, the **admin panel**, **shops**, **player trades**, **personal storage**, **item protection**, the **news** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
+**Towny**, the **Vault economy**, the **admin panel**, **shops**, **player trades**, **personal storage**, **item protection**, the **news**, **combat** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
 follow the same pattern: extend a base class (or implement an interface), place the file in the correct package, and the
 plugin handles the rest automatically at startup. The configuration system provides typed access to `config.yml` values.
 
@@ -415,11 +415,11 @@ pure arithmetic apart from `pane` and `draw`, and `GUIFrameTest` pins it down.
 | `draw(inventory, slots)`      | Fills every slot not in `slots` with the border                                        |
 | `spacedColumns(count)`        | Columns for up to 4 buttons spread with a gap between each, centred (`4`; `3, 5`; …)    |
 | `packedColumns(count)`        | Columns for up to 7 items side by side, centred; an even count leaves column 4 empty   |
-| `centeredSlots(rows, count)`  | Slots for `count` items in rows of seven, last row packed, the block centred vertically |
 
 A menu of buttons whose set depends on the viewer — a permission, a feature switched off — should lay each row out with
 `spacedColumns` from the buttons it actually has, rather than fixing slots and leaving a hole where one is missing.
-`MainMenuGUI` and `AdminPanelGUI` both do this.
+`MainMenuGUI` and `AdminPanelGUI` both do this. Centring is for a row of buttons only: a list — anything paged — fills
+from the top-left, so its items keep their places as it grows.
 
 ### ConfirmGUI
 
@@ -532,20 +532,13 @@ For example, a 6-row GUI provides 45 content slots per page (rows 1–5).
 |:-----------------------|:-----------------------|:-------------------------------------------------------------------------------|
 | `PagedLayout.FULL`     | 45                     | Every slot above the navigation row is content                                 |
 | `PagedLayout.FRAMED`   | 28                     | Content is inset by one slot on every side, with a black glass border round it |
-| `PagedLayout.CENTERED` | 28                     | Framed, and a page that is not full keeps its items centred inside the border  |
 
-A framed menu carries the border into its navigation row too, so the whole edge is one colour rather than changing
-where the controls start.
-
-`CENTERED` is for lists that are often short, such as the players online. A full page looks exactly like `FRAMED`; a
-page of a few items puts them in the middle of the menu rather than in its top-left corner, with the last row packed
-around the centre column (see [`GUIFrame`](#guiframe)). It only changes `LIST` mode — `SET` positions are explicit.
+Either way a page fills in reading order from its top-left slot, however few items it holds. A framed menu carries the
+border into its navigation row too, so the whole edge is one colour rather than changing where the controls start.
 
 **Do not index `getItems` by the raw slot.** Under a framed layout a slot is not a position in that list, because the
-border sits between them, and on a centred page the slot an item lands in depends on how many share the page. Use
-`contentIndex(event, page)`, which reads the slots as they were drawn for that viewer and returns the position or
-`null` when the slot is not content (an empty slot inside a `FULL` or `FRAMED` area still has a position, one past the
-end of the list):
+border sits between them. Use `contentIndex(event, page)`, which returns the position or `null` when the slot is not
+content (an empty slot inside the content area still has a position, one past the end of the list):
 
 ```kotlin
 override fun onContentClick(event: InventoryClickEvent, page: Int) {
@@ -1133,8 +1126,13 @@ list's command descriptions and a transaction's recorded source.
 - **Escape player-written text** with `MiniMessage.miniMessage().escapeTags(...)` before passing it as an argument.
   Arguments are inserted verbatim.
 - **Write keys as whole string literals.** `tr(if (credit) "gui.history.credit" else "gui.history.debit")` is fine;
-  `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list) and
-  `money.source.*` are the only runtime-built keys.
+  `tr("gui.history.$state")` is not, because the test below cannot see it. `command.*` (the help list),
+  `money.source.*` and `item.*` (content items, held to `items.yml` by `ContentFilesTest`) are the only runtime-built
+  keys.
+- **Text on an item is written in the item language** with `Lang.item(key)`, and the item carries a stamp so
+  `ItemRedraw` can redraw it when the language changes. Paper does not translate anything inside an item for each
+  player (it does for chat, titles and entity names), so an item is written once, in the language `item-language`
+  names, and every copy stays identical and stacks. See [Lang](UTILITY_GUIDE.md#lang).
 - **Placeholder names are lowercase letters only** — `{name}`, `{balance}`, `{pages}`.
 - **Server-log messages stay English.** `logger.info`/`warning`/`severe` are for the owner, not the player.
 - Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
@@ -2501,13 +2499,15 @@ Every one of them opens at six rows. `MainMenuGUI` puts the profile alone at the
 up to four with `GUIFrame.spacedColumns`. **A button for something switched off or not permitted is left out, not
 greyed**, and each row is centred on what remains: the global shop only when shops are on and the viewer passes its
 gate, the storage only while `StorageManager.isAvailable`, trading only when `player-trades.enabled`, pay and the leaderboard only with the economy running and the
-command's permission (`CommandRegistrar.canRun`), the news only while `NewsManager.isAvailable`, the sidebar switch
+command's permission (`CommandRegistrar.canRun`), the news only while `NewsManager.isAvailable`, the Forge and the
+bestiary only where combat is on (the bestiary only when `bestiary.yml` defines a mob), the sidebar switch
 only while the sidebar runs, the admin panel only with `tritown.admin`, and the TownyMenu shortcut only when TownyMenu is enabled. Empty rows are dropped, so the menu
-never has a hole in it. The two list menus use `PagedLayout.CENTERED` and keep *Back* and one extra button either side
+never has a hole in it. The two list menus use `PagedLayout.FRAMED` and keep *Back* and one extra button either side
 of the page number (`MenuRender.BACK_OFFSET`, `EXTRA_OFFSET`).
 
 **The menu points the way; it does not do the work.** Each button runs the command or opens the menu that already owns
-the action — `/trades`, `/tritown storage`, `/trade <name>`, `/pay <name> <amount>`, `/tritown news` through `CommandRegistrar.run`, the admin panel,
+the action — `/trades`, `/tritown storage`, `/trade <name>`, `/pay <name> <amount>`, `/tritown news`, `/tritown forge`,
+`/tritown bestiary` through `CommandRegistrar.run`, the admin panel,
 TownyMenu through its own `/townymenu` — so there is exactly one place each rule and message lives. Paying asks for the
 amount with `ChatPrompt` and hands it to `/pay`, which validates it.
 
@@ -3386,6 +3386,484 @@ checks on each click as well as the command.
 `NewsSettings` is a snapshot swapped in whole on a reload. The posts themselves are never re-read on a reload; every
 change to them is already on disk.
 
+## Combat
+
+Fights with mobs happen in RPG numbers: players and mobs have health pools in the hundreds and thousands, and hits come
+from stats. The core lives in `combat/` (stats, the pipeline's maths, the HUD) and `mobs/` (levels, profiles, custom
+mobs, nameplates), neither of which is scanned. The listeners are `listeners/combat/DamageListener`, `StatListener`,
+`listeners/mobs/MobListener` and `BossListener`, the tasks are `tasks/combat/CombatHudTask` and `tasks/mobs/MobTurnTask`,
+the menus are `guis/adventure/StatsGUI` and `guis/bestiary/BestiaryGUI`, and the commands are
+`commands/adventure/StatsCommand` (`/tritown stats`), `BestiaryCommand` (`/tritown bestiary`) and
+`commands/mobs/MobCommand` (`/tritown mob`).
+
+### Vanilla health is the truth
+
+Every living entity has an **RPG pool** (`CombatHealth.max`): a player's is their Health stat, a mob's is its vanilla
+maximum × the lens × its level's growth. **Current RPG health is never stored.** It is always
+`vanillaHealth / vanillaMax × rpgMax`, so the pool is exactly as full as the entity's hearts.
+
+That one rule is why so little had to be built. Vanilla keeps doing what it does: saving health, natural regeneration,
+potions, totems, `/kill` and death, killer credit and drops. Nothing can drift out of step because there is nothing
+else to keep in step. **Never change a player's or a mob's vanilla `MAX_HEALTH`, and never store RPG health.**
+
+The **lens** (`balance.yml`, default 5) is RPG health per vanilla half-heart at level 1. Every hit and every pool is
+multiplied by it alike, so level-1 play with vanilla gear is vanilla at any lens. That is the balance anchor.
+
+### The pipeline
+
+`DamageListener.onDamage` runs at `HIGH` on every `EntityDamageEvent` in a world where `Combat.isActive`. The attacker is
+the damage source's *causing* entity, which covers arrows, fangs, explosions and pets.
+
+| Hit                                   | Worked out as                                                                   |
+|:--------------------------------------|:--------------------------------------------------------------------------------|
+| player → player, or a pet → a player  | **left alone**                                                                  |
+| the world → a player                  | left alone, so falls, lava and drowning take vanilla's share                    |
+| player → mob, melee                   | `DamageMath.meleeHit`: `(lens + Damage) × (1 + Strength/100) × share × crit`    |
+| player → mob, arrow or trident        | `DamageMath.shotHit`: vanilla's hit × the weapon's shot multiplier × Strength × crit |
+| mob → player, mob → mob               | `DamageMath.mobHit`: vanilla's hit × lens × `damage-growth^(level−1)` × `MobPower.damage`, then Defense |
+| the world, or a player's potion or TNT → mob | `DamageMath.environmentHit`: vanilla × lens, i.e. level-1 units          |
+
+- **The share** is vanilla's own melee hit divided by the player's attack damage (`DamageMath.vanillaShare`). It carries
+  everything *but* the weapon — attack cooldown, sweeping, Sharpness, Smite, a mace's fall — so those keep working as
+  vanilla meant them. Vanilla's jump-crit ×1.5 is divided back out; a jump attack adds `jump-crit-chance` instead.
+- **A bow's Damage is only for what it shoots**: a player swinging with a bow or crossbow in hand hits with the bare
+  hand's worth.
+- **Arrows and tridents** carry the shooter's Strength and crit stats in their own data (`ShotStats`), with what the
+  weapon makes each point of the shot worth (`DamageMath.shotMultiplier`: the weapon's Damage, with the lens's worth for
+  the bare hand, over the vanilla damage of a shot from a weapon of no Damage). `StatListener` writes it at
+  `EntityShootBowEvent` / `ProjectileLaunchEvent`, so a shot lands with what it was fired with. A vanilla bow comes out
+  at the lens, so vanilla stays vanilla.
+- **Environment hits on mobs** are level-1 units whatever the mob's level, so a lava pit, fall trap or fire aspect is
+  only ever as strong as it is against a level-1 mob. That is what stops traps from farming the wild.
+
+The RPG hit becomes vanilla damage through the victim's own pool (`DamageMath.toVanilla`), which is written to the
+event's `BASE`:
+
+- **A mob** keeps vanilla's reductions as they are — `event.damage = …` recalculates them.
+- **A player's** worn armor is already their Defense, so vanilla's armor reduction would count it twice.
+  `applyWithoutArmor` zeroes the `ARMOR` modifier and carries every other one over with `VanillaReductions`: each takes
+  the same *share* of what reaches it as it took of vanilla's hit (Resistance, Protection and its kin, a shield, a
+  helmet under an anvil, invulnerability frames), and absorption soaks up what it can hold. The modifier API is
+  deprecated without a replacement; it is still the only way to take one reduction out and keep the rest.
+
+`afterDamage` (at `MONITOR`) floats the damage up from the mob (`DamageIndicators`) for hits a player landed, and asks
+the mob's nameplate to redraw.
+
+### Stats
+
+`Stat` is Health, Defense, Damage, Strength, Crit Chance, Crit Damage, Speed, Vitality and Magic Find. **None of
+them apply between players but Speed**, which is movement and cannot tell who is chasing whom, so `SpeedSync` caps it
+at `combat.speed-cap` and applies it as a transient modifier twice a second (`tasks/combat/SpeedTask`). Vitality
+scales natural regeneration and healing potions (`VitalityListener`), and Magic Find the rare loot rolls. `StatSheet` is
+an immutable value per stat, and `StatSources` is the only place one is built:
+
+| Source    | Gives                                                                                            |
+|:----------|:-------------------------------------------------------------------------------------------------|
+| `BASE`    | `balance.yml`'s `player` block: Health, Crit Chance, Crit Damage                                 |
+| `ARMOR`   | Each worn piece: its gear stats, or for vanilla armor, its armor × `armor-point` + its toughness × `toughness-point` as Defense |
+| `WEAPON`  | The held item: its gear stats, or for a vanilla item its attack damage × the lens as Damage; and Magic Find for Looting |
+| `EFFECTS` | Strength for the Strength effect, less for Weakness, per level                                    |
+
+Items are read through their `ATTRIBUTE_MODIFIERS` component, so a material's defaults and any custom modifiers both
+count. Defense works as `100 / (100 + Defense)` of a mob's hit getting through.
+
+`PlayerStats` caches a sheet per player. `StatListener` drops it whenever equipment, the held item or effects may have
+changed, and a sheet also expires after a second regardless, which catches what no event reports. `/tritown reload`
+drops them all.
+
+### Levels
+
+`MobListener.onSpawn` gives a hostile mob (`Enemy`) a level as it spawns, stored in its own persistent data under
+`tritown:mob` by `MobProfiles`. The game saves it with the entity, so the level survives unloads and restarts.
+
+- **Only wild spawns are levelled**: `NATURAL`, `REINFORCEMENTS`, `PATROL`, `JOCKEY`, `MOUNT`. Spawners, trial spawners,
+  eggs, raids, commands and built golems get no profile, and a mob with no profile is level 1. Vanilla farms keep
+  working.
+- **Transformations keep the level**: `EntityTransformEvent` copies the profile to what a mob becomes — a drowned zombie,
+  a slime's children.
+- **The level comes from where it spawned** (`MobZones`): distance from the world's spawn picks a ring of the world's
+  `LevelZone`, and night and depth add to it in the Overworld. `LevelZone` is plain Kotlin, tested in `LevelZoneTest`.
+- **Town claims are always level 1**, checked with Towny on every spawn. Towns are safe, and a mob farm inside one works
+  as it does in vanilla.
+
+A level grows a mob's pool by `health-growth^(level−1)` and its hits by `damage-growth^(level−1)`, and its dropped
+experience by `mobs.xp-per-level` per level.
+
+### Ranks and affixes
+
+A wild mob at or above a rank's `min-level` can spawn **elite** or **champion** instead (`MobRoll.rank`, the champion
+roll first). A rank multiplies the mob's pool and hits (`DamageMath`'s `multiplier`) and gives it distinct random
+affixes (`MobRoll.affixes`). Rank, chances and multipliers are the `ranks` block of `balance.yml`; `mobs.ranks.exempt`
+keeps bosses such as the Warden unranked. `MobRoll` is plain Kotlin over a `Random` the caller hands in, tested in
+`MobRollTest` with seeds.
+
+| Affix      | Does                                                                     |
+|:-----------|:-------------------------------------------------------------------------|
+| Armored    | Has Defense                                                              |
+| Frenzied   | Moves faster (an attribute modifier saved with the mob)                  |
+| Vampiric   | Heals a share of what it deals to a player                               |
+| Enraged    | Hits harder below a share of its health                                  |
+| Molten, Frostbound, Venomous | Sets a player it hits on fire, slows them, poisons them |
+| Volatile   | A telegraphed blast where it died: a hit from the mob, not a real explosion, so no blocks or drops are lost |
+| Summoner   | Calls minions of its kind once below a share of its health, at its level but unranked |
+| Blinking   | Steps in behind a target that keeps its distance                         |
+| Warded     | Shrugs off projectiles until something strikes it in melee               |
+
+**`AffixEffects` is the only place any of it happens**, and every effect is triggered by a mob, so none of it can reach
+a hit between players. What an affix remembers about one mob — a broken ward, minions already called, the last blink —
+is in memory and forgotten when the mob unloads, which only ever favours the mob. `ActiveMobs` holds every mob in
+loaded chunks that has a rank, a custom kind or an affix (`MobProfile.isActive`), kept in step by `MobListener`'s spawn,
+load and unload handlers, and `tasks/mobs/MobTurnTask` gives each one with a player within 32 blocks its turn twice a
+second: affix particles and blinking, then a custom mob's abilities.
+
+A slime's children keep its level but not its rank, or one champion would split into a crowd of them.
+
+**`MobPower` is the one place a profile becomes numbers**: the multiplier on a mob's pool (rank × kind), on its hits
+(rank × kind × Enraged) and its Defense (Armored + its kind's). `CombatHealth.max` and `DamageListener` ask it, so a
+new source of toughness goes there and nowhere else.
+
+**Nameplates** (`MobNameplate`) give a levelled mob a name — `[Lv21] ★ Vampiric Zombie 1,820/2,400❤` — redrawn a
+tick after it is hurt or healed. A ranked mob's is always visible, so nobody walks into a champion unwarned. A name is
+shared by every viewer, so its frame is rendered in the configured language, and the kind of mob is a
+`<lang:entity.minecraft.…>` tag that each client fills in itself. A normal mob's shows on the crosshair, the way a
+named mob's does. Setting a name never makes a mob persistent (only a name tag does), and a mob a player names keeps
+their name: `PlayerNameEntityEvent` drops the nameplate. A custom mob's nameplate carries its own name
+(`mob.kind-name`) in place of its kind's, rendered in the configured language like the frame, and always shows.
+
+### Custom mobs
+
+The server's own mobs are defined in `bestiary.yml` (see [Content Files](#content-files)): a vanilla kind with a name,
+a look, traits and loot of its own. `content/MobKindDef` is the model and `BestiaryCatalog` holds them, read by
+`ContentParser.bestiary`; `mobs/MobKinds` finds a mob's kind and dresses it, and `mobs/MobSetup` settles any mob TriTown
+has just decided about.
+
+- **A mob stores its kind, never its stats.** `MobProfile.kind` is the id alone. What the kind multiplies its pool and
+  hits by, and its Defense, are read from the catalog every time through `MobPower`, so `/tritown reload` retunes every
+  one already out there. Size, speed and footing are attribute modifiers (`tritown:kind-scale`, `-speed`,
+  `-knockback`), which `MobKinds.refresh` puts on again as a mob loads and on a reload. A mob whose kind has left the
+  file is an ordinary one at its level.
+- **A variant takes the place of a wild spawn of its own kind.** `MobListener.onSpawn` asks `MobRoll.kind` — plain
+  Kotlin over a `SpawnPlace` (`MobZones.place`: kind of world, world, biome, height, night) and a seeded `Random`,
+  tested in `MobRollTest` — before the rank roll. Each variant of the kind whose `spawn` rule allows the level and place
+  rolls its `chance` in file order, and the first to succeed takes the spawn. So a custom mob is only ever a wild one:
+  never in a town (level 1, below every variant), from a spawner, an egg or a command. `rankable: false` keeps a variant
+  from also rolling a rank; its fixed `affixes` are written into its profile alongside any its rank rolls.
+- **A costume is only a look.** `MobKinds.dress` puts on what `equipment` names — `Gear.costume` for a piece of gear
+  (its base with its model, trim and dye, and no `GearData`), or a vanilla item — with its `ATTRIBUTE_MODIFIERS`
+  emptied, so netherite on a mob is no hidden armor and a sword no hidden damage. Every piece has a drop chance of 0 and
+  a custom mob picks nothing up, so gear only leaves a mob through `MobLoot`.
+- **It changes no blocks.** `MobListener` cancels `EntityChangeBlockEvent` for any custom mob, so a Voidstalker carries
+  nothing off.
+- **Transformations keep the kind only if it still fits.** A drowned Gravewalker is an ordinary drowned at the same
+  level, and a split never keeps a kind.
+- **Summoned minions share their summoner's kind**, through `MobSetup.spawn`, which is also what
+  `/tritown mob spawn <kind> [level]` uses. Neither is ever eligible for loot. `mob kinds` lists them all.
+
+### Abilities
+
+A custom mob's `abilities` are what it does in a fight, on cooldowns. `mobs/Ability` names them and
+`mobs/AbilityEffects` is **the only place any of them happens**; their numbers are the `abilities` block of
+`balance.yml` (`Balance.AbilityTuning`: a cooldown, a wind-up, damage, range, radius, seconds, a count and a power for
+each, of which each ability reads only what it needs).
+
+| Ability    | Does                                                                                     |
+|:-----------|:-----------------------------------------------------------------------------------------|
+| Leap       | Pounces on a target 4 blocks or more away, and hurts players where it lands              |
+| Slam       | Rears up, then a shockwave hurts and throws up players around it                         |
+| Charge     | Lowers its head, then dashes, hitting everyone it runs through once                      |
+| Volley     | Looses a fan of arrows that cannot be picked up                                          |
+| Fireball   | Hurls small fireballs that set no blocks alight                                          |
+| Meteor, Storm | Marks spots on and around its target, then brings fire or lightning (an effect only) down on them |
+| Ensnare    | Spits a web that all but roots its target                                                |
+| Hook       | Drags a target that keeps its distance in                                                |
+| Summon     | Calls minions until its cap is alive: its `minions` kind, or its own                     |
+| Bulwark    | Once hurt, braces for far more Defense for a few seconds (`MobPower.defense` asks)        |
+| Frost Nova | A burst that hurts and slows everyone close by                                           |
+| Miasma     | A poisonous cloud where its target stood, hurting twice a second                         |
+| Drain      | A tether that hurts its target twice a second and heals the mob by a share of it          |
+
+- **It only ever hurts players, and only as the mob.** Every hit is `player.damage` with a `DamageSource` the mob
+  caused, so `DamageListener.hurtPlayer` grows it by the mob's level, rank and kind and takes the player's Defense off
+  it like any of its hits, and the mob's affixes answer it. Ability damage is in level-1 vanilla units — a zombie's hit
+  is 3. Nothing an ability does can reach a hit between players, and only players in survival or adventure are hit.
+- **It changes no blocks.** Fireballs are not incendiary, lightning is `strikeLightningEffect`, and meteors are
+  particles.
+- **It always warns first.** `windUp` shows particles and sound for `windup-ticks` (holding the mob in place for the
+  close-quarters ones) before it lands, and a mob winding one up starts no other. `MobTurnTask` offers a mob a turn
+  twice a second; it picks at random among its abilities that are off cooldown and can reach its target — a distance
+  window, line of sight, its minion cap — and waits `global-cooldown-ticks` before the next.
+- **What it remembers is in memory**: cooldowns, a Bulwark's end, the minions it has called. `forget` clears it when
+  the mob dies or unloads.
+
+### Bosses
+
+A boss is a custom mob under `bosses:` in `bestiary.yml`: everything a variant has but `spawn`, plus a `BossDef` — a
+fixed `level`, the `sigil` that summons it, the `place` it may be summoned (worlds, water, a highest Y), an `arena`, a
+bar colour and `phases`. They live in `mobs/boss/`.
+
+- **Summoned on purpose.** A sigil is a content item; `listeners/mobs/BossListener` takes a right-click with one in the
+  main hand to `BossSummons.summon`. It keeps `ShopTrade`'s order: **everything that can refuse is asked first** —
+  `mobs.bosses.enabled`, combat on in the world, not a town claim, the boss's `place`, no other boss or ritual within
+  two arenas, and room for the boss's scaled height (measured on an entity made with `createEntity`, never added) —
+  and only then is one sigil taken from the hand. After `ritual-seconds` the boss rises a few blocks ahead; if it
+  cannot, the sigil is handed back. It is **eligible**, at its own level whatever the ring, glowing, and
+  `removeWhenFarAway = false`; its profile and home (`tritown:boss-home`) are set in the spawn consumer, before
+  anything sees it arrive.
+- **`BossFights` runs every fight**, from `MobTurnTask` twice a second whether or not anyone is near: a boss bar per
+  viewer in their own language (`boss.bar`), a boss pulled past `arena + arena-margin` taken home, a boss with no one to
+  fight turned to the nearest player in its arena (which keeps a spider or an enderman hostile), phases entered, and a
+  boss nobody has been in the arena of for `idle-seconds` sent away. It takes a fight up again as the boss loads
+  (`adopt`), without announcing phases it has already passed, and lets it go as it unloads or dies (`release`).
+- **Phases** are read from health: below a phase's `below` percent, its abilities join the boss's
+  (`AbilityEffects.abilities`), and the first time, its line (`mob.kind.<id>.phase-N`) is announced, its minions are
+  called (`MobSetup.minions`) and its affixes are written into the boss's profile.
+- **Only TriTown moves a boss.** `BossListener` cancels a boss's own teleports (an enderman's) and portals; the moves
+  TriTown makes — taking it home, Blinking — go through `MobSetup.teleport`, which lets them through.
+- **Loot is personal.** `MobListener.onDeath` hands a boss to `BossFights.defeated` instead of dropping anything.
+  `MobLoot.bossRewards` rolls its `loot` once for each player whose share of the `DamageLedger` is at least
+  `contributor-share`, with their own Magic Find, gear at `gear-odds` (mythic among them), plus a `gear-chance` of a
+  random craftable piece of its tier — as long as a player killed it and players dealt `player-share` between them, as
+  for any mob. A share is dropped where the boss fell as its owner's alone (`ItemOwnership.dropFor(player, stack, at)`)
+  for a contributor within `loot-range`, or handed over with `InventoryUtil.give`. Only players online are given
+  anything. Those who took part without earning a share are told so.
+- **Signature gear** is a piece with no recipe: the Forge never crafts it and the random champion drop never picks it,
+  so only the loot that names it drops it.
+
+`/tritown mob spawn <boss>` calls a boss up at its level, not eligible, for testing; `/tritown mob bosses` prints each
+boss against one player in a kit of its tier, reading its kind's vanilla health and hit off an entity made with
+`createEntity`.
+
+### The bestiary
+
+`mobs/BestiaryRecords` keeps what each player has found of the custom mobs in their player data, under `bestiary`: per
+kind id, the kills and the ids of every drop it gave them (an item's id, or `gear:` and a piece's). `MobListener.onDeath`
+credits the killer of an eligible custom mob with its drops; `BossFights.defeated` credits every contributor to a boss,
+those short of a share with no drops.
+
+`guis/bestiary/BestiaryGUI` (`/tritown bestiary`, no permission node, or the main menu's **Bestiary** button, shown
+where combat is on) lists every kind, variants and then bosses. One the viewer has not slain is a blank page that says
+where it lives or how it is summoned; one they have shows its description, where it lives or its level and sigil, its
+abilities (a boss's phases' too) and affixes, the kills — a star at 10, 100 and 1,000 — and which of its own `loot`
+lines they have found. It reads and never acts. Abilities are named by `Ability.key` (`mob.ability.*`).
+
+### Loot
+
+A wild mob drops the materials and essence `mobs.yml` gives it (see [Content Files](#content-files)) on top of vanilla's
+loot, through `MobLoot.dropsFor`, when all of these hold:
+
+1. it is **eligible**: its profile says it spawned in the wild. A summoner's minions, and anything from a spawner, are
+   not;
+2. a **player killed it**;
+3. **players dealt enough of it**: the `DamageLedger` has at least `player-share` percent of its pool credited to
+   players, a tamed pet's hits counting for its owner. `DamageListener.afterDamage` credits each hit, capped at the
+   health the mob had left. So a trap, a lava pit or another mob doing the work earns nothing;
+4. it is at least `min-level`.
+
+`LootRoller` rolls the drops: the family's material at the rank's chance — a normal mob's multiplied by the killer's
+Magic Find, up to `magic-find-cap` — and, for a ranked mob, essence of the grade its level falls in. A champion also has
+a `gear-chance` of a finished piece of gear (`LootRoller.dropsGear`, Magic Find helping), of the tier its level is made
+for and a rarity from `drop-odds` — but only a piece with a recipe, since one without is a custom mob's own. A custom
+mob rolls its own `loot` lines on top (`LootRoller.rollEntries`), each on its own and each boosted by Magic Find: items
+from `items.yml`, or a piece of gear at a rarity from `drop-odds`. A boss drops nothing here: its loot is personal (see
+[Bosses](#bosses)). It is plain Kotlin over a seeded `Random`, tested in `LootRollerTest`; the ledger is tested in
+`DamageLedgerTest`.
+
+The drops go into `EntityDeathEvent.getDrops()`, so item protection's death window hands them to the killer like the
+rest of the mob's loot, and nothing new had to be taught to it. **Mobs never drop money**: materials are sold to the
+server's shops, so every faucet stays one the owner prices.
+
+### Content items
+
+Materials, essence, trophies and sigils are *content items*, defined in `items.yml` and made by `ContentItems.create`.
+Every one is an **echo shard** wearing another vanilla item's look through the `item_model` component, and carrying its
+id under `PluginItem.ITEM_ID_KEY`. The one use TriTown gives any of them is a sigil's, right-clicked to summon its boss
+(see [Bosses](#bosses)). An echo shard's only use is crafting a recovery compass, which
+`listeners/items/ContentItemListener` refuses in a crafting grid and a crafter — so a content item can't be placed,
+eaten, smelted, brewed, traded to a villager or used as what it looks like. Pick nothing else as the base without
+re-checking every use it has.
+
+Its name and lore (`item.<id>.name`, `item.<id>.lore`) are written in the item language with `Lang.item`, and its name
+takes its `Rarity`'s colour, so every copy is identical and stacks. It carries a stamp of its definition and the item
+language under `tritown:revision`, and `ContentItems.refresh` redraws a copy drawn from older ones (see
+[Item redraws](#item-redraws)). Text a single player reads about one — a price, a salvage line — names it in *their*
+language through `GearText.item`. `ContentItems.idOf` recognises one even after its definition is gone, so it stays as
+inert as the day it dropped.
+
+`/tritown item give <player> <id> [amount]` and `item list` (`tritown.item.admin`, `commands/items/ItemCommand`) hand
+them out.
+
+### Gear
+
+Gear is defined in `gear.yml` (see [Content Files](#content-files)) and lives in `gear/`, outside the scan. A piece is a
+stack of its definition's `base` item carrying a `GearData` under `tritown:gear` (`GearCodec`): its id, rarity, stars,
+the quality each stat rolled, its reforge, and the content stamp it was drawn with. **Never its stats.**
+
+- **Stats are worked out, never stored.** `GearStats.of` turns a definition and its data into a `StatSheet` every
+  time: the slot's points (`gear.slot-points`), shared by the definition's weights, each through its stat's curve
+  (`per-100 × growth^(tier−1)`), then scaled by rarity, stars and roll, plus a reforge's share. So retuning
+  `gear.yml` or `balance.yml` reaches every piece already out there.
+- **Every piece of a slot and tier is worth the same.** A definition lists weights, not numbers, and the budget does the
+  rest, so no author can make a piece stronger than its tier. `GearStatsTest` holds this, and holds a mythic piece of
+  a tier weaker than a rare one of the next: the tier is the progression, rarity the chase.
+- **Drawn in the item language.** `GearRender` writes the name (reforge first), a line per stat, the flavour line,
+  what the piece is between players, and its stars, rarity and slot — every word from `Lang.item`, every number plain
+  text, and only the base item's name a vanilla translation key the client fills in. It also sets the look
+  (`item_model`, trim, dye), the glint from epic up, and unbreakable: gear never wears out, so the sinks are the
+  Forge's.
+- **Redrawn when stale.** `GearData.revision` stamps the content a piece was drawn from (`GearCatalog.revision`, built
+  from text so it is the same from one start to the next) together with `Lang.itemRevision`. `Gear.refresh` redraws a
+  piece whose stamp is out of date, and costs one read when it is not (see [Item redraws](#item-redraws)). Drawing
+  works on the stack in place and leaves enchantments and anvil names alone.
+- **Between players, a piece is its base item.** Its own vanilla armor and attack damage never count as Defense or
+  Damage — `StatSources` uses its gear stats instead — so they only matter in PvP, where the piece is exactly the
+  vanilla item it is made of.
+
+`Gear` is the one entry point: `create` (fresh rolls), `preview` (common, average rolls, for the Forge's list),
+`read`, `stats`, `save` and `refresh`. Bows and crossbows are the `bow` slot: their Damage only counts for what they
+shoot (`Gear.isRanged`), and an arrow's worth is `DamageMath.shotMultiplier` of the bow's Damage — a vanilla bow counts
+as `vanilla.bow-attack`, so it shoots like an iron sword swings. A thrown trident is measured against its own melee
+hit.
+
+`/tritown item give <player> <id> [rarity]` hands out a piece of gear as well as an item (`commands/items/ItemCommand`).
+
+### Item redraws
+
+Paper renders server-side translations for each player in chat, titles, boss bars and entity names, but **never inside
+an item**: an item's network encoding switches it off. So gear and content items are written in one language — the
+item language, `item-language` in `config.yml`, which follows `language` when `auto` and is English when that is `auto`
+too — and read with `Lang.item(key)`. `Lang.itemRevision` stamps that language's text, and each item stamps it along
+with its own content, so an edit to a content file, a language file or either setting leaves every copy out there
+stale.
+
+`content/ItemRedraw` is the one place that brings them back into step: `refresh(stack)` asks `Gear.refresh`, then
+`ContentItems.refresh`, and costs one read when nothing changed. It runs:
+
+- from `listeners/items/ItemRefreshListener` as a player joins, opens an inventory (the one they open and their own),
+  picks something up, takes a piece in hand or puts one on;
+- on `/tritown reload`, over everyone online;
+- from `ShopManager.redrawItems`, over every shop's goods and price items, on enable and on reload — otherwise a shop
+  would hand out stale copies that do not stack with fresh ones, and stop recognising the fresh ones it buys back.
+
+Anything new that keeps its own copy of a TriTown item, as the shops do, redraws it the same way.
+
+### The Forge
+
+`/tritown forge` (`commands/adventure/ForgeCommand`, no permission node) and the main menu's **Forge** button open
+`guis/forge/ForgeGUI`. With nothing in hand it offers crafting; with a piece in the main hand it offers what that piece
+can still take — an action it cannot, a sixth star, a rarity above the cap, is left out rather than greyed.
+
+| Action  | What it does                                               | Costs                                                   |
+|:--------|:-----------------------------------------------------------|:--------------------------------------------------------|
+| Craft   | Makes a piece from its recipe, at a rarity from `craft-odds` | The recipe's items and money                          |
+| Upgrade | Adds a star: `star-bonus` percent more base stats           | Essence × the star's number, money × the star's number |
+| Refine  | Raises its rarity one step, no higher than `refine-cap`    | Essence and money × the step's number                   |
+| Reforge | Gives it a new reforge, never the one it has if another fits | Essence and money                                     |
+| Salvage | Breaks it down for good                                     | Nothing; gives back essence for its rarity and stars   |
+
+`gear/Forge` does all of it, and nothing else makes or changes gear. It keeps `ShopTrade`'s order: **everything that
+can refuse is asked first** (the items are counted, the economy is there), then the money is charged, and only once it
+has gone are the items taken and the piece made or changed — all in one tick, so nothing can vanish in between. The
+piece being changed is re-read from the main hand at that moment; no TriTown menu lets the hand change underneath it.
+Every action asks first through `ConfirmGUI` and reports through `ForgeRender.announce`.
+
+`ForgeCosts` works out every cost, plain Kotlin tested in `ForgeCostsTest`. Money grows by `money-growth` per tier.
+Essence is the grade a mob of the piece's tier drops (`essenceFor(6 × tier)`), so upgrading gear means fighting at its
+tier. **Mythic is never crafted or refined**: it only ever drops.
+
+Money moves as `EconomyContext.SOURCE_GEAR` with the reasons `money.reason.gear-craft`, `-upgrade`, `-refine` and
+`-reforge`, all filed under `FlowCategory.GEAR`, so the admin panel shows the Forge as the sink it is.
+
+### Balance
+
+Every number is in `plugins/TriTown/content/balance.yml` (see [Content Files](#content-files)); nothing is tuned in
+Kotlin. `DamageMath` holds every formula and is the only place one lives — a listener only turns an event into a call
+and the result back into vanilla damage — so the whole model runs in tests:
+
+- `DamageMathTest` covers each formula.
+- `BalanceSimulationTest` holds the bundled tuning to the design: **the vanilla anchor** (at level 1 with iron, diamond
+  or netherite, a zombie dies in vanilla's number of swings and hits for vanilla's share, ±15%), the default crits
+  adding no more than 15% to an average swing, every level being harder than the last, and vanilla diamond being
+  outclassed by the Overworld's cap.
+- It holds gear to the same design through `BalanceSimulator.gearRow`, a rare three-star kit of the plainest shape:
+  **on level** (tier T against level 6T) a zombie dies in 3–5 swings and each of its hits takes 3–8% of health, an
+  elite takes 12–20 swings, **a tier behind** needs no more than 2.5 times the swings (a mob's health about doubles
+  every tier, so a tier of gear is worth about double), and **two tiers ahead** a zombie dies in two.
+
+- `BossBalanceTest` holds every bundled boss to a group fight (`BalanceSimulator.bossRow`): one player in a rare
+  three-star kit of the boss's tier needs 60–200 swings to bring it down, and each of its hits takes 10–30% of their
+  health.
+
+`BalanceSimulator` is the same model as a table, and `/tritown mob balance` prints the on-level gear table — and
+`/tritown mob bosses` each boss — so an owner can see what an edit does before anyone fights. A change that breaks
+`BalanceSimulationTest` or `BossBalanceTest` changes how the game feels, and has to be a decision.
+
+### The HUD
+
+`CombatHudTask` redraws each fighting player's health and Defense on the action bar twice a second
+(`combat.hud.action-bar`). Towny's own notices can use the same line.
+
+`DamageIndicators` are text displays that live under a second. They are never persistent, so a crash or an unloading
+chunk leaves nothing behind, `Main.onDisable` removes the rest, and `combat.hud.indicator-limit` caps how many exist at
+once.
+
+The sidebar gets `%health%`, `%max_health%`, `%defense%`, `%mob_level%` and `%danger%` (`CombatPlaceholders`).
+`%danger%` returns a whole translated fragment (`scoreboard.danger`), or nothing where combat is off, so the default
+wilderness line can end with it and still read naturally without it.
+
+### Settings
+
+| Key                          | What it does                                                         |
+|:-----------------------------|:---------------------------------------------------------------------|
+| `combat.enabled`             | Everything above                                                      |
+| `combat.disabled-worlds`     | Worlds, by name, where hits stay vanilla and mobs are not levelled    |
+| `combat.hud.*`               | The action bar, the damage indicators and their limit                 |
+| `combat.speed-cap`           | The most Speed, in percent, that makes a player faster                |
+| `mobs.levels.*`              | Night and depth bonuses, each kind of world's rings, and per-world ones |
+| `mobs.xp-per-level`          | Extra experience per level above 1                                    |
+| `mobs.nameplates`            | Whether levelled mobs wear a nameplate                                |
+| `mobs.custom.enabled`        | Whether the custom mobs of `bestiary.yml` take the place of wild spawns |
+| `mobs.bosses.enabled`        | Whether sigils summon their bosses                                    |
+| `mobs.bosses.announce-range` | How near a player must be to hear of a boss summoned, fallen or gone  |
+
+`CombatSettings` and `MobSettings` are snapshots swapped in whole on a reload.
+
+## Content Files
+
+The combat layer is tuned in files of its own rather than in `config.yml`: `config.yml` says what runs where, and the
+content files say what it is worth. They live in `src/main/resources/content/`, are copied to
+`plugins/TriTown/content/` on first start the way the language files are, and `/tritown reload` reads them again.
+
+| File           | Holds                                                                                     |
+|:---------------|:------------------------------------------------------------------------------------------|
+| `balance.yml`  | The lens, player base stats, the jump crit, effect bonuses, mob growth, vanilla gear's worth, ranks, affixes and abilities, gear's budget and the Forge's costs |
+| `items.yml`    | Content items: each id's look (`model`), `rarity` and `glint`                              |
+| `mobs.yml`     | Mob families and their material, the loot rules per rank, and the essence grades           |
+| `gear.yml`     | Gear: each piece's slot, tier, base, look, weights and recipe; and reforges                |
+| `bestiary.yml` | Custom mobs: each one's base kind, where it spawns, its traits, costume and loot         |
+
+`ContentRegistry` loads them with SnakeYAML into immutable snapshots and swaps each in whole. Parsing is plain Kotlin
+over the parsed map (`BalanceParser`, `ContentParser`, both reading through `YamlReader`), so the bundled files are
+checked in tests:
+
+- `BalanceParserTest` requires `balance.yml` to parse to exactly `Balance.DEFAULT` with no warnings, so the defaults in
+  Kotlin and the file can never disagree.
+- `ContentFilesTest` requires `items.yml`, `mobs.yml`, `gear.yml` and `bestiary.yml` to parse without a warning,
+  every item, piece of gear, reforge and custom mob to be named in every language, no language to translate one that
+  does not exist, every piece a tier from 1 to 10 and a recipe unless a custom mob drops it (signature gear, of its
+  boss's tier), every variant a chance to appear, and every boss phases and a sigil some variant drops.
+- `BestiaryParserTest` covers what `bestiary.yml` can get wrong.
+
+What only the server can check — that a piece's `base` is worn where its slot says — leaves the piece out and says so.
+
+What only the server can check — that a `model` is a real item, that a family's mob is a real kind, that a custom
+mob's base is a mob that can be spawned (or it is left out), that its biomes and costume items exist — is checked as
+the files load, and warned about in the console.
+
+- A value that is missing takes the default quietly; one that is present but unusable takes it too, and the console
+  names it.
+- A file that cannot be read at all keeps what was loaded before — the defaults, the first time — so a typo made while
+  the server runs never takes combat down with it.
+
 ## Sidebar
 
 The sidebar lives in `net.trilleo.mc.plugins.tritown.scoreboard`, which — like `economy` — is **not** one of the
@@ -3435,7 +3913,7 @@ IN_CAPITAL -> context.plotTown?.isCapital == true
 ### Placeholders
 
 A line is **translated first and substituted second**, so a translator can move a value to wherever it reads best.
-`PlaceholderEngine` holds the `%marker%` resolvers; the four `placeholders/` objects register them when the service
+`PlaceholderEngine` holds the `%marker%` resolvers; the five `placeholders/` objects register them when the service
 starts. An unknown marker is left on screen as written, so a typo shows up instead of silently blanking a value, and a
 resolver that throws falls back to `common.none` rather than taking the whole sidebar down.
 
@@ -3447,6 +3925,7 @@ PlaceholderEngine.register("town_plot_price") { context ->
 
 Every value a resolver returns must already be escaped — the line it lands in is parsed as MiniMessage afterwards. Use
 `TownyUtil.name` / `TownyUtil.text` for anything player-written.
+The one exception is `%danger%`, which returns a whole translated fragment of TriTown's own (see [Combat](#the-hud)).
 
 ### Rendering and cost
 

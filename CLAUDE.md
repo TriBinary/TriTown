@@ -68,18 +68,24 @@ The server console reads commands from the terminal running Gradle.
 src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
 ├── commands/                # Sub-commands (auto-registered)
-│   ├── admin/  economy/  info/  menu/  news/  protection/
-│   └── moderation/  scoreboard/  shop/  storage/  trade/
+│   ├── admin/  adventure/  economy/  info/  items/  menu/  mobs/
+│   └── moderation/  news/  protection/  scoreboard/  shop/  storage/  trade/
+├── combat/                  # Combat: stats, DamageMath, the health lens, the HUD, indicators (not scanned)
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
+├── content/                 # The content files and their parsers, ContentRegistry, content items (not scanned)
 ├── data/                    # JSON-persisted PlayerData / ServerData and their managers
 ├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
 │                            # storage (not scanned)
 ├── enums/                   # AccountType, FlowCategory, StatsWindow, TransactionType, FillMode, …
+├── gear/                    # Gear: its data, stats, drawing and refreshing, the Forge and its costs (not scanned)
 ├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI); admin/ is the panel,
-│                            # menu/ the main menu, news/ the news; ConfirmGUI asks before the irreversible
+│                            # menu/ the main menu, news/ the news, forge/ the Forge, bestiary/ the bestiary;
+│                            # ConfirmGUI asks before the irreversible
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
 ├── menu/                    # The main menu item and the invariant that keeps it unique (not scanned)
+├── mobs/                    # Mobs: levels, ranks and affixes, custom mobs and abilities, bosses (boss/),
+│                            # nameplates, loot (not scanned)
 ├── news/                    # Server news: posts, storage, read state, notifications (not scanned)
 ├── protection/              # Item protection: drop owners, drop windows, container and entity claims
 │                            # (not scanned)
@@ -94,6 +100,8 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
                              # ChatPrompt, CountdownUtil, TeamUtil, TagUtil, PDCUtil, GameRuleUtil, AtomicFile
 src/main/resources/
 ├── config.yml  plugin.yml
+├── content/                 # balance.yml, items.yml, mobs.yml, gear.yml, bestiary.yml — what the combat layer is
+│                            # made of and tuned with
 └── lang/                    # en_US.yml, zh_CN.yml — every player-facing string
 ```
 
@@ -125,6 +133,12 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
 - **Never write a player-facing string in Kotlin.** Every message, item name, lore line and menu title comes from
   `sender.tr("key")` / `player.tr("key", "name" to value)`. A hardcoded sentence is a bug, even a short one.
+- **Text on an item is written in the item language** with `Lang.item(key)`, never a player's `tr`. Paper translates
+  chat, titles and entity names per player but never anything inside an item, so an item is written once, in the
+  language `item-language` names, which keeps every copy identical so it stacks. Stamp what you drew with
+  `Lang.itemRevision` and redraw through `ItemRedraw` when it changes; anything that keeps its own copy of a TriTown
+  item (as the shops do) redraws it too. Text one player reads *about* an item — a price, a message — names it in their
+  language through `GearText`.
 - `Lang` loads `plugins/TriTown/lang/<id>.yml` (copied from `src/main/resources/lang/` on first start). With
   `language: auto` in `config.yml` each player gets the file matching their client locale (`zh_tw` → `zh_CN` by prefix),
   falling back to `en_US`. The console, and anything without a player behind it, uses the configured language.
@@ -134,7 +148,9 @@ accepting a `JavaPlugin`. See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 - Keys are grouped by area: `command.*` per command, `common.*` for shared lines, `money.*` for the economy, `gui.*`
   per menu. Reuse an existing key before adding one.
 - Key names must appear as whole string literals (`tr(if (credit) "a.credit" else "a.debit")`, not `"a.$state"`) so
-  `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list) and `money.source.*`.
+  `LangFilesTest` can see them. The only runtime-built keys are `command.*` (the help list), `money.source.*`, and
+  `item.*`, `gear.item.*`, `gear.reforge.*` and `mob.kind.*` for content, which `ContentFilesTest` holds to the
+  content files instead.
 - Placeholder names are lowercase letters only (`{name}`, `{balance}`), which is what the test checks for.
 - A GUI declares `titleKey` and its title is translated for the viewer; override `title(player)` when the title carries
   live data.
@@ -344,6 +360,82 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
   `NewsRender.material`.
 - **Every editor click re-checks `tritown.news.manage`**, not only the command that opened the menu.
 
+## Working with Combat
+
+**Fights with mobs are in RPG numbers; fights between players are vanilla.** See [Combat](docs/DEVELOPER_GUIDE.md#combat).
+
+- **Vanilla health is the truth.** An entity's RPG health is always `vanillaHealth / vanillaMax × rpgMax`. Never store
+  RPG health anywhere, and never change a player's or a mob's vanilla `MAX_HEALTH`: everything vanilla does with
+  health — regeneration, potions, totems, death — works only because the two cannot drift apart.
+- **Never touch a hit between players.** `DamageListener` leaves player→player hits, a pet biting a player, and
+  everything the world does to a player exactly as vanilla has them. Anything new that fires on a hit must skip players
+  too, or it becomes a PvP advantage.
+- **Every formula lives in `DamageMath`**, which is plain Kotlin. Listeners turn an event into a call and the result
+  back into vanilla damage (`DamageMath.toVanilla`); they never do arithmetic of their own. A change that fails
+  `BalanceSimulationTest` changes how the game feels, so it is a decision, not a fix-up.
+- **Numbers belong in `content/balance.yml`**, never in Kotlin. A new tunable goes in `Balance` with its default,
+  `BalanceParser`, and the bundled file — `BalanceParserTest` fails when the file and `Balance.DEFAULT` disagree.
+- **Build stats only in `StatSources`**, and read them through `PlayerStats`. Anything new that changes a player's stats
+  must invalidate their sheet (see `StatListener`).
+- **Only wild spawns are levelled.** A mob from a spawner, an egg or a command has no profile and is level 1, and town
+  claims are always level 1, so vanilla farms keep working. Read a level through `MobProfiles.level`.
+- **Environment damage to a mob is level-1 units** (`DamageMath.environmentHit`), so no trap outgrows level 1. Keep it
+  that way for any new source of damage a player does not deal by hand.
+- **Extra loot only ever comes from `MobLoot`**: an eligible mob, killed by a player, with players' damage over
+  `player-share`. Mobs never drop money — a new faucet belongs in a shop the owner prices.
+- **A content item stays an echo shard with an `item_model`**, whose one use `ContentItemListener` refuses. A new base
+  item would need every vanilla use of it refused first.
+- **Every affix effect lives in `AffixEffects`**, and is triggered by a mob. A new affix goes there, in `Affix`, and in
+  both language files, and must never let a player's hit on a player change.
+- **A mob's nameplate is shared by every viewer**, so its frame is rendered in the configured language (`Lang.tr(null,
+  …)`) and a mob's kind is a `<lang:…>` tag the client fills in. Setting a name must never make a mob persistent.
+
+## Working with Custom Mobs
+
+**The server's own mobs live in `content/bestiary.yml`.** See [Custom mobs](docs/DEVELOPER_GUIDE.md#custom-mobs).
+
+- **A mob stores its kind, never its stats.** `MobProfile.kind` is an id; what it is worth is read from the catalog
+  every time. Never write a kind's health, damage or Defense onto a mob.
+- **`MobPower` is the only place a profile becomes a multiplier or Defense.** Rank, kind and affixes meet there, and
+  `CombatHealth` and `DamageListener` only ask it. A new source of toughness goes there.
+- **Never change a mob's vanilla `MAX_HEALTH` to make it bigger.** A kind's size is `MobPower.health`; its scale,
+  speed and footing are named attribute modifiers that `MobKinds.refresh` can put on again.
+- **A costume is only a look.** Dress a mob through `MobKinds.dress`, which empties every piece's attribute modifiers
+  and sets its drop chance to 0. Gear only ever leaves a mob through `MobLoot`.
+- **A custom mob is only ever a wild one**, rolled in `MobListener.onSpawn`, or one TriTown calls up itself through
+  `MobSetup.spawn` — which is never eligible for loot.
+- **Custom mobs change no blocks**, and neither may anything new they do.
+- **Every ability lives in `AbilityEffects`**, and hurts only players, only as the mob (a `DamageSource` it caused),
+  so the pipeline scales it and it can never touch a hit between players. A new ability goes there, in `Ability`, and
+  in the `abilities` block of `balance.yml` with its default in `Balance`, and always warns before it lands.
+- **Bosses go through `mobs/boss/`.** `BossSummons` is the only way one is summoned — every refusal asked before the
+  sigil is taken — and `BossFights` the only thing that runs a fight. Only TriTown moves a boss, through
+  `MobSetup.teleport`; `BossListener` refuses every other teleport and portal.
+- **A boss's loot is personal**, rolled per contributor in `MobLoot.bossRewards` and never added to its death drops.
+  A piece of gear with no recipe is signature gear: only the loot that names it drops it.
+- **A new boss is held to `BossBalanceTest`**, and its kind needs vanilla numbers there.
+- **The bestiary only reads.** `BestiaryRecords` is credited from `MobListener.onDeath` and `BossFights.defeated`
+  alone; the menu never changes a record, and nothing a record holds is a reward.
+
+## Working with Gear
+
+**A piece of gear is what it is, never what it is worth.** See [Gear](docs/DEVELOPER_GUIDE.md#gear) and
+[The Forge](docs/DEVELOPER_GUIDE.md#the-forge).
+
+- **Gear stores its identity, never its stats.** `GearData` is an id, a rarity, stars, rolls and a reforge;
+  `GearStats.of` works the stats out every time, so retuning reaches every piece already out there. Never write a
+  stat onto an item.
+- **Every piece of a slot and tier is worth the same.** A definition gives weights, never numbers, and the budget in
+  `balance.yml` does the rest. `GearStatsTest` and `BalanceSimulationTest` hold the budget to the design.
+- **Go through `Gear`** to make, read, save or refresh a piece, and through `Forge` for anything a player pays for.
+  `Forge` asks everything that can refuse first, charges, and only then takes and changes — the `ShopTrade` order.
+- **Draw gear with `GearRender`**, which writes only item-language text and plain numbers and leaves enchantments
+  and anvil names alone. A redraw must never lose what a player gave a piece.
+- **Between players a piece is its base item.** Its own vanilla armor and attack damage never count as RPG stats, and
+  nothing new may make a piece stronger against a player than the vanilla item it is made of.
+- **Mythic only ever drops.** The Forge refines no higher than `refine-cap`, and `craft-odds` never lists mythic.
+- **Money moves as `SOURCE_GEAR`** with a `money.reason.gear-*` reason, filed under `FlowCategory.GEAR`.
+
 ## Versioning & Releases
 
 - `plugin_version` in [gradle.properties](gradle.properties) is the single source of truth for the plugin version. It
@@ -389,5 +481,7 @@ or `Fix` commit carries its own changelog entry. See [docs/COMMIT_STRUCTURE.md](
 - **Escape player-written text** — town names, boards, and other player input must be escaped
   (`MiniMessage.miniMessage().escapeTags(...)`) before being embedded in MiniMessage.
 - **Build items with the DSL** — use `itemStack { }` for GUI and custom items and `LoreUtil` for wrapped lore.
+- **Lists fill from the top-left** — a paged list uses `PagedLayout.FRAMED` (or `FULL`), never a centred layout. Only a
+  row of buttons is centred, with `GUIFrame.spacedColumns` or `packedColumns`.
 - **No manual registration** — never edit `plugin.yml` commands/listeners. The auto-registration system handles
   everything.

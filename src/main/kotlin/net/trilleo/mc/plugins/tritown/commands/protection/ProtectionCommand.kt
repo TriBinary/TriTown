@@ -57,7 +57,12 @@ class ProtectionCommand : PluginCommand(
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> =
-        if (args.size == 1) listOf(INSPECT, RELEASE).filter { it.startsWith(args[0], ignoreCase = true) } else emptyList()
+        if (args.size == 1) listOf(INSPECT, RELEASE).filter {
+            it.startsWith(
+                args[0],
+                ignoreCase = true
+            )
+        } else emptyList()
 
     /** The entity in the crosshair if there is one, the block otherwise. */
     private fun target(player: Player): ClaimHolder? =

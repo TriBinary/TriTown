@@ -8,6 +8,7 @@ import net.trilleo.mc.plugins.tritown.Main
 import net.trilleo.mc.plugins.tritown.enums.LimitPeriod
 import net.trilleo.mc.plugins.tritown.enums.MatchMode
 import net.trilleo.mc.plugins.tritown.enums.TownyRequirement
+import net.trilleo.mc.plugins.tritown.gear.GearText
 import net.trilleo.mc.plugins.tritown.shops.ShopCost
 import net.trilleo.mc.plugins.tritown.shops.ShopEntry
 import net.trilleo.mc.plugins.tritown.shops.ShopTrade
@@ -39,17 +40,20 @@ object ShopRender {
     }
 
     /**
-     * What to call [item] in a line of text.
+     * What to call [item] in a line of text [viewer] reads.
      *
      * A renamed item is called by the name it was given, escaped because an
-     * administrator wrote it. Anything else uses the client's own translation,
-     * so a Chinese player reads Chinese item names without TriTown shipping a
-     * copy of Minecraft's dictionary.
+     * administrator wrote it. Gear and content items go by their own names in
+     * the viewer's language, not the vanilla item they are made of. Anything
+     * else uses the client's own translation, so a Chinese player reads Chinese
+     * item names without TriTown shipping a copy of Minecraft's dictionary.
      */
-    fun itemName(item: ItemStack): String {
+    fun itemName(viewer: Player, item: ItemStack): String {
         val meta = item.itemMeta
         val custom: Component? = if (meta != null && meta.hasDisplayName()) meta.displayName() else null
-        return custom?.let { ComponentUtil.escape(plain.serialize(it)) } ?: "<lang:${item.translationKey()}>"
+        return custom?.let { ComponentUtil.escape(plain.serialize(it)) }
+            ?: GearText.label(viewer, item)
+            ?: "<lang:${item.translationKey()}>"
     }
 
     /**
@@ -59,7 +63,7 @@ object ShopRender {
      * the player hands over or as something they are given.
      */
     fun itemLine(player: Player, item: ItemStack, multiplier: Int = 1, key: String = "gui.shop.cost-item"): String =
-        player.tr(key, "amount" to item.amount * multiplier, "item" to itemName(item))
+        player.tr(key, "amount" to item.amount * multiplier, "item" to itemName(player, item))
 
     /**
      * What [amount] of [entry] costs, money first, coloured as something the
@@ -164,7 +168,7 @@ object ShopRender {
             player.tr(
                 key,
                 "amount" to result.amount,
-                "item" to itemName(entry.item),
+                "item" to itemName(player, entry.item),
                 "price" to money(result.money),
             )
         )

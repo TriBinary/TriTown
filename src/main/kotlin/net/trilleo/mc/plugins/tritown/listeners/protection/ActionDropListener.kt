@@ -6,9 +6,9 @@ import net.trilleo.mc.plugins.tritown.protection.Protection
 import org.bukkit.block.TileState
 import org.bukkit.entity.Item
 import org.bukkit.entity.Player
+import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
-import org.bukkit.event.Event
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockDispenseLootEvent

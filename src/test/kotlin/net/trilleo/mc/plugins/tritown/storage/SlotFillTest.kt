@@ -1,10 +1,6 @@
 package net.trilleo.mc.plugins.tritown.storage
 
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
+import kotlin.test.*
 
 /**
  * Depositing and sorting move a player's items around without them watching
