@@ -4,8 +4,8 @@
 
 TriTown is a Minecraft Paper plugin that adds custom town features for the Trilleo server on top of
 [Towny](https://github.com/TownyAdvanced/Towny). Where [TownyMenu](https://github.com/Trilleo/TownyMenu) is a general
-GUI for Towny's existing features, TriTown holds functionality specific to this server. It targets Minecraft 26.2 (Paper
-API 26.2), hard-depends on Towny and Vault, and is written in Kotlin. [README.md](README.md) has the player-facing
+GUI for Towny's existing features, TriTown holds functionality specific to this server. It targets Minecraft 26.3 (Paper
+API 26.3), hard-depends on Towny and Vault, and is written in Kotlin. [README.md](README.md) has the player-facing
 overview.
 
 ## Tech Stack
@@ -14,7 +14,7 @@ overview.
 |:---------------|:-------------------------------------------------|
 | Language       | Kotlin 2.3.10                                    |
 | Build          | Gradle 9.7.1 (Kotlin DSL)                        |
-| Platform       | Paper API 26.2 (MC 26.2)                         |
+| Platform       | Paper API 26.3 (MC 26.3)                         |
 | Towny          | 0.103.2.7 (`towny_version` in gradle.properties) |
 | Vault API      | 1.7.1 (`vault_api_version` in gradle.properties) |
 | FancyNpcs API  | 2.9.2 (`fancynpcs_version`, API artifact only)   |
@@ -58,7 +58,7 @@ Before finishing any task that changes the plugin, do all of the following:
 ```
 
 The local test server lives in `run/` (gitignored). `copyPlugin` puts the matching Towny jar in `run/plugins/`, but the
-Paper 26.2 jar (`run/paper-*.jar`), Vault, and FancyNpcs (Maven carries its API only) must be downloaded by hand, and
+Paper 26.3 jar (`run/paper-*.jar`), Vault, and FancyNpcs (Maven carries its API only) must be downloaded by hand, and
 `eula.txt` accepted, before `startServer` works. No economy plugin is needed — TriTown supplies the economy itself.
 The server console reads commands from the terminal running Gradle.
 

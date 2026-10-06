@@ -118,7 +118,7 @@ built on.
 
 | Dependency     | Version                             |
 |:---------------|:------------------------------------|
-| Paper          | 26.2+                               |
+| Paper          | 26.3+                               |
 | Java           | 25+                                 |
 | Towny          | 0.103.2.7+                          |
 | Vault          | 1.7+                                |
@@ -141,7 +141,7 @@ The compiled JAR is placed in `build/libs/`. Run `./gradlew copyPlugin` to copy 
 into `run/plugins/` for the local test server, or `./gradlew startServer` to copy them and start the server. Before the
 first start:
 
-- download a Paper 26.2 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
+- download a Paper 26.3 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
 - put Vault into `run/plugins/`;
 - put [FancyNpcs](https://modrinth.com/plugin/fancynpcs) into `run/plugins/` as well, to test shop NPCs — only its API
   is published to Maven, so the plugin itself is not fetched by the build;
