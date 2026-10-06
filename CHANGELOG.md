@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## Version 1.5.1
+
 ### New Features
 
 #### Towns
