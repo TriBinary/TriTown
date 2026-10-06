@@ -32,8 +32,17 @@ object MobSetup {
      * summoner's minion, or one an administrator asks for — as [kind] if one is
      * given, with the affixes the kind always has. It is unranked, and never
      * eligible: it drops nothing beyond vanilla's loot.
+     *
+     * [prepare] runs before the mob joins the world, so anything it marks the
+     * mob with is already there when other plugins see the spawn.
      */
-    fun spawn(at: Location, type: EntityType, level: Int, kind: MobKindDef?): LivingEntity? {
+    fun spawn(
+        at: Location,
+        type: EntityType,
+        level: Int,
+        kind: MobKindDef?,
+        prepare: (LivingEntity) -> Unit = {},
+    ): LivingEntity? {
         val profile = MobProfile(
             level = level,
             rank = MobRank.NORMAL,
@@ -43,7 +52,10 @@ object MobSetup {
             kind = kind?.id,
         )
         val entity = at.world.spawnEntity(at, type, SpawnReason.CUSTOM) { spawned ->
-            (spawned as? LivingEntity)?.let { MobProfiles.assign(it, profile) }
+            (spawned as? LivingEntity)?.let {
+                MobProfiles.assign(it, profile)
+                prepare(it)
+            }
         }
         val mob = entity as? LivingEntity ?: run {
             entity.remove()

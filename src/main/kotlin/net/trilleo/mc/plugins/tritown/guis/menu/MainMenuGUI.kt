@@ -11,6 +11,7 @@ import net.trilleo.mc.plugins.tritown.economy.EconomyService
 import net.trilleo.mc.plugins.tritown.enums.FillMode
 import net.trilleo.mc.plugins.tritown.guis.admin.AdminPanelGUI
 import net.trilleo.mc.plugins.tritown.guis.admin.PanelRender
+import net.trilleo.mc.plugins.tritown.guis.gathering.ResourcesGUI
 import net.trilleo.mc.plugins.tritown.guis.storage.StorageRender
 import net.trilleo.mc.plugins.tritown.mobs.BestiaryRecords
 import net.trilleo.mc.plugins.tritown.news.NewsManager
@@ -39,7 +40,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * The way in to everything TriTown offers a player.
  *
- * The profile sits on its own at the top, and the buttons below it are laid
+ * The profile sits at the top — beside the viewer's town's resource regions,
+ * when it has any — and the buttons below it are laid
  * out in rows of up to three. A button for something the server has switched
  * off, or the viewer may not use, is left out rather than shown greyed, and
  * each row is centred on what is left — so the menu never has a hole in it,
@@ -57,7 +59,7 @@ class MainMenuGUI : PluginGUI(
 ) {
 
     private enum class Button {
-        PROFILE, TOWN, STORAGE, SHOP, TRADE, PAY, LEADERBOARD, SERVER, FORGE, NEWS, BESTIARY, SIDEBAR, ADMIN, CLOSE
+        PROFILE, RESOURCES, TOWN, STORAGE, SHOP, TRADE, PAY, LEADERBOARD, SERVER, FORGE, NEWS, BESTIARY, SIDEBAR, ADMIN, CLOSE
     }
 
     /** Which button each slot holds, per viewer, since the buttons shown depend on who is looking. */
@@ -78,6 +80,7 @@ class MainMenuGUI : PluginGUI(
         val player = event.whoClicked as? Player ?: return
         when (layouts[player.uniqueId]?.get(event.rawSlot)) {
             Button.TOWN -> MenuRender.later(player) { player.performCommand(TOWNY_MENU_COMMAND) }
+            Button.RESOURCES -> MenuRender.later(player) { CommandRegistrar.run(player, "resources") }
             Button.STORAGE -> MenuRender.later(player) { CommandRegistrar.run(player, "storage") }
             Button.SHOP -> MenuRender.later(player) { CommandRegistrar.run(player, "trades") }
             Button.TRADE -> MenuRender.later(player) { PlayerPickerGUI.show(player, PlayerPickerGUI.Mode.TRADE) }
@@ -115,7 +118,7 @@ class MainMenuGUI : PluginGUI(
      */
     private fun layout(player: Player): Map<Int, Button> {
         val rows = listOf(
-            listOf(Button.PROFILE),
+            listOfNotNull(Button.PROFILE, Button.RESOURCES.takeIf { ResourcesGUI.hasRegions(player) }),
             listOfNotNull(
                 Button.TOWN.takeIf { hasTownyMenu() },
                 Button.STORAGE.takeIf { StorageManager.isAvailable },
@@ -161,6 +164,7 @@ class MainMenuGUI : PluginGUI(
     private fun render(player: Player, button: Button): ItemStack = when (button) {
         Button.PROFILE -> profile(player)
         Button.TOWN -> town(player)
+        Button.RESOURCES -> card(player, Material.IRON_PICKAXE, "gui.menu.resources", "gui.menu.resources-lore")
         Button.STORAGE -> storage(player)
         Button.SHOP -> card(player, Material.EMERALD, "gui.menu.shop", "gui.menu.shop-lore")
         Button.TRADE -> trade(player)

@@ -14,7 +14,7 @@ TriTown is in early development; see the [change log](CHANGELOG.md) for what has
 
 **A menu in every hotbar.** Every player carries a glowing item in the last slot of their hotbar; right-click it, or
 run `/tt menu`, for everything TriTown offers in one place. Your profile sits at the top — balance, founding credit,
-leaderboard rank, town and nation — and below it are your town at a glance with a shortcut into
+leaderboard rank, town and nation — beside it your town's resource regions, when it has any, and below it are your town at a glance with a shortcut into
 [TownyMenu](https://github.com/Trilleo/TownyMenu), your storage, the global shop, a list of the players near enough to trade with
 (anyone waiting for your answer first), a list of players to pay, the richest players as heads, the server's vital signs,
 the Forge, the server news, your bestiary, a sidebar switch, and the admin panel for those allowed it. Anything switched off on the server, or that you may not
@@ -32,6 +32,16 @@ starting balance, balance cap and formatting are all configurable. If you would 
 starting balance. Only founding a town with `/t new` can spend it: TriTown takes it off the price Towny charges, so a
 new player who spends their balance by mistake can still found a town. Joining someone else's town gives it up, and
 `/balance` shows it while you hold it.
+
+**Resource regions in town.** Mark out part of a town — a mine, a farm, a wood, animal pens, a monster arena — and
+its resources grow back on their own. Ore turns to bedrock when mined and returns, crops are replanted and grow through
+their stages, trees regrow, and spawners keep animals and monsters about. Only the town's residents can gather there,
+and they can even when the town denies them building, destroying and using everywhere else, which suits a starter town
+new players join. Nothing else in a region can be changed by anyone, and nothing grows, burns or explodes there except
+through TriTown. Everything is set up in game: draw the region with a wand, then click blocks, seeds and spawn eggs in
+your inventory to add resources and spawners, and set each one's regrow time, the block that stands in while it is gone,
+extra drops with their chances, and — for an ore vein that is different every time — what it may grow back as.
+Players find their town's regions from the main menu or `/tt resources`, along with a tally of what they have gathered.
 
 **A sidebar that follows you.** A scoreboard that changes with where you are standing: a new player without a town is
 pointed at joining one, your own claims show your town's level, residents, land, bank, upkeep and any warning, another
@@ -108,7 +118,7 @@ built on.
 
 | Dependency     | Version                             |
 |:---------------|:------------------------------------|
-| Paper          | 26.2+                               |
+| Paper          | 26.3+                               |
 | Java           | 25+                                 |
 | Towny          | 0.103.2.7+                          |
 | Vault          | 1.7+                                |
@@ -131,7 +141,7 @@ The compiled JAR is placed in `build/libs/`. Run `./gradlew copyPlugin` to copy 
 into `run/plugins/` for the local test server, or `./gradlew startServer` to copy them and start the server. Before the
 first start:
 
-- download a Paper 26.2 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
+- download a Paper 26.3 jar from [papermc.io](https://papermc.io/downloads/paper) into `run/`;
 - put Vault into `run/plugins/`;
 - put [FancyNpcs](https://modrinth.com/plugin/fancynpcs) into `run/plugins/` as well, to test shop NPCs — only its API
   is published to Maven, so the plugin itself is not fetched by the build;
@@ -168,6 +178,8 @@ itself, are still anyone's.
 | `/tt mob <level/balance>` | Inspect mob levels and the balance (OP only) |
 | `/tt item <give/list>`   | Hand out the server's own items and gear (OP only) |
 | `/tt forge`              | Craft gear, and upgrade, refine, reforge or salvage it |
+| `/tt resources`          | See your town's resource regions and what you have gathered |
+| `/tt gather <action> …`  | Set up resource regions (OP only)     |
 
 `/eco` takes `give`, `take` and `set` (`<player> <amount> [currency]`), `reset <player>` back to the starting balance,
 `info <player>` for an account's details, `history [player]` to browse recorded transactions in a menu, and `flush` to
@@ -281,6 +293,14 @@ version stays available as `/tritown:balance` and so on.
 | `mobs.nameplates`                         | `true`             | Show a levelled mob's level and health when a player looks at it                |
 | `mobs.ranks.exempt`                       | bosses             | Kinds of mob that never spawn as elites or champions                            |
 | `towns.founding-credit`                   | `100.0`            | Credit only `/t new` can spend, given once to players without a town; `0` is off |
+| `gathering.enabled`                       | `true`             | Turn resource regions off entirely                                              |
+| `gathering.max-volume`                    | `250000`           | The most blocks one region may cover                                            |
+| `gathering.default-regrow-seconds`        | `60`               | How long a newly added resource takes to grow back                              |
+| `gathering.depleted-blocks.<category>`    | `BEDROCK` / `AIR`  | What stands in for a harvested block, per category, unless the resource sets one |
+| `gathering.spawner-range`                 | `48`               | How close a player has to be for a spawner to call up mobs                      |
+| `gathering.effects`                       | `true`             | Particles and a chime when a block grows back                                   |
+| `gathering.entry-titles`                  | `true`             | Show a region's name when a player walks in                                     |
+| `gathering.save-interval`                 | `60`               | Seconds between writing harvested blocks to disk                                |
 | `news.enabled`                            | `true`             | Turn the server news off entirely                                               |
 | `news.join-message.enabled`               | `true`             | List a player's unread posts a moment after they join                           |
 | `news.join-message.delay-seconds`         | `3`                | How long after joining                                                          |

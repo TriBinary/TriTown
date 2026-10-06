@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+## Version 1.5.1
+
+### New Features
+
+#### Towns
+
++ Added **resource regions**: parts of a town whose resources grow back on their own, and which only the town's
+  residents can gather. Made for a starter town that new players join.
+    + Mining, foraging, farming and excavation: ore turns to a stand-in block such as bedrock and comes back, trees
+      regrow, and crops are replanted as seedlings and grow through their stages. A crop can only be harvested ripe.
+    + Husbandry and combat: spawners keep animals or monsters about, replace those lost after a set time and keep them
+      from wandering off. Monsters can be given a level, and do not burn in daylight.
+    + Residents can gather even when the town denies them the right to build, destroy and use. Only the gathering itself
+      is allowed: they still cannot build, open anything or break a block that is not a ripe resource.
+    + Nothing in a region can be changed by anyone else either. Nothing grows, spreads, decays, burns, floods or
+      explodes there except through TriTown, and animals there cannot be led away, renamed or bred.
+    + Walking into a region shows its name and what can be gathered, or why you cannot gather there.
++ Resource regions are set up in game by administrators with `/tritown gather`.
+    + Draw a region with the wand (`/tritown gather wand`) inside one town's land, then `/tritown gather create <id>`.
+    + Add a resource by clicking a block, or a seed for a crop, in your own inventory: every block of that kind in the
+      region becomes one. Set how long it takes to grow back, what stands in for it meanwhile, whether it keeps its
+      vanilla drops, extra drops with their own chances, and what it may grow back as by weight, for an ore vein that is
+      different every time.
+    + Add a spawner by standing where it belongs and clicking a spawn egg. Set how many mobs it keeps, how quickly it
+      replaces them, how far they roam and how strong its monsters are.
+    + Rename, close, resize, outline and regrow regions from the editor. `/tritown gather build` lets you change a
+      region freely without anything counting as a harvest.
+    + Harvested blocks keep growing back across restarts. Deleting a region, or the town it belongs to, grows everything
+      back first and removes its mobs.
++ Players see their town's resource regions, and a tally of what they have gathered in each category, from the new
+  **Resource Regions** button in the main menu or with `/tritown resources`.
+
+### Technical Details
+
+#### Combat
+
++ `MobSetup.spawn` takes a `prepare` callback that runs before the mob joins the world.
+
 ## Version 1.5.0
 
 ### New Features
