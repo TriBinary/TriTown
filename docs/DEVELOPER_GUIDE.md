@@ -2,7 +2,7 @@
 
 This guide explains how to create **commands**, **listeners**, **GUIs**, **tasks**, **custom items**, **recipes**, work
 with **translations** and the **configuration** system using TriTown's registration system, and how to build on
-**Towny**, the **Vault economy**, the **admin panel**, **shops**, **player trades**, **personal storage**, **item protection**, the **news**, **combat** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
+**Towny**, the **Vault economy**, the **admin panel**, **shops**, **player trades**, **personal storage**, **item protection**, the **news**, **resource regions**, **combat** and the **sidebar**. Commands, listeners, GUIs, tasks, custom items, and recipes all
 follow the same pattern: extend a base class (or implement an interface), place the file in the correct package, and the
 plugin handles the rest automatically at startup. The configuration system provides typed access to `config.yml` values.
 
@@ -3386,6 +3386,97 @@ checks on each click as well as the command.
 `NewsSettings` is a snapshot swapped in whole on a reload. The posts themselves are never re-read on a reload; every
 change to them is already on disk.
 
+## Resource Regions
+
+Parts of a town whose resources grow back, which only the town's residents may gather. An administrator draws a box
+with the wand, and sets up in game which blocks are resources and which mobs the region keeps; nothing about a region
+lives in `config.yml`, whose `gathering` block only sets the rules.
+
+The core lives under `gathering/`, which is **not a scanned package**: `GatherManager` has to be loaded before the main
+menu asks whether the viewer's town has a region. The menus are in `guis/gathering/`, the commands in
+`commands/gathering/` (`/tritown gather` for administrators, `/tritown resources` for players), the listeners in
+`listeners/gathering/`, and the tasks in `tasks/gathering/`.
+
+### The model
+
+| Type              | What it is                                                                                     |
+|:------------------|:-----------------------------------------------------------------------------------------------|
+| `ResourceRegion`  | A box (`Cuboid`) in one town, its name, whether it is open, its nodes and its spawners         |
+| `ResourceNode`    | A kind of block that grows back: category, regrow time, stand-in block, drops, regrowth pool   |
+| `ResourceSpawner` | A spot that keeps up to N mobs of one type about, replacing them after a delay                 |
+| `DepletedNode`    | A harvested block waiting to grow back: what it was, what was put in its place, and when       |
+| `GatherCategory`  | Mining, foraging, farming, excavation (blocks); husbandry, combat (spawners)                    |
+| `GatherManager`   | Every region and every harvested block, and the only thing that reads or writes either         |
+| `GatherAccess`    | Who may gather where: the owning town's residents, on land the town still owns                 |
+| `GatherPermits`   | The one gathering action each player is cleared for this tick (see below)                      |
+| `Harvest`         | Deciding a break and, once every plugin has had its say, carrying it out                       |
+| `Regrowth`        | Putting a stand-in down, growing crops through their stages, and putting the block back        |
+| `Spawners`        | The mobs each spawner keeps, recognised by a PDC tag so they survive a restart                 |
+| `GatherEditors`   | The wand, each administrator's selection, building mode, and particle outlines                 |
+| `AreaCheck`       | Whether a box can be a region: small enough, clear of others, inside one town's land           |
+
+A node is a *kind* of block, not a position: every block of that kind inside the region is one, so an administrator
+builds a mine out of ore and adds one rule. A crop (`ResourceNode.isStaged`) is only ripe at its last stage and is put
+back as a seedling; anything else is replaced by its stand-in — the node's own `depleted` block, or the category's from
+`gathering.depleted-blocks`. A column plant (sugar cane, cactus, bamboo) takes the same plant stacked above it along,
+since the game breaks those too. Growing back never overwrites a rebuilt spot: if the block is no longer the stand-in
+TriTown left, the record is dropped.
+
+### Gathering against Towny's permissions
+
+A starter town usually denies its residents the right to build, destroy and use. Gathering must work anyway, without
+handing those rights out, so the decision is made before Towny's:
+
+1. A `LOWEST` handler (`GatherBlockListener.onBreak`, `GatherEntityListener.onHit`/`onInteract`) decides. A refused
+   action is cancelled there, and Towny — whose handlers ignore cancelled events — never sees it.
+2. An approved action leaves a **permit** in `GatherPermits` for that player, that block and that tick.
+3. Towny then fires its own `TownyDestroyEvent`, `TownyItemuseEvent` or `TownySwitchEvent`.
+   `GatherTownyListener` lifts the refusal only where a permit matches, and suppresses Towny's message.
+
+Every other action Towny judges as it always would. Building is never lifted. A new way to gather — a right-click
+harvest, fishing — needs its own `LOWEST` decision and permit; never un-cancel a Towny event without one.
+
+`GatherTownyListener` also cancels Towny's `MobSpawnRemovalEvent` and `MobRemovalEvent` for spawner mobs, so a town
+with mobs switched off keeps its arena, and deletes a town's regions when Towny deletes the town.
+
+### Protection inside a region
+
+`GatherBlockListener` keeps a region exactly as it was built: nothing may be placed, poured, tilled, stripped,
+fertilised or trampled, and growth, spread, fading, forming, leaf decay, fire, liquids flowing in, pistons and
+explosions are all held still — TriTown does the growing. An administrator in building mode (`/tritown gather build`)
+is left to Towny alone, and breaking a harvested spot in building mode forgets it.
+
+Spawner mobs (`GatherEntityListener`) may only be hurt, sheared or milked by gatherers; they cannot be leashed,
+renamed or bred, do not burn in daylight or transform, and are walked back when they stray. A hostile spawner mob is
+called up through `MobSetup.spawn` with its level, and is never eligible for loot, so a spawner is never a new faucet.
+
+### Storage
+
+`JsonGatherStorage` keeps two files under `<dataFolder>/gathering/`, both written through `AtomicFile`:
+
+- `regions.json` — the definitions, written the moment one is edited (`GatherManager.save()`). If neither it nor its
+  backup can be read, `GatherManager.isReady` stays false and the feature switches itself off rather than start empty.
+- `depleted.json` — the harvested blocks, flushed by `GatherSaveTask` and once more at shutdown, so a restart picks
+  every one back up. Losing it only leaves those blocks as their stand-ins until an administrator runs
+  `/tritown gather regrow`.
+
+Items (extra drops) are stored with `ItemCodec`, the same way shop entries are.
+
+### Ticking
+
+`GatherTickTask` runs every second on the server thread: `Regrowth.tick` puts back what is due and steps crops on a
+stage, `Spawners.tick` stocks every spawner within `spawner-range` of a player, and `GatherNotices.tick` shows a title to
+anyone who walked into a region. Nothing in an unloaded chunk is touched; it waits for the chunk to load.
+
+### Rules
+
+- **Go through `GatherManager`** for every region and harvested block; `save()` after editing a region in place.
+- **Ask `GatherAccess.refusal`** before letting anyone gather. It re-reads Towny every time.
+- **Never cache a town's name or claims** — a region keeps only the town's UUID.
+- **Spawner mobs are recognised by their tag**, never by their type or position. Count them through `Spawners`.
+- **Every editor click re-checks `tritown.gather.admin.edit`**, not only the command that opened the menu.
+- **A region's name is administrator-written MiniMessage**, embedded as written, like a shop's.
+
 ## Combat
 
 Fights with mobs happen in RPG numbers: players and mobs have health pools in the hundreds and thousands, and hits come
@@ -3557,7 +3648,9 @@ has just decided about.
 - **Transformations keep the kind only if it still fits.** A drowned Gravewalker is an ordinary drowned at the same
   level, and a split never keeps a kind.
 - **Summoned minions share their summoner's kind**, through `MobSetup.spawn`, which is also what
-  `/tritown mob spawn <kind> [level]` uses. Neither is ever eligible for loot. `mob kinds` lists them all.
+  `/tritown mob spawn <kind> [level]` uses. Neither is ever eligible for loot. `mob kinds` lists them all. Its
+  `prepare` callback runs before the mob joins the world, so a tag it sets — a resource spawner's — is already there
+  when other plugins, Towny among them, see the spawn.
 
 ### Abilities
 

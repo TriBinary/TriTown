@@ -68,7 +68,7 @@ The server console reads commands from the terminal running Gradle.
 src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── Main.kt                  # Plugin entry point (Main.instance, Main.reload())
 ├── commands/                # Sub-commands (auto-registered)
-│   ├── admin/  adventure/  economy/  info/  items/  menu/  mobs/
+│   ├── admin/  adventure/  economy/  gathering/  info/  items/  menu/  mobs/
 │   └── moderation/  news/  protection/  scoreboard/  shop/  storage/  trade/
 ├── combat/                  # Combat: stats, DamageMath, the health lens, the HUD, indicators (not scanned)
 ├── config/                  # PluginConfig (typed config.yml wrapper), EconomySettings
@@ -77,9 +77,11 @@ src/main/kotlin/net/trilleo/mc/plugins/tritown/
 ├── economy/                 # The economy: ledger, accounts, currencies, Vault provider, statistics,
 │                            # storage (not scanned)
 ├── enums/                   # AccountType, FlowCategory, StatsWindow, TransactionType, FillMode, …
+├── gathering/               # Resource regions: nodes that grow back, spawners, Towny permits, storage (not scanned)
 ├── gear/                    # Gear: its data, stats, drawing and refreshing, the Forge and its costs (not scanned)
 ├── guis/                    # GUIs (auto-registered, extend PluginGUI / PagedPluginGUI); admin/ is the panel,
-│                            # menu/ the main menu, news/ the news, forge/ the Forge, bestiary/ the bestiary;
+│                            # menu/ the main menu, news/ the news, forge/ the Forge, bestiary/ the bestiary,
+│                            # gathering/ the region editor and the players' Resource Regions menu;
 │                            # ConfirmGUI asks before the irreversible
 ├── items/                   # Custom items (auto-registered, extend PluginItem)
 ├── listeners/               # Event listeners, including Towny events (auto-registered)
@@ -110,7 +112,7 @@ src/main/resources/
 The plugin uses `PackageScanner` to discover components at startup — you **never** edit `plugin.yml` or wire things
 manually. Just extend the right base class and place the file in the correct package. Packages outside the table below
 are never scanned, which is why the economy core lives in `economy/`, the shop core in `shops/`, the trade core
-in `trades/`, the storage core in `storage/` and the news core in `news/`: each has to be alive before the registrars build the commands and menus that read it. `menu/` is outside
+in `trades/`, the storage core in `storage/`, the news core in `news/` and resource regions in `gathering/`: each has to be alive before the registrars build the commands and menus that read it. `menu/` is outside
 the scan for a simpler reason: `MenuItem` is not a `PluginItem`, because it is named in each holder's language.
 
 | Component   | Base Class                     | Package                 |
@@ -359,6 +361,26 @@ The main menu (`guis/menu`) is how players reach TriTown, opened from the menu i
 - **Keep the model free of Bukkit types** — it is the file's shape. An icon is a material's name, read back through
   `NewsRender.material`.
 - **Every editor click re-checks `tritown.news.manage`**, not only the command that opened the menu.
+
+## Working with Resource Regions
+
+**Parts of a town whose resources grow back, gathered only by its residents.** See
+[Resource Regions](docs/DEVELOPER_GUIDE.md#resource-regions).
+
+- **Go through `GatherManager`** — it is the only thing that reads or writes a region or a harvested block. `save()`
+  after editing a region in place; harvested blocks are flushed by `GatherSaveTask`.
+- **Gathering overrides Towny only through a permit.** Decide at `LOWEST`, cancel what is refused, and leave a
+  `GatherPermits.grant` for what is allowed; `GatherTownyListener` lifts Towny's refusal only where a permit matches.
+  Never un-cancel a Towny event, or a Bukkit event Towny cancelled, without one, and never lift building: a starter
+  town's residents must still be unable to build, destroy or use anything that is not gathering.
+- **Ask `GatherAccess.refusal`** before anyone gathers. It re-reads Towny on every call; a region keeps only its town's
+  UUID.
+- **A region is held still.** Anything new that could change a block inside one — a mechanic, a mob, an item — must be
+  refused in `GatherBlockListener` unless it is a harvest, and anything that grows there grows through `Regrowth`.
+- **Never overwrite a rebuilt spot.** A harvested block is only put back while the stand-in TriTown left is still there.
+- **Spawner mobs are recognised by their PDC tag**, through `Spawners`, and are never eligible for loot. A new
+  husbandry or combat interaction goes in `GatherEntityListener` with its own permit.
+- **Every editor click re-checks `tritown.gather.admin.edit`**, not only the command that opened the menu.
 
 ## Working with Combat
 

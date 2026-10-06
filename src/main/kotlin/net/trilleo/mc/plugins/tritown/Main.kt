@@ -16,6 +16,9 @@ import net.trilleo.mc.plugins.tritown.economy.storage.JsonPulseStorage
 import net.trilleo.mc.plugins.tritown.economy.vault.TriTownVaultEconomy
 import net.trilleo.mc.plugins.tritown.economy.vault.VaultRegistration
 import net.trilleo.mc.plugins.tritown.enums.ProviderMode
+import net.trilleo.mc.plugins.tritown.gathering.GatherManager
+import net.trilleo.mc.plugins.tritown.gathering.Spawners
+import net.trilleo.mc.plugins.tritown.gathering.storage.JsonGatherStorage
 import net.trilleo.mc.plugins.tritown.guis.storage.StorageGUI
 import net.trilleo.mc.plugins.tritown.menu.MenuItem
 import net.trilleo.mc.plugins.tritown.mobs.ActiveMobs
@@ -133,6 +136,14 @@ class Main : JavaPlugin() {
         NewsSettings.load(pluginConfig, logger)
         NewsManager.start(JsonNewsStorage(dataFolder, logger), logger)
 
+        // Before the registrars, like the shops: the main menu asks whether the viewer's town has a region.
+        GatheringSettings.load(pluginConfig)
+        if (GatheringSettings.snapshot.enabled) {
+            GatherManager.start(JsonGatherStorage(dataFolder, logger), logger)
+            // The worlds loaded before TriTown did, so their spawner mobs never reached the listener.
+            server.worlds.forEach { world -> world.entities.forEach(Spawners::adopt) }
+        }
+
         ItemRegistrar.registerAll(this)
         RecipeRegistrar.registerAll(this)
 
@@ -194,6 +205,8 @@ class Main : JavaPlugin() {
         StorageSettings.load(pluginConfig)
         // Only the settings, as with the shops: every change to a post is already on disk.
         NewsSettings.load(pluginConfig, logger)
+        // Only the settings, as with the shops: every change to a region is already on disk.
+        GatheringSettings.load(pluginConfig)
 
         // The material may have changed, or the item been switched off.
         MainMenuSettings.load(pluginConfig, logger)
@@ -224,6 +237,8 @@ class Main : JavaPlugin() {
         server.onlinePlayers.forEach(SpeedSync::clear)
 
         ShopManager.shutdown()
+        // After the tasks, so the last write of harvested blocks cannot race the flush task.
+        GatherManager.shutdown()
 
         PlayerDataManager.saveAll()
         ServerDataManager.save()

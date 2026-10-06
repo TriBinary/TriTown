@@ -363,6 +363,41 @@ towns:
   # Set to 0 to turn it off.
   founding-credit: 100.0
 
+# ── Resource Gathering ──────────────────────────────────────────────────────
+# Parts of a town whose resources grow back: a mine whose ore returns, a farm
+# that replants itself, a wood that regrows, pens that keep their animals and
+# an arena that keeps its monsters. Only the town's residents may gather there,
+# even when the town denies them building, destroying and using everywhere
+# else, and nothing else in a region can be changed. Regions are drawn with
+# /tritown gather wand and set up in game with /tritown gather; these are the
+# rules that apply to all of them.
+gathering:
+  # Turn resource regions off entirely. Existing regions are left on disk untouched.
+  # Changing this needs a restart.
+  enabled: true
+  # The most blocks one region may cover, so a slip of the wand cannot take in a whole town.
+  max-volume: 250000
+  # Seconds a newly added resource takes to grow back, until it is given its own time.
+  default-regrow-seconds: 60
+  # What stands in for a harvested block until it grows back, by the resource's
+  # category, unless the resource names its own. Crops are put back as seedlings
+  # and grow through their stages instead. AIR leaves a gap.
+  depleted-blocks:
+    mining: BEDROCK
+    foraging: AIR
+    farming: AIR
+    excavation: BEDROCK
+  # How close a player has to be for a spawner to call its mobs up.
+  spawner-range: 48
+  # Particles and a chime when a block grows back, and a puff when a mob appears.
+  effects: true
+  # Show a region's name, and whether you may gather there, when you walk in.
+  entry-titles: true
+  # Seconds between writing harvested blocks to disk. A crash loses at most this
+  # long of them, and those blocks simply stay as they are. Regions themselves
+  # are always written the moment they are changed.
+  save-interval: 60
+
 # ── News ────────────────────────────────────────────────────────────────────
 # Update notes for the server, read from the main menu or with /tritown news.
 # Posts are written in game — /tritown news manage, or the Manage button in the
